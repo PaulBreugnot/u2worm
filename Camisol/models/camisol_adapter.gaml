@@ -5,7 +5,8 @@
 
 model Camisoleadapter
 
-import "camisole.gaml"
+import "camisol.gaml"
+
 global
 {
 	geometry shape <- square(1#cm);
