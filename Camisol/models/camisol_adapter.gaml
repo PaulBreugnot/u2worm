@@ -1,13 +1,11 @@
 /***
 * Name: Camisoleadapter
-* Author: nicolas
-* Description: 
-* Tags: Tag1, Tag2, TagN
+* Author: Lucas GROSJEAN, Nicolas MARILLEAU
 ***/
 
 model Camisoleadapter
 
-import "camisole_V7.gaml"
+import "camisole.gaml"
 global
 {
 	geometry shape <- square(1#cm);
@@ -19,6 +17,9 @@ experiment Simple type: gui
 		//soil_caracteristics <- sc;
 		return true;
 	}*/
+	
+	float kilo_of_production_adapt <- kilo_of_production;
+	
 	action extract_N_P(float N, float P)
 	{
 		float sumN <- sum(Dam collect(each.dim[0]));
@@ -34,46 +35,37 @@ experiment Simple type: gui
 		write "NN "+sumN+" "+sumN2;
 		write "PP "+sumP+" "+sumP2;
 	}
-	action init_new_year(float cl, float cr, float No, float Po ){
-		
-		int nb_om <- length(organic_particles);
-		float OM <- /*000001*/ 1.5#gram/(#cm*#cm)*world.shape.area;
-		ask organic_particles{
-			C_labile <- C_labile +cl* OM*self.shape.area ; ///nb_om;
-			C_recalcitrant <-C_recalcitrant + cr* OM*self.shape.area ; ///nb_om;
-			N <- N+ No*OM*self.shape.area;
-			P <- P+ Po*OM*self.shape.area;
-		//	write "fdf"+C_labile+ " "+C_recalcitrant+" "+N+" "+P;
-		
-		}
-		
-		
-		return true;
-	}
+	
 	float get_DIM_N
 	{
 		return sum(Dam collect(each.dim[0]));
 	}
+	
 	float get_DOM_N
 	{
 		return sum(Dam collect(each.dom[0]));
 	}
+	
 	float get_DOM_C
 	{
 		return sum(Dam collect(each.dom[2]));
 	}
+	
 	float get_C_L
 	{
 		return sum(particle collect(each.C_labile));
 	}
+	
 	float get_C_R
 	{
 		return sum(particle collect(each.C_recalcitrant));
 	}
+	
 	float get_N
 	{
 		return sum(particle collect(each.N));
 	}
+	
 	float get_P
 	{
 		return sum(particle collect(each.P));
@@ -83,14 +75,27 @@ experiment Simple type: gui
 	{
 		return world.shape.area;
 	}
+	
 	float get_DOM_P
 	{
 		return sum(Dam collect(each.dom[1]));
 	}
+	
 	float get_DIM_P
 	{
 		return sum(Dam collect(each.dim[1]));
 	}
+	
+	float get_production_total
+	{
+		return kilo_of_production;
+	}
+	
+	float get_production_without_charette
+	{
+		return kilo_of_production_adapt;
+	}
+	
 	output
 	{
 		
