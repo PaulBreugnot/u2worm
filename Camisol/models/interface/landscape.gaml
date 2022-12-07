@@ -9,6 +9,8 @@ model landscape
 
 global {
 	file landscape <- file("../../images/landscape.png");
+	file sun <- file("../../images/sun.png");
+	file plots <- file("../../images/plots.png");
 	
 	/**
 	 * For an exact match with the PNG landscape, the rectangle should be 261.3#m*148.1#m.
@@ -27,7 +29,9 @@ grid HelpGrid cell_width:cell_size cell_height:cell_size {
 experiment landscape type:gui {	
 	output {
 		display camisol type:opengl axes: false fullscreen: true {
+			image "sun" position: {0, 0, 0} size: {1, 1} file: sun;
 			image "landscape" position: {0, 0, 0} size: {1, 1} file: landscape;
+			image "plots" position: {0, 0, 0} size: {1, 1} file: plots;
 			// grid HelpGrid border:#black;
 		}
 	}

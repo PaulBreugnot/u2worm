@@ -20,7 +20,9 @@ experiment application type:gui {
 			event mouse_down action:mouse_down_crop_buttons;
 			event mouse_up action:mouse_up_crop_buttons;
 			
+			image "sun" position: {0, 0, 0} size: {1, 1} file: sun;
 			image "landscape" position: {0, 0, 0} size: {1, 1} file: landscape;
+			image "plots" position: {0, 0, 0} size: {1, 1} file: plots;
 			// grid HelpGrid border:#black;
 			
 			species Button aspect:button_image;

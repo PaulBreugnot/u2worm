@@ -37,7 +37,7 @@ global {
 		float num_cell_width <- env_width / cell_size;
 		float num_cell_height <- env_height / cell_size;
 		
-		return {(num_cell_width-2.5)*cell_size, 0.5*cell_size};
+		return {(num_cell_width-2.5)*cell_size, 1*cell_size};
 	}
 	
 	action next_button_coordinates {
