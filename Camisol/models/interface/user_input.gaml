@@ -1,26 +1,15 @@
 /**
-* Name: CamisolInterface
-* Based on the internal empty template. 
-* Author: Paul Breugnot
+* Name: userinput
+* Based on the internal skeleton template. 
+* Author: pbreugno
 * Tags: 
 */
 
+model userinput
 
-model CamisolInterface
-
-/* Insert your model definition here */
+import "landscape.gaml"
 
 global {
-	file landscape <- file("../images/landscape.png");
-	
-	/**
-	 * For an exact match with the PNG landscape, the rectangle should be 261.3#m*148.1#m.
-	 * But for convenience, values are rounded to ease objects positionning.
-	 */
-	float env_width <- 260#m;
-	float env_height <- 150#m;
-	float cell_size <- 15#m;
-	geometry shape <- rectangle(env_width, env_height);
 	
 	list<string> buttons;
 	int i_button <- 0;
@@ -60,33 +49,50 @@ global {
 			buttons <- buttons + ("crop_" + i + ".png");
 		}
 		loop button over: buttons {
-			create Button number:1 with: (location: button_coordinates, image: image_file("../images/crops/" + button));
+			create Button number:1 with: (location: button_coordinates, image: image_file("../../images/crops/" + button));
 			do next_button_coordinates;
+		}
+	}
+	
+	Button current_focus;
+	
+	action mouse_move_crop_buttons {
+		list<Button> buttons_under_mouse <- Button overlapping #user_location;
+		if length(buttons_under_mouse) = 0 or buttons_under_mouse[0] != current_focus {
+			if (current_focus != nil) {
+				current_focus.size <- 0.8*cell_size;
+				current_focus <- nil;
+			}
+		}
+		if length(buttons_under_mouse) > 0 and buttons_under_mouse[0] != current_focus {
+			current_focus <- buttons_under_mouse[0];
+			current_focus.size <- 0.9*cell_size;
 		}
 	}
 }
 
-grid HelpGrid cell_width:cell_size cell_height:cell_size {
-	rgb color <- rgb(255,255,255, 0.1);
-	
-}
 
 species Button {
 	image_file image;
+	float size <- 0.8*cell_size;
+	/**
+	 * Shape of the button, used to catch mouse events.
+	 */
+	geometry shape <- circle(0.5*size); // 0.5 factor for radius
 	
 	aspect debug {
-		draw circle(4#m) color:#blue;
+		draw shape color:#white border:#black;
 	}
 	aspect button_image {
-		draw image size:0.8*cell_size;
+		draw image size:size;
 	}
 }
 
-experiment application type:gui {
+experiment userinput type:gui {	
 	output {
-		display camisol type:opengl axes: false fullscreen: true {
-			image "landscape" position: {0, 0, 0} size: {1, 1} file: landscape;
-			// grid HelpGrid border:#black;
+		display camisol type:opengl axes: false {
+			event mouse_move action:mouse_move_crop_buttons;
+			
 			species Button aspect:button_image;
 		}
 	}
