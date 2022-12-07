@@ -8,6 +8,7 @@
 model userinput
 
 import "landscape.gaml"
+import "seed.gaml"
 
 global {
 	
@@ -64,9 +65,36 @@ global {
 				current_focus <- nil;
 			}
 		}
-		if length(buttons_under_mouse) > 0 and buttons_under_mouse[0] != current_focus {
-			current_focus <- buttons_under_mouse[0];
-			current_focus.size <- 0.9*cell_size;
+		if (selected_seed = nil) {
+			if length(buttons_under_mouse) > 0 and buttons_under_mouse[0] != current_focus {
+				current_focus <- buttons_under_mouse[0];
+				current_focus.size <- 0.9*cell_size;
+			}
+		} else {
+			selected_seed.location <- #user_location;
+		}
+	}
+	
+	Seed selected_seed;
+	bool del_selected_seed <- false;
+	
+	action mouse_down_crop_buttons {
+		if selected_seed = nil {
+			ask Button overlapping #user_location {
+				create Seed number:1 returns:new_seed with:(image:self.image,size:self.size,location:#user_location);
+				selected_seed<-new_seed[0];
+			}
+		} else {
+			del_selected_seed <- true;
+		}
+	}
+	action mouse_up_crop_buttons {
+		if (del_selected_seed) {
+			del_selected_seed <- false;
+			ask selected_seed {
+				do die;
+			}
+			selected_seed <- nil;
 		}
 	}
 }
@@ -92,8 +120,11 @@ experiment userinput type:gui {
 	output {
 		display camisol type:opengl axes: false {
 			event mouse_move action:mouse_move_crop_buttons;
+			event mouse_down action:mouse_down_crop_buttons;
+			event mouse_up action:mouse_up_crop_buttons;
 			
 			species Button aspect:button_image;
+			species Seed aspect:crop_image;
 		}
 	}
 }

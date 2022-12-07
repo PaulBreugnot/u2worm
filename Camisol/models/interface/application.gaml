@@ -17,10 +17,14 @@ experiment application type:gui {
 	output {
 		display camisol type:opengl axes: false fullscreen: true {
 			event mouse_move action:mouse_move_crop_buttons;
+			event mouse_down action:mouse_down_crop_buttons;
+			event mouse_up action:mouse_up_crop_buttons;
 			
 			image "landscape" position: {0, 0, 0} size: {1, 1} file: landscape;
 			// grid HelpGrid border:#black;
+			
 			species Button aspect:button_image;
+			species Seed aspect:crop_image;
 		}
 	}
 }
