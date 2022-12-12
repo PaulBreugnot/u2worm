@@ -5,9 +5,9 @@
 * Tags: 
 */
 
-model userinput
+model buttons
 
-import "landscape.gaml"
+import "plot.gaml"
 import "seed.gaml"
 
 global {
@@ -55,20 +55,20 @@ global {
 		}
 	}
 	
-	Button current_focus;
+	Button current_button_focus;
 	
 	action mouse_move_crop_buttons {
 		list<Button> buttons_under_mouse <- Button overlapping #user_location;
-		if length(buttons_under_mouse) = 0 or buttons_under_mouse[0] != current_focus {
-			if (current_focus != nil) {
-				current_focus.size <- 0.8*cell_size;
-				current_focus <- nil;
+		if length(buttons_under_mouse) = 0 or buttons_under_mouse[0] != current_button_focus {
+			if (current_button_focus != nil) {
+				current_button_focus.size <- 0.8*cell_size;
+				current_button_focus <- nil;
 			}
 		}
 		if (selected_seed = nil) {
-			if length(buttons_under_mouse) > 0 and buttons_under_mouse[0] != current_focus {
-				current_focus <- buttons_under_mouse[0];
-				current_focus.size <- 0.9*cell_size;
+			if length(buttons_under_mouse) > 0 and buttons_under_mouse[0] != current_button_focus {
+				current_button_focus <- buttons_under_mouse[0];
+				current_button_focus.size <- 0.9*cell_size;
 			}
 		} else {
 			selected_seed.location <- #user_location;
@@ -83,6 +83,7 @@ global {
 			ask Button overlapping #user_location {
 				create Seed number:1 returns:new_seed with:(image:self.image,size:self.size,location:#user_location);
 				selected_seed<-new_seed[0];
+				seed_is_selected <- true;
 			}
 		} else {
 			del_selected_seed <- true;
@@ -95,6 +96,7 @@ global {
 				do die;
 			}
 			selected_seed <- nil;
+			seed_is_selected <- false;
 		}
 	}
 }

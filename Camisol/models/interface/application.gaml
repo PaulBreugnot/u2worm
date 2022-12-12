@@ -7,7 +7,8 @@
 
 model application
 
-import "user_input.gaml"
+import "buttons.gaml"
+import "plot.gaml"
 
 global {
 	/** Insert the global definitions, variables and actions here */
@@ -15,10 +16,13 @@ global {
 
 experiment application type:gui {	
 	output {
-		display camisol type:opengl axes: false fullscreen: true {
+		display camisol type:opengl axes: false fullscreen: false {
+			// Button actions
 			event mouse_move action:mouse_move_crop_buttons;
 			event mouse_down action:mouse_down_crop_buttons;
 			event mouse_up action:mouse_up_crop_buttons;
+			// Plot actions
+			event mouse_move action:mouse_move_plots;
 			
 			image "sun" position: {0, 0, 0} size: {1, 1} file: sun;
 			image "landscape" position: {0, 0, 0} size: {1, 1} file: landscape;
@@ -27,6 +31,7 @@ experiment application type:gui {
 			
 			species Button aspect:button_image;
 			species Seed aspect:crop_image;
+			species Plot aspect:plot_state;
 		}
 	}
 }
