@@ -26,7 +26,7 @@ grid HelpGrid cell_width:cell_size cell_height:cell_size {
 	rgb color <- rgb(255,255,255, 0.1);
 }
 
-experiment landscape type:gui {	
+experiment debug_landscape type:gui {	
 	output {
 		display camisol type:opengl axes: false fullscreen: true {
 			image "sun" position: {0, 0, 0} size: {1, 1} file: sun;

@@ -18,20 +18,19 @@ experiment application type:gui {
 	output {
 		display camisol type:opengl axes: false fullscreen: false {
 			// Button actions
-			event mouse_move action:mouse_move_crop_buttons;
-			event mouse_down action:mouse_down_crop_buttons;
-			event mouse_up action:mouse_up_crop_buttons;
+			event mouse_move action:mouse_move_seed_buttons;
+			event mouse_down action:mouse_down_seed_buttons;
 			// Plot actions
 			event mouse_move action:mouse_move_plots;
+			event mouse_down action:mouse_down_plots;
 			
 			image "sun" position: {0, 0, 0} size: {1, 1} file: sun;
 			image "landscape" position: {0, 0, 0} size: {1, 1} file: landscape;
 			image "plots" position: {0, 0, 0} size: {1, 1} file: plots;
 			// grid HelpGrid border:#black;
 			
-			species Button aspect:button_image;
-			species Seed aspect:crop_image;
-			species Plot aspect:plot_state;
+			species SeedView aspect:default;
+			species PlotView aspect:default;
 		}
 	}
 }
