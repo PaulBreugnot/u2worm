@@ -10,6 +10,7 @@ model plot
 
 import "landscape.gaml"
 import "seed.gaml"
+import "fertilizer.gaml"
 
 /* Insert your model definition here */
 global {
@@ -75,6 +76,7 @@ global {
 	
 	PlotView current_plot_focus;
 	SeedView selected_seed;
+	FertilizerView selected_fertilizer;
 	
 	action mouse_move_plots {
 		list<PlotView> plots_under_mouse <- PlotView overlapping #user_location;
@@ -99,6 +101,16 @@ global {
 		}
 	}
 	action mouse_down_plots {
+		if(selected_seed = nil) {
+			write "nil";
+		} else {
+			write selected_seed.name;
+		}
+		if(current_plot_focus = nil) {
+			write "nil";
+		} else {
+			write current_plot_focus.name;
+		}
 		if selected_seed != nil and current_plot_focus != nil {
 			// Only if the plot is not yet planted (note: the mouse move event sets the growth state to 1 for those plots)
 			if current_plot_focus.plot.growth_state = 1 {

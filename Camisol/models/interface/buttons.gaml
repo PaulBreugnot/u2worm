@@ -17,7 +17,7 @@ global {
 	Button current_button_focus;
 	
 	action mouse_move_buttons {
-		list<Button> buttons_under_mouse <- (SeedButton+SeedButtonMenu) overlapping #user_location;
+		list<Button> buttons_under_mouse <- (SeedButton+SeedButtonMenu+FertilizerButton+FertilizerButtonMenu) overlapping #user_location;
 		if length(buttons_under_mouse) = 0 or buttons_under_mouse[0] != current_button_focus {
 			if (current_button_focus != nil) {
 				ask current_button_focus {
@@ -26,24 +26,36 @@ global {
 				current_button_focus <- nil;
 			}
 		}
-		if (selected_seed = nil) {
+		if (selected_seed = nil and selected_fertilizer = nil) {
 			if length(buttons_under_mouse) > 0 and buttons_under_mouse[0] != current_button_focus {
 				current_button_focus <- buttons_under_mouse[0];
 				ask buttons_under_mouse[0] {
 					do mouse_enter;
 				}
 			}
-		} else {
-			selected_seed.location <- #user_location;
+		} else if (selected_seed != nil) {
+				selected_seed.location <- #user_location;
+		} else if (selected_fertilizer != nil) {
+				selected_fertilizer.location <- #user_location;
 		}
 	}
 	
 	action mouse_down_buttons {
+		// Deletes the selected seed of fertilizer.
+		// If the click occurs anywhere, the selected item is just deleted.
+		// It is the purpose of the plot model to handle planting or fertilization
+		// if an appropriate plot is clicked.
 		if (selected_seed != nil) {
 			ask selected_seed {
 				do die;
 			}
 			selected_seed <- nil;
+		}
+		if (selected_fertilizer != nil) {
+			ask selected_fertilizer {
+				do die;
+			}
+			selected_fertilizer <- nil;
 		}
 		if current_button_focus != nil {
 			ask current_button_focus {
@@ -54,6 +66,8 @@ global {
 	
 	init {
 		create SeedButtonMenu number:1 with: (location:{(num_cell_width-4.5)*cell_size, 1*cell_size});
+		create FertilizerButtonMenu number:1 with: (location:{(num_cell_width-4.5)*cell_size, 2*cell_size});
+		
 		ask SeedButtonMenu {
 			do click;
 		}
@@ -81,11 +95,30 @@ species SeedButton parent: Button {
 		seed_view.size <- 0.8*cell_size;
 	}
 	action click {
-		if selected_seed = nil {
+		if selected_seed = nil and selected_fertilizer = nil {
 			// Creates a new SeedView bound to the the same Seed as the button
 			create SeedView number:1 returns:new_seed_view with:(seed:self.seed_view.seed,size:0.8*cell_size,location:#user_location);
 			selected_seed<-new_seed_view[0];
 			write "Selected seed: " + selected_seed.seed.type;
+		}
+	}
+}
+
+species FertilizerButton parent: Button {
+	FertilizerView fertilizer_view;
+	
+	action mouse_enter {
+		fertilizer_view.size <- 0.9*cell_size;
+	}
+	action mouse_leave {
+		fertilizer_view.size <- 0.8*cell_size;
+	}
+	action click {
+		if selected_seed = nil and selected_fertilizer = nil {
+			// Creates a new SeedView bound to the the same Seed as the button
+			create FertilizerView number:1 returns:new_fertilizer_view with:(fertilizer:self.fertilizer_view.fertilizer,size:0.8*cell_size,location:#user_location);
+			selected_fertilizer<-new_fertilizer_view[0];
+			write "Selected fertilizer: " + selected_fertilizer.fertilizer.type;
 		}
 	}
 }
@@ -122,17 +155,8 @@ species ButtonMenu parent: Button {
 		return coordinates;
 	}
 	
-	list<Button> buttons;
-	
 	action show_buttons virtual: true;
-	
-	action hide_buttons {
-		activated <- false;
-		ask buttons {
-			do die;
-		}
-		buttons <- [];
-	}
+	action hide_buttons virtual: true;
 	
 	action mouse_enter {
 		size <- 0.9*cell_size;
@@ -142,14 +166,16 @@ species ButtonMenu parent: Button {
 	}
 	action click {
 		if !activated {
-			activated <- true;
 			do show_buttons;
 		}
 	}
 }
 
 species SeedButtonMenu parent: ButtonMenu {
+	image_file image <- image_file("../../images/crops/crop.png");
 	list<Seed> seeds;
+	list<SeedView> seed_views;
+	list<Button> buttons;
 
 	init {
 		loop i from: 1 to: 19 {
@@ -159,15 +185,89 @@ species SeedButtonMenu parent: ButtonMenu {
 	}
 	
 	action show_buttons {
+		activated <- true;
+		ask FertilizerButtonMenu {
+			do hide_buttons;
+		}
 		loop i from: 1 to: 19 {
 			create SeedView number: 1 with: (location: button_coordinates[i-1], seed: seeds[i-1], size: 0.8*cell_size) returns: new_seed_view;
 			create SeedButton number: 1 with: (location: button_coordinates[i-1], seed_view: new_seed_view[0]) returns: new_button;
+			add new_seed_view[0] to: seed_views;
 			add new_button[0] to: buttons;
 		}
 	}
 	
+	action hide_buttons {
+		activated <- false;
+		ask seed_views {
+			do die;
+		}
+		ask buttons {
+			do die;
+		}
+		seed_views <- [];
+		buttons <- [];
+	}
+	
+	aspect default {
+		draw image size:size;
+	}
 	aspect debug {
 		draw circle(0.5*size) color:#red;
+	}
+}
+
+species FertilizerButtonMenu parent: ButtonMenu {
+	image_file image <- image_file("../../images/fertilizers/fertilizer.png");
+	list<Fertilizer> fertilizers;
+	list<FertilizerView> fertilizer_views;
+	list<Button> buttons;
+	
+	init {
+		loop i from: 1 to: 10 {
+			create Fertilizer number: 1 with:(type: i) returns: new_fertilizer;
+			add new_fertilizer[0] to: fertilizers;
+		}
+	}
+	
+	action show_buttons {
+		activated <- true;
+		ask SeedButtonMenu {
+			do hide_buttons;
+		}
+		// First button block
+		loop i from: 1 to: 7 {
+			create FertilizerView number: 1 with: (location: button_coordinates[3+i-1], fertilizer: fertilizers[i-1], size: 0.8*cell_size) returns: new_fertilizer_view;
+			create FertilizerButton number: 1 with: (location: button_coordinates[3+i-1], fertilizer_view: new_fertilizer_view[0]) returns: new_button;
+			add new_fertilizer_view[0] to: fertilizer_views;
+			add new_button[0] to: buttons;
+		}
+		// Second button block
+		loop i from: 8 to: 10 {
+			create FertilizerView number: 1 with: (location: button_coordinates[5+i-1], fertilizer: fertilizers[i-1], size: 0.8*cell_size) returns: new_fertilizer_view;
+			create FertilizerButton number: 1 with: (location: button_coordinates[5+i-1], fertilizer_view: new_fertilizer_view[0]) returns: new_button;
+			add new_fertilizer_view[0] to: fertilizer_views;
+			add new_button[0] to: buttons;
+		}
+	}
+	
+	action hide_buttons {
+		activated <- false;
+		ask fertilizer_views {
+			do die;
+		}
+		ask buttons {
+			do die;
+		}
+		fertilizer_views <- [];
+		buttons <- [];
+	}
+	
+	aspect default {
+		draw image size:size;
+	}
+	aspect debug {
+		draw circle(0.5*size) color:#blue;
 	}
 }
 
@@ -178,8 +278,10 @@ experiment debug_buttons type:gui {
 			event mouse_move action:mouse_move_buttons;
 			event mouse_down action:mouse_down_buttons;
 			
-			species SeedButtonMenu aspect:debug;
+			species SeedButtonMenu aspect:default;
 			species SeedView aspect:default;
+			species FertilizerButtonMenu aspect:default;
+			species FertilizerView aspect:default;
 		}
 	}
 }
