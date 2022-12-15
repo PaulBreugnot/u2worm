@@ -29,7 +29,8 @@ global {
 			{155.78465270996094,103.0467758178711,0.0},
 			{49.326107025146484,103.64986419677734,0.0}
 			]);
-		new_plot_views[0].icon_location <- {43.637484782513866,93.46230227181701,0.0};
+		new_plot_views[0].seed_icon_location <- {43.637484782513866,93.46230227181701,0.0};
+		new_plot_views[0].fertilizer_icon_location <- {184.36069638917638,91.8210529376853,0.0};
 		
 		new_plot_views[1].shape <- polygon([
 			{71.12135314941406,85.66154479980469,0.0},
@@ -41,7 +42,8 @@ global {
 			{117.36358642578125,84.703125,0.0},
 			{91.84754943847656,86.02091979980469,0.0}
 		]);
-		new_plot_views[1].icon_location <- {62.510271224840764,78.69243296044709,0.0};
+		new_plot_views[1].seed_icon_location <- {62.510271224840764,78.69243296044709,0.0};
+		new_plot_views[1].fertilizer_icon_location <- {170.00144871789786,79.92347306323204,0.0};
 		
 		new_plot_views[2].shape <- polygon([
 			{79.18619537353516,64.98503875732422,0.0},
@@ -51,7 +53,8 @@ global {
 			{155.4347686767578,67.37484741210938,0.0},
 			{126.5286636352539,64.52976989746094,0.0}
 		]);
-		new_plot_views[2].icon_location <- {69.0747186830414,58.17894706231469,0.0};
+		new_plot_views[2].seed_icon_location <- {69.0747186830414,58.17894706231469,0.0};
+		new_plot_views[2].fertilizer_icon_location <- {159.74429336008703,58.99936552500823,0.0};
 		
 		new_plot_views[3].shape <- polygon([
 			{84.64569854736328,47.21467208862305,0.0},
@@ -63,7 +66,9 @@ global {
 			{123.56702423095703,47.106571197509766,0.0},
 			{105.836181640625,47.106571197509766,0.0}		
 		]);
-		new_plot_views[3].icon_location <- {77.68979988923124,41.3576191854663,0.0};
+		new_plot_views[3].seed_icon_location <- {77.68979988923124,41.3576191854663,0.0};
+		new_plot_views[3].fertilizer_icon_location <- {150.7185905138058,44.2294962136383,0.0};
+		
 		/*
 		 * Plant growth images
 		 */
@@ -90,34 +95,30 @@ global {
 				current_plot_focus <- nil;
 			}
 		}
-		if (selected_seed != nil) {
-			if length(plots_under_mouse) > 0 and plots_under_mouse[0] != current_plot_focus {
-				current_plot_focus <- plots_under_mouse[0];
-				// Simulates a growth state of 1 for not planted plots, for visual purpose only
-				if (current_plot_focus.plot.growth_state = 0) {
-					current_plot_focus.plot.growth_state <- 1;		
-				}
+		if length(plots_under_mouse) > 0 and plots_under_mouse[0] != current_plot_focus {
+			current_plot_focus <- plots_under_mouse[0];
+			// Simulates a growth state of 1 for not planted plots, for visual purpose only
+			if (selected_seed != nil and current_plot_focus.plot.growth_state = 0) {
+				current_plot_focus.plot.growth_state <- 1;		
 			}
 		}
 	}
 	action mouse_down_plots {
-		if(selected_seed = nil) {
-			write "nil";
-		} else {
-			write selected_seed.name;
-		}
-		if(current_plot_focus = nil) {
-			write "nil";
-		} else {
-			write current_plot_focus.name;
-		}
-		if selected_seed != nil and current_plot_focus != nil {
-			// Only if the plot is not yet planted (note: the mouse move event sets the growth state to 1 for those plots)
-			if current_plot_focus.plot.growth_state = 1 {
-				current_plot_focus.plot.seed <- selected_seed.seed;
-				write "Seed " + selected_seed.seed.type + " planted to " + current_plot_focus.plot.number;
+		if current_plot_focus != nil {
+			if selected_seed != nil {
+				// Only if the plot is not yet planted (note: the mouse move event sets the growth state to 1 for those plots)
+				if current_plot_focus.plot.growth_state = 1 {
+					current_plot_focus.plot.seed <- selected_seed.seed;
+					write "Seed " + selected_seed.seed.type + " planted to " + current_plot_focus.plot.number;
+				}
 			}
-			
+			if selected_fertilizer != nil {
+				// Only if the plot has not grown yet
+				if current_plot_focus.plot.growth_state <= 1 {
+					current_plot_focus.plot.fertilizer <- selected_fertilizer.fertilizer;
+					write "Plot " + current_plot_focus.plot.number + " fertilized with " + selected_fertilizer.fertilizer.type;
+				}
+			}
 		}
 	}
 }
@@ -125,6 +126,7 @@ global {
 species Plot {
 	int number;
 	Seed seed;
+	Fertilizer fertilizer;
 	int growth_state <- 0 min:0 max:3;
 	
 
@@ -134,18 +136,22 @@ species PlotView {
 	Plot plot;
 	list<image_file> images <- [nil, nil, nil, nil];
 	image_file current_image;
-	point icon_location;
+	point seed_icon_location;
+	point fertilizer_icon_location;
 	float icon_size <- 0.5*cell_size;
 	
 	aspect debug {
 		draw shape border:#black;
 	}
 	aspect default {
+		if plot.fertilizer != nil {
+			draw fertilizer_images[plot.fertilizer.type-1] at: fertilizer_icon_location size:icon_size;
+		}
+		if plot.seed != nil {
+			draw seed_images[plot.seed.type-1] at: seed_icon_location size:icon_size;
+		}
 		if plot.growth_state > 0 {
 			draw images[plot.growth_state-1] at: {env_width/2, env_height/2, 0};
-			if plot.seed != nil {
-				draw seed_images[plot.seed.type-1] at: icon_location size:icon_size;
-			}
 		}
 	}
 }
