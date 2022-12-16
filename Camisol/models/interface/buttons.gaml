@@ -15,9 +15,10 @@ global {
 	float num_cell_height <- env_height / cell_size;
 	
 	Button current_button_focus;
+	bool disable_up <- false;
 	
 	action mouse_move_buttons {
-		list<Button> buttons_under_mouse <- (SeedButton+SeedButtonMenu+FertilizerButton+FertilizerButtonMenu) overlapping #user_location;
+		list<Button> buttons_under_mouse <- (SoilButton+SeedButton+SeedButtonMenu+FertilizerButton+FertilizerButtonMenu) overlapping #user_location;
 		if length(buttons_under_mouse) = 0 or buttons_under_mouse[0] != current_button_focus {
 			if (current_button_focus != nil) {
 				ask current_button_focus {
@@ -26,7 +27,7 @@ global {
 				current_button_focus <- nil;
 			}
 		}
-		if (selected_seed = nil and selected_fertilizer = nil) {
+		if (selected_seed = nil and selected_fertilizer = nil and selected_soil = nil) {
 			if length(buttons_under_mouse) > 0 and buttons_under_mouse[0] != current_button_focus {
 				current_button_focus <- buttons_under_mouse[0];
 				ask buttons_under_mouse[0] {
@@ -34,37 +35,56 @@ global {
 				}
 			}
 		} else if (selected_seed != nil) {
-				selected_seed.location <- #user_location;
+			selected_seed.location <- #user_location;
 		} else if (selected_fertilizer != nil) {
-				selected_fertilizer.location <- #user_location;
+			selected_fertilizer.location <- #user_location;
+		} else if (selected_soil != nil) {
+			selected_soil.location <- #user_location;
 		}
 	}
 	
 	action mouse_down_buttons {
-		// Deletes the selected seed of fertilizer.
-		// If the click occurs anywhere, the selected item is just deleted.
-		// It is the purpose of the plot model to handle planting or fertilization
-		// if an appropriate plot is clicked.
-		if (selected_seed != nil) {
-			ask selected_seed {
-				do die;
-			}
-			selected_seed <- nil;
-		}
-		if (selected_fertilizer != nil) {
-			ask selected_fertilizer {
-				do die;
-			}
-			selected_fertilizer <- nil;
-		}
-		if current_button_focus != nil {
+		if current_button_focus != nil and selected_seed = nil and selected_fertilizer = nil and selected_soil = nil {
 			ask current_button_focus {
 				do click;
+				disable_up <- true;
 			}
 		}
 	}
 	
+	action mouse_up_buttons {
+		// Plots should handle selected items in mouse down actions, so they can be killed safely at mouse up
+		if (!disable_up) {
+			if (selected_seed != nil) {
+				ask selected_seed {
+					do die;
+				}
+
+				selected_seed <- nil;
+			} else if (selected_fertilizer != nil) {
+				ask selected_fertilizer {
+					do die;
+				}
+
+				selected_fertilizer <- nil;
+			} else if (selected_soil != nil) {
+				ask selected_soil {
+					do die;
+				}
+
+				selected_soil <- nil;
+			}
+		}
+		disable_up <- false;
+	}
+	
 	init {
+		// list<point> soil_button_coordinates <- [{1, 3*cell_size}, ]
+		loop i from: 0 to: 2 {
+			create Soil number:1 with: (color: soil_colors[i]) returns: new_soils;
+			create SoilView number:1 with: (soil: new_soils[0], location:{(i+1)*cell_size, 3.5*cell_size}) returns: new_soil_views;
+			create SoilButton number: 1 with: (soil_view: new_soil_views[0], location:{(i+1)*cell_size, 3.5*cell_size});
+		}
 		create SeedButtonMenu number:1 with: (location:{(num_cell_width-4.5)*cell_size, 1*cell_size});
 		create FertilizerButtonMenu number:1 with: (location:{(num_cell_width-4.5)*cell_size, 2*cell_size});
 		
@@ -83,6 +103,25 @@ species Button {
 	action mouse_enter virtual: true;
 	action mouse_leave virtual: true;
 	action click virtual: true;
+}
+
+species SoilButton parent: Button {
+	SoilView soil_view;
+	
+	action mouse_enter {
+		soil_view.size <- 0.9*cell_size;
+	}
+	action mouse_leave {
+		soil_view.size <- 0.8*cell_size;
+	}
+	action click {
+		if selected_seed = nil and selected_fertilizer = nil and selected_soil = nil {
+			// Creates a new SoilView bound to the the same Soil as the button
+			create SoilView number:1 returns:new_soil_icon with:(soil:self.soil_view.soil,size:0.8*cell_size,location:#user_location);
+			selected_soil<-new_soil_icon[0];
+			write "Selected soil: " + selected_soil.soil.color;
+		}
+	}
 }
 
 species SeedButton parent: Button {
@@ -115,7 +154,7 @@ species FertilizerButton parent: Button {
 	}
 	action click {
 		if selected_seed = nil and selected_fertilizer = nil {
-			// Creates a new SeedView bound to the the same Seed as the button
+			// Creates a new FertilizerView bound to the the same Fertilizer as the button
 			create FertilizerView number:1 returns:new_fertilizer_view with:(fertilizer:self.fertilizer_view.fertilizer,size:0.8*cell_size,location:#user_location);
 			selected_fertilizer<-new_fertilizer_view[0];
 			write "Selected fertilizer: " + selected_fertilizer.fertilizer.type;
@@ -277,7 +316,9 @@ experiment debug_buttons type:gui {
 		display camisol type:opengl axes: false {
 			event mouse_move action:mouse_move_buttons;
 			event mouse_down action:mouse_down_buttons;
+			event mouse_up action:mouse_up_buttons;
 			
+			species SoilView aspect:default;
 			species SeedButtonMenu aspect:default;
 			species SeedView aspect:default;
 			species FertilizerButtonMenu aspect:default;

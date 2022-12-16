@@ -8,7 +8,7 @@
 
 model plot
 
-import "landscape.gaml"
+import "soil.gaml"
 import "seed.gaml"
 import "fertilizer.gaml"
 
@@ -16,7 +16,9 @@ import "fertilizer.gaml"
 global {
 	init {
 		create Plot number:4 returns: new_plots;
+		create Soil number:4 returns: new_soils;
 		create PlotView number: 4 returns: new_plot_views;
+		
 		/*
 		 * Polygon shapes gather manually from clicks in the debug_plots experiment.
 		 */
@@ -74,12 +76,18 @@ global {
 		 */
 		 loop i from: 0 to: 3 {
 		 	new_plots[i].number <- i+1;
+		 	new_plots[i].soil <- new_soils[i];
+		 	
 		 	new_plot_views[i].plot <- new_plots[i];
-		 	new_plot_views[i].images[0] <- image_file("../../images/plots/plot_" + (i+1) + "_plant_1.png");
+		 	new_plot_views[i].growth_images[0] <- image_file("../../images/plots/plot_" + (i+1) + "_plant_1.png");
 		 }
 	}
 	
 	PlotView current_plot_focus;
+	string current_plot_focus_old_color;
+	bool soil_changed;
+	
+	SoilView selected_soil;
 	SeedView selected_seed;
 	FertilizerView selected_fertilizer;
 	
@@ -92,14 +100,21 @@ global {
 					// Growth state set back to 0
 					current_plot_focus.plot.growth_state <- 0;
 				}
+				if(!soil_changed) {
+					current_plot_focus.plot.soil.color <- current_plot_focus_old_color;
+				}
 				current_plot_focus <- nil;
 			}
 		}
 		if length(plots_under_mouse) > 0 and plots_under_mouse[0] != current_plot_focus {
 			current_plot_focus <- plots_under_mouse[0];
+			current_plot_focus_old_color <- current_plot_focus.plot.soil.color;
 			// Simulates a growth state of 1 for not planted plots, for visual purpose only
 			if (selected_seed != nil and current_plot_focus.plot.growth_state = 0) {
 				current_plot_focus.plot.growth_state <- 1;		
+			} else if (selected_soil != nil) {
+				soil_changed <- false;
+				current_plot_focus.plot.soil.color <- selected_soil.soil.color;
 			}
 		}
 	}
@@ -111,6 +126,8 @@ global {
 					current_plot_focus.plot.seed <- selected_seed.seed;
 					write "Seed " + selected_seed.seed.type + " planted to " + current_plot_focus.plot.number;
 				}
+				// ask selected_seed {do die;}
+				// selected_seed <- nil;
 			}
 			if selected_fertilizer != nil {
 				// Only if the plot has not grown yet
@@ -118,13 +135,25 @@ global {
 					current_plot_focus.plot.fertilizer <- selected_fertilizer.fertilizer;
 					write "Plot " + current_plot_focus.plot.number + " fertilized with " + selected_fertilizer.fertilizer.type;
 				}
+				// ask selected_fertilizer {do die;}
+				// selected_fertilizer <- nil;
+			}
+			if selected_soil != nil {
+				// TODO: copy soil parameters (other than color, already handled by the move/preview action) from the selected soil to the plot's soil
+				current_plot_focus.plot.soil <- selected_soil.soil;
+				write "Soil of plot " + current_plot_focus.plot.number + " set to " + selected_soil.soil.color;
+				soil_changed <- true;
+				// ask selected_soil {do die;}
+				// selected_soil <- nil;
 			}
 		}
 	}
+	
 }
 
 species Plot {
 	int number;
+	Soil soil;
 	Seed seed;
 	Fertilizer fertilizer;
 	int growth_state <- 0 min:0 max:3;
@@ -134,7 +163,7 @@ species Plot {
 
 species PlotView {
 	Plot plot;
-	list<image_file> images <- [nil, nil, nil, nil];
+	list<image_file> growth_images <- [nil, nil, nil, nil];
 	image_file current_image;
 	point seed_icon_location;
 	point fertilizer_icon_location;
@@ -150,8 +179,11 @@ species PlotView {
 		if plot.seed != nil {
 			draw seed_images[plot.seed.type-1] at: seed_icon_location size:icon_size;
 		}
+		if plot.soil != nil {
+			draw soil_images[plot.soil.color][plot.number-1] at: {env_width/2, env_height/2, 0};
+		}
 		if plot.growth_state > 0 {
-			draw images[plot.growth_state-1] at: {env_width/2, env_height/2, 0};
+			draw growth_images[plot.growth_state-1] at: {env_width/2, env_height/2, 0};
 		}
 	}
 }
@@ -175,7 +207,6 @@ experiment debug_plots type:gui {
 			}
 			event mouse_move action:mouse_move_plots;
 			event mouse_down action:mouse_down_plots;
-			image "plots" position: {0, 0, 0} size: {1, 1} file: plots;
 			// species Plot aspect:debug;
 			
 			species PlotView aspect:default;

@@ -11,6 +11,7 @@ global {
 	file landscape <- file("../../images/landscape.png");
 	file sun <- file("../../images/sun.png");
 	file plots <- file("../../images/plots.png");
+	file plants <- file("../../images/plants.png");
 	
 	/**
 	 * For an exact match with the PNG landscape, the rectangle should be 261.3#m*148.1#m.
