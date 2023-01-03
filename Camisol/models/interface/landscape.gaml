@@ -23,9 +23,9 @@ global {
 	geometry shape <- rectangle(env_width, env_height);
 }
 
-grid HelpGrid cell_width:cell_size cell_height:cell_size {
-	rgb color <- rgb(255,255,255, 0.1);
-}
+//grid HelpGrid cell_width:cell_size cell_height:cell_size {
+//	rgb color <- rgb(255,255,255, 0.1);
+//}
 
 experiment debug_landscape type:gui {	
 	output {
@@ -33,7 +33,7 @@ experiment debug_landscape type:gui {
 			image "sun" position: {0, 0, 0} size: {1, 1} file: sun;
 			image "landscape" position: {0, 0, 0} size: {1, 1} file: landscape;
 			image "plots" position: {0, 0, 0} size: {1, 1} file: plots;
-			// grid HelpGrid border:#black;
+//			grid HelpGrid border:#black;
 		}
 	}
 }

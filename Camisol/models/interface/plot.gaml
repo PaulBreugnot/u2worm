@@ -9,8 +9,7 @@
 model plot
 
 import "soil.gaml"
-import "seed.gaml"
-import "fertilizer.gaml"
+import "harvest.gaml"
 
 /* Insert your model definition here */
 global {
@@ -157,6 +156,7 @@ species Plot {
 	Seed seed;
 	Fertilizer fertilizer;
 	int growth_state <- 0 min:0 max:3;
+	list<Harvest> harvests;
 	
 
 }

@@ -37,7 +37,7 @@ experiment application type:gui {
 			species SeedView aspect:default;
 			species FertilizerButtonMenu aspect:default;
 			species FertilizerView aspect:default;
-			
+			species EpochView aspect:default;
 		}
 	}
 }

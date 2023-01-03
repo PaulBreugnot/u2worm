@@ -18,7 +18,7 @@ global {
 	bool disable_up <- false;
 	
 	action mouse_move_buttons {
-		list<Button> buttons_under_mouse <- (SoilButton+SeedButton+SeedButtonMenu+FertilizerButton+FertilizerButtonMenu) overlapping #user_location;
+		list<Button> buttons_under_mouse <- (SoilButton+SeedButton+SeedButtonMenu+FertilizerButton+FertilizerButtonMenu+EpochButton) overlapping #user_location;
 		if length(buttons_under_mouse) = 0 or buttons_under_mouse[0] != current_button_focus {
 			if (current_button_focus != nil) {
 				ask current_button_focus {
@@ -79,17 +79,22 @@ global {
 	}
 	
 	init {
-		// list<point> soil_button_coordinates <- [{1, 3*cell_size}, ]
+		write "Building buttons...";
 		loop i from: 0 to: 2 {
 			create Soil number:1 with: (color: soil_colors[i]) returns: new_soils;
-			create SoilView number:1 with: (soil: new_soils[0], location:{(i+1)*cell_size, 3.5*cell_size}) returns: new_soil_views;
-			create SoilButton number: 1 with: (soil_view: new_soil_views[0], location:{(i+1)*cell_size, 3.5*cell_size});
+			create SoilView number:1 with: (soil: new_soils[0], location:{(i+6.75)*cell_size, 2*cell_size}) returns: new_soil_views;
+			create SoilButton number: 1 with: (soil_view: new_soil_views[0], location:{(i+6.75)*cell_size, 2*cell_size});
 		}
 		create SeedButtonMenu number:1 with: (location:{(num_cell_width-4.5)*cell_size, 1*cell_size});
 		create FertilizerButtonMenu number:1 with: (location:{(num_cell_width-4.5)*cell_size, 2*cell_size});
 		
 		ask SeedButtonMenu {
 			do click;
+		}
+		
+		create Calendar number: 1;
+		ask EpochView {
+			create EpochButton number:1 with: (epoch_view: self);
 		}
 	}
 }
@@ -158,6 +163,30 @@ species FertilizerButton parent: Button {
 			create FertilizerView number:1 returns:new_fertilizer_view with:(fertilizer:self.fertilizer_view.fertilizer,size:0.8*cell_size,location:#user_location);
 			selected_fertilizer<-new_fertilizer_view[0];
 			write "Selected fertilizer: " + selected_fertilizer.fertilizer.type;
+		}
+	}
+}
+
+species EpochButton parent: Button {
+	EpochView epoch_view;
+	
+	init {
+		shape<-square(0.8*cell_size);
+		location<-epoch_view.location;
+	}
+	action mouse_enter {
+		if epoch_view.epoch.time < current_time {
+			epoch_view.size <- 1.1*cell_size;
+		}
+	}
+	action mouse_leave {
+		if epoch_view.epoch.time < current_time {
+			epoch_view.size <- cell_size;
+		}
+	}
+	action click {
+		if epoch_view.epoch.time < current_time {
+			selected_epoch <- epoch_view;
 		}
 	}
 }
@@ -323,6 +352,7 @@ experiment debug_buttons type:gui {
 			species SeedView aspect:default;
 			species FertilizerButtonMenu aspect:default;
 			species FertilizerView aspect:default;
+			species EpochView aspect: default;
 		}
 	}
 }
