@@ -84,7 +84,7 @@ global {
 	}
 	
 	PlotView current_plot_focus;
-	string current_plot_focus_old_color;
+	Soil current_plot_focus_old_soil;
 	bool soil_changed;
 	
 	SoilView selected_soil;
@@ -101,20 +101,20 @@ global {
 					current_plot_focus.plot.growth_state <- 0;
 				}
 				if(!soil_changed) {
-					current_plot_focus.plot.soil.color <- current_plot_focus_old_color;
+					current_plot_focus.plot.soil <- current_plot_focus_old_soil;
 				}
 				current_plot_focus <- nil;
 			}
 		}
 		if length(plots_under_mouse) > 0 and plots_under_mouse[0] != current_plot_focus {
 			current_plot_focus <- plots_under_mouse[0];
-			current_plot_focus_old_color <- current_plot_focus.plot.soil.color;
+			current_plot_focus_old_soil <- current_plot_focus.plot.soil;
 			// Simulates a growth state of 1 for not planted plots, for visual purpose only
 			if (selected_seed != nil and current_plot_focus.plot.growth_state = 0) {
 				current_plot_focus.plot.growth_state <- 1;		
 			} else if (selected_soil != nil) {
 				soil_changed <- false;
-				current_plot_focus.plot.soil.color <- selected_soil.soil.color;
+				current_plot_focus.plot.soil <- selected_soil.soil;
 			}
 		}
 	}
