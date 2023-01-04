@@ -11,7 +11,10 @@ model plot
 import "soil.gaml"
 import "harvest.gaml"
 
-/* Insert your model definition here */
+/**
+ * Defines the Plot features that allow a parcel to be planted and fertilized.
+ */
+ 
 global {
 	init {
 		create Plot number:4 returns: new_plots;
@@ -20,6 +23,7 @@ global {
 		
 		/*
 		 * Polygon shapes gather manually from clicks in the debug_plots experiment.
+		 * Shapes are only used to catch mouse clicks on plots.
 		 */
 		new_plot_views[0].shape <- polygon([
 			{49.62765121459961,103.64986419677734,0.0},
@@ -82,7 +86,13 @@ global {
 		 }
 	}
 	
+	/**
+	 * Reference to the plot under the cursor. Used to preview seeds and soils.
+	 */
 	PlotView current_plot_focus;
+	/**
+	 * Holds a reference to the original soil so that we can get back to it after a soil preview.
+	 */
 	Soil current_plot_focus_old_soil;
 	bool soil_changed;
 	
@@ -92,6 +102,7 @@ global {
 	
 	action mouse_move_plots {
 		list<PlotView> plots_under_mouse <- PlotView overlapping #user_location;
+		// No plot under focus or same plot
 		if length(plots_under_mouse) = 0 or plots_under_mouse[0] != current_plot_focus {
 			if (current_plot_focus != nil) {
 				// If the plot has not been planted
@@ -99,23 +110,31 @@ global {
 					// Growth state set back to 0
 					current_plot_focus.plot.growth_state <- 0;
 				}
-				if(!soil_changed) {
+				// If the soil has not changed after the preview
+				if(current_plot_focus_old_soil != nil and !soil_changed) {
 					current_plot_focus.plot.soil <- current_plot_focus_old_soil;
+					current_plot_focus_old_soil <- nil;
 				}
 				current_plot_focus <- nil;
 			}
 		}
+		// New plot under focus case
 		if length(plots_under_mouse) > 0 and plots_under_mouse[0] != current_plot_focus {
 			current_plot_focus <- plots_under_mouse[0];
-			current_plot_focus_old_soil <- current_plot_focus.plot.soil;
 			// Simulates a growth state of 1 for not planted plots, for visual purpose only
 			if (selected_seed != nil and current_plot_focus.plot.growth_state = 0) {
 				current_plot_focus.plot.growth_state <- 1;		
 			} else if (selected_soil != nil) {
-				soil_changed <- false;
+				// Saves current soil
+				current_plot_focus_old_soil <- current_plot_focus.plot.soil;
+				// Preview the selected soil
 				current_plot_focus.plot.soil <- selected_soil.soil;
+				// False until the soil is actually changed by a click
+				soil_changed <- false;
 			}
 		}
+
+		
 	}
 	action mouse_down_plots {
 		if current_plot_focus != nil {
@@ -125,8 +144,6 @@ global {
 					current_plot_focus.plot.seed <- selected_seed.seed;
 					write "Seed " + selected_seed.seed.type + " planted to " + current_plot_focus.plot.number;
 				}
-				// ask selected_seed {do die;}
-				// selected_seed <- nil;
 			}
 			if selected_fertilizer != nil {
 				// Only if the plot has not grown yet
@@ -134,41 +151,81 @@ global {
 					current_plot_focus.plot.fertilizer <- selected_fertilizer.fertilizer;
 					write "Plot " + current_plot_focus.plot.number + " fertilized with " + selected_fertilizer.fertilizer.type;
 				}
-				// ask selected_fertilizer {do die;}
-				// selected_fertilizer <- nil;
 			}
 			if selected_soil != nil {
 				// TODO: copy soil parameters (other than color, already handled by the move/preview action) from the selected soil to the plot's soil
 				current_plot_focus.plot.soil <- selected_soil.soil;
 				write "Soil of plot " + current_plot_focus.plot.number + " set to " + selected_soil.soil.color;
 				soil_changed <- true;
-				// ask selected_soil {do die;}
-				// selected_soil <- nil;
 			}
 		}
 	}
 	
 }
 
+/**
+ * A parcel that can be planted and fertilized.
+ */
 species Plot {
+	/**
+	 * Plot identifier.
+	 */
 	int number;
+	/**
+	 * Define the soil color and base parameters.
+	 */
 	Soil soil;
+	/**
+	 * Seed currently planted (nil if none is planted).
+	 */
 	Seed seed;
+	/**
+	 * Fertilizer currently applied (nil if none is applied).
+	 */
 	Fertilizer fertilizer;
+	/**
+	 * The growth state:
+	 * - 0: no seed
+	 * - 1: seed planted
+	 * - 2: start to grow
+	 * - 3: ready to harvest
+	 */
 	int growth_state <- 0 min:0 max:3;
+	/**
+	 * List of harvest performed on this plot so that harvest[epoch.time]
+	 * corresponds to the harvest performed at the given epoch.
+	 */
 	list<Harvest> harvests;
-	
-
 }
 
+/**
+ * Adaptor used to visualise a Plot.
+ */
 species PlotView {
+	/**
+	 * Visualised plot.
+	 */
 	Plot plot;
+	/**
+	 * Images of the plot for each growth_state level.
+	 */
 	list<image_file> growth_images <- [nil, nil, nil, nil];
-	image_file current_image;
+	/**
+	 * Location of the seed icon for the current plot.
+	 */
 	point seed_icon_location;
+	/**
+	 * Location of the fertilizer icon for the current plot.
+	 */
 	point fertilizer_icon_location;
+	/**
+	 * Size of seed and fertilizer icons.
+	 */
 	float icon_size <- 0.5*cell_size;
 	
+	/**
+	 * Can be used to visualize the plot shape.
+	 */
 	aspect debug {
 		draw shape border:#black;
 	}
@@ -191,7 +248,7 @@ species PlotView {
 experiment debug_plots type:gui {
 	output {
 		display camisol type:opengl axes: true {
-			// For debug purpose
+			// For debug purpose: click outside of the plots to select a random seed
 			event mouse_up {
 				write #user_location;
 				if(selected_seed = nil) {

@@ -7,31 +7,57 @@
 
 model seed
 
+/**
+ * Defines features used to handle seeds.
+ */
 global {
-	/** Insert the global definitions, variables and actions here */
+	/**
+	 * Images used to represent each crop.
+	 */
 	list<image_file> seed_images;
 	
-	init {
-		loop i from:0 to:18 {
-			add image_file("../../images/crops/crop_" + (i+1) + ".png") to:seed_images;
+	// Note: the regular init function is not used, since the controller model
+	// needs the seeds but "import seed.gaml" in controller.gaml causes the
+	// seed init to be called AFTER the controller init.
+	action init_seeds {
+		write "Building available seeds...";
+		// Initializes all the available seeds
+		loop i from:1 to:19 {
+			add image_file("../../images/crops/crop_" + i + ".png") to:seed_images;
+			create Seed number: 1 with:(type: i);
 		}
 	}
 }
 
+/**
+ * A basic seed.
+ */
 species Seed {
+	/**
+	 * Type of the seed.
+	 */
 	int type <- 1 min: 1 max:19;
 
+	// TODO: parameters of each seed.
 }
 
+/**
+ * Adapter used to visualize seeds using the corresponding icon.
+ */
 species SeedView {
+	/**
+	 * Seed to visualize.
+	 */
 	Seed seed;
-	float size;
-	image_file image;
+	/**
+	 * Seed icon size.
+	 */
+	float icon_size;
 
 	aspect debug {
-		draw circle(size/2);
+		draw circle(icon_size/2);
 	}
 	aspect default {
-		draw seed_images[seed.type-1] size:size;
+		draw seed_images[seed.type-1] size:icon_size;
 	}
 }

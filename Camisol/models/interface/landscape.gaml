@@ -7,6 +7,9 @@
 
 model landscape
 
+/**
+ * Defines the base environment size and backgrounds.
+ */
 global {
 	file landscape <- file("../../images/landscape.png");
 	file sun <- file("../../images/sun.png");
@@ -32,7 +35,7 @@ experiment debug_landscape type:gui {
 		display camisol type:opengl axes: false fullscreen: true {
 			image "sun" position: {0, 0, 0} size: {1, 1} file: sun;
 			image "landscape" position: {0, 0, 0} size: {1, 1} file: landscape;
-			image "plots" position: {0, 0, 0} size: {1, 1} file: plots;
+			// image "plots" position: {0, 0, 0} size: {1, 1} file: plots;
 //			grid HelpGrid border:#black;
 		}
 	}

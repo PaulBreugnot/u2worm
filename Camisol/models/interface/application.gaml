@@ -7,11 +7,15 @@
 
 model application
 
-import "buttons.gaml"
+import "controller.gaml"
 import "plot.gaml"
 
+/**
+ * Main application. All the features of the interface models are imported in
+ * this model and activated in the application experiment.
+ */
 global {
-	/** Insert the global definitions, variables and actions here */
+	
 }
 
 experiment application type:gui {	

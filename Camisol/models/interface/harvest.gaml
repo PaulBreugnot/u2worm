@@ -11,83 +11,156 @@ import "landscape.gaml"
 import "seed.gaml"
 import "fertilizer.gaml"
 
+/**
+ * Defines features used to represents harvests, i.e. quantities of crops
+ * collected at each time step on each plot.
+ * 
+ * On the final interface, the harvest can only be visualized for a single epoch.
+ */
 global {
+	/**
+	 * Current time, initialize at 0. One unit of time represents a complete cycle growth.
+	 */
 	int current_time <- 0;
 
-	/** Insert the global definitions, variables and actions here */
+	/**
+	 * Width/height pixel ratio for quantity images.
+	 */
 	list<float> harvest_images_ratio <- [
-		231/137,
-		174/209,
-		364/156
+		231/137, // Basket
+		174/209, // Bag
+		364/156  // Barrow
 	];
+	/**
+	 * Scales each quantity image.
+	 */
 	list<point> harvest_sizes <- [
-		{cell_size, cell_size/harvest_images_ratio[0]},
-		{0.8*cell_size*harvest_images_ratio[1], 0.8*cell_size},
-		{0.8*cell_size*harvest_images_ratio[2], 0.8*cell_size}
+		{cell_size, cell_size/harvest_images_ratio[0]}, // Basket
+		{0.8*cell_size*harvest_images_ratio[1], 0.8*cell_size}, // Bag
+		{0.8*cell_size*harvest_images_ratio[2], 0.8*cell_size}  // Barrow
 	];
+	/**
+	 * The locations at which each harvest can be represent for each plot.
+	 */
 	list<point> harvest_locations <- [
-		{0.5*cell_size, 2.8*cell_size},
-		{0.5*cell_size, 3.8*cell_size},
-		{0.5*cell_size, 5.2*cell_size},
-		{0.5*cell_size, 6.5*cell_size}
+		{0.5*cell_size, 2.8*cell_size}, // Plot 0
+		{0.5*cell_size, 3.8*cell_size}, // Plot 1
+		{0.5*cell_size, 5.2*cell_size}, // Plot 2
+		{0.5*cell_size, 6.5*cell_size}  // Plot 3
 	];
+	/**
+	 * Images used to represent a crop quantity. A quantity can only have the
+	 * following possible values:
+	 * - 0: a basket of crop
+	 * - 1: a bag of crop
+	 * - 2: a barrow of crop
+	 */
 	list<image_file> harvest_images <- [
 		image_file("../../images/harvest/basket.png"),
 		image_file("../../images/harvest/bag.png"),
 		image_file("../../images/harvest/barrow.png")
 	];
 	
-	EpochView current_epoch;
+	/**
+	 * Currently selected epoch to visualize.
+	 */
 	EpochView selected_epoch <- nil;
-}
-
-species Calendar {
-	init {
-		create Epoch number: 1 with: (time: 0) returns: _init_epoch;
-		create EpochView number: 1 with: (epoch: _init_epoch[0], location: {1.5*cell_size, 8.5*cell_size}) returns: calendar_views;
-		current_epoch <- calendar_views[0];
-		loop i from: 1 to: 5 {
+	
+	action init_calendar {
+		loop i from: 0 to: 5 {
 			create Epoch number: 1 with: (time: i) returns: _epochs;
-			create EpochView number: 1 with: (epoch: _epochs[0], location: {(1.5 + 2*i)*cell_size, 8.5*cell_size});
 		}
 	}
 }
 
+/**
+ * A Calendar contains all the Epochs of given simulation, including those not yet simulated.
+ */
+species Calendar {
+	init {
+		
+	}
+}
+
+/**
+ * A basic epoch.
+ */
 species Epoch {
+	/**
+	 * Date/time of the epoch.
+	 */
 	int time;
 }
 
+/**
+ * Adaptor used to visualize an epoch as an icon.
+ */
 species EpochView {
-	float size <- cell_size;
+	/**
+	 * Epoch to visualize.
+	 */
 	Epoch epoch;
+	/**
+	 * Epoch icon size.
+	 */
+	float icon_size <- cell_size;
 	
 	aspect default {
+		// Default colors
 		rgb epoch_color <- #white;
 		rgb epoch_border <- #black;
+		
 		if current_time < epoch.time {
+			// Epoch not yet simulated
 			epoch_color <- epoch_color - rgb(0, 0, 0, 0.5);
 			epoch_border <- #grey;
 		} else if current_time = epoch.time {
+			// Epoch currently simulated
 			epoch_color <- #green;
 		} else if self = selected_epoch {
+			// Passed epoch
 			epoch_border <- #blue;
 		}
-		draw square(size) color: epoch_color border: epoch_border;
+		draw square(icon_size) color: epoch_color border: epoch_border;
 		draw string(epoch.time+1) at: location+{0, 0, 0.5} color: epoch_border anchor: #center font: font("Helvetica", 25);
 	}
 }
 
+/**
+ * Harvests are used to represent the simulation history, storing all the
+ * parameters used for each plot at each epoch and the quantity of crops harvested.
+ */
 species Harvest {
-	int epoch;
+	/**
+	 * Time at which crops were harvested.
+	 */
+	int time;
+	/**
+	 * Plot identifier on which crops were harvested.
+	 */
 	int plot;
+	/**
+	 * Crop type harvested.
+	 */
 	int seed;
+	/**
+	 * Fertilizer type.
+	 */
 	int fertilizer;
+	/**
+	 * Quantity of crops harvested (between 1 and 3)
+	 */
 	int quantity;
 }
 
+/**
+ * Adaptor used to visualize the harvest of all plots for a given epoch.
+ */
 species HarvestView {
+	/**
+	 * Harvest to visualize.
+	 */
 	Harvest harvest;
-	bool show <- false;
 	
 	init {
 		location <- harvest_locations[harvest.plot];
