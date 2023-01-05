@@ -46,6 +46,9 @@ global {
 
 species Soil {
 	// TODO: What parameters should be associated to the soil?
+	float N <- 0.0;
+	float P <- 0.0;
+	
 	/**
 	 * The color of the soil. Brown by default.
 	 */

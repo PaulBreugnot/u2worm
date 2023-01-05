@@ -47,6 +47,9 @@ species Fertilizer {
 	 */
 	int type <- 1 min: 1 max:10;
 	// TODO: fertilizer parameters
+	
+	float N <- 0.0;
+	float P <- 0.0;
 }
 
 species OrganicFertilizer parent: Fertilizer {

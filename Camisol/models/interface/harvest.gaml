@@ -71,14 +71,8 @@ global {
 			create Epoch number: 1 with: (time: i) returns: _epochs;
 		}
 	}
-}
-
-/**
- * A Calendar contains all the Epochs of given simulation, including those not yet simulated.
- */
-species Calendar {
+	
 	init {
-		
 	}
 }
 
@@ -190,20 +184,15 @@ experiment debug_harvest type: gui {
 				ask HarvestView {
 					do die;
 				}
-				ask Calendar {
-					do die;
-				}
-				if(true) {
-					create Calendar number: 1;
-				}
+
 				loop i from:0 to:3 {
 					create Harvest number:1 with:(plot: i, seed:i, fertilizer: i, quantity: (current_time+i+2) mod 3) returns: harvests;
 					create HarvestView number:1 with:(harvest: harvests[0]);
 				}
 				current_time <- current_time+1;
 			}
-			image "landscape" position: {0, 0, -0.001} size: {1, 1} file: landscape;
-			image "plots" position: {0, 0, -0.001} size: {1, 1} file: plots;
+			image "landscape" position: {0, 0, -0.01} size: {1, 1} file: landscape;
+			image "plots" position: {0, 0, -0.01} size: {1, 1} file: plots;
 			species HarvestView aspect: default;
 			species EpochView aspect: default;
 			// grid HelpGrid border:#black;

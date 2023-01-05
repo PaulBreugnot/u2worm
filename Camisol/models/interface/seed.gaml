@@ -39,6 +39,8 @@ species Seed {
 	int type <- 1 min: 1 max:19;
 
 	// TODO: parameters of each seed.
+	float N <- 0.0;
+	float P <- 0.0;
 }
 
 /**

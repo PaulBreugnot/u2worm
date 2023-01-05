@@ -25,7 +25,7 @@ global {
 	/**
 	 * Buttons that should be managed by the button model.
 	 */
-	list<species<Button>> handled_buttons <- [SoilButton, SeedButton, SeedButtonMenu, FertilizerButton, FertilizerButtonMenu, EpochButton];
+	list<species<Button>> handled_buttons <- [SoilButton, SeedButton, SeedButtonMenu, FertilizerButton, FertilizerButtonMenu, EpochButton, RunButton];
 
 	/**
 	 * Mouse move buttons event handle adaptor.
@@ -82,10 +82,14 @@ global {
 			create EpochButton number:1 with: (
 				epoch_view: new_epoch_view[0],
 				location:new_epoch_view[0].location,
-				button_size: 0.8*cell_size
+				button_size: cell_size
 			);
 			i <- i + 1;
 		}
+		create RunButton number:1 with: (
+			button_size: 0.8*cell_size,
+			location: {(1.5 + 2*i)*cell_size, 8.5*cell_size}
+		);
 	}
 }
 
@@ -212,6 +216,37 @@ species EpochButton parent: Button {
 	}
 	action post_click {
 		// Nothing to do
+	}
+}
+
+species RunButton parent: Button {
+	image_file button_image <- image_file("../../images/play-green.png");
+	float icon_size <- button_size;
+	
+	init {
+		shape<-square(button_size);
+	}
+	action mouse_enter {
+		icon_size <- 1.1*button_size;
+	}
+	action mouse_leave {
+		icon_size <- button_size;
+	}
+	agent click {
+		if current_time < 6 {
+			ask Plot {
+				do grow;
+			}
+			current_time <- current_time+1;
+		}
+		return nil;
+	}
+	action post_click {
+		
+	}
+	
+	aspect default {
+		draw button_image size: icon_size;
 	}
 }
 
@@ -429,6 +464,7 @@ experiment debug_controller type:gui {
 			species FertilizerButtonMenu aspect:default;
 			species FertilizerView aspect:default;
 			species EpochView aspect: default;
+			species RunButton aspect: default;
 		}
 	}
 }

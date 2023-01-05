@@ -160,7 +160,6 @@ global {
 			}
 		}
 	}
-	
 }
 
 /**
@@ -196,6 +195,21 @@ species Plot {
 	 * corresponds to the harvest performed at the given epoch.
 	 */
 	list<Harvest> harvests;
+	
+	int micro_model_num_steps <- 1000;
+		
+	action grow {
+		float N<-soil.N;
+		float P<-soil.P;
+		
+		if(fertilizer != nil) {
+			N <- N + fertilizer.N;
+			P <- P + fertilizer.P;
+		}
+		loop i from: 0 to: 1000 {
+			
+		}
+	}
 }
 
 /**
