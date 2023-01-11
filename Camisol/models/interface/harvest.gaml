@@ -27,9 +27,9 @@ global {
 	 * Width/height pixel ratio for quantity images.
 	 */
 	list<float> harvest_images_ratio <- [
-		231/137, // Basket
-		174/209, // Bag
-		364/156  // Barrow
+		221.871/131.128, // Basket
+		166.684/201.108, // Bag
+		349.310/149.796  // Barrow
 	];
 	/**
 	 * Scales each quantity image.
@@ -56,9 +56,9 @@ global {
 	 * - 2: a barrow of crop
 	 */
 	list<image_file> harvest_images <- [
-		image_file("../../images/harvest/basket.png"),
-		image_file("../../images/harvest/bag.png"),
-		image_file("../../images/harvest/barrow.png")
+		image_file(image_path + definition + "/harvest/basket.png"),
+		image_file(image_path + definition + "/harvest/bag.png"),
+		image_file(image_path + definition + "/harvest/barrow.png")
 	];
 	
 	/**
@@ -175,6 +175,13 @@ species HarvestView {
 
 experiment debug_harvest type: gui {
 
+	action _init_ {
+		create simulation;
+		ask simulation {
+			do init_seeds();
+			do init_fertilizers();
+		}
+	}
 	output {
 		display camisol type:opengl axes: false {
 			event mouse_down {

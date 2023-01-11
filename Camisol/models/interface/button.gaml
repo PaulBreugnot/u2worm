@@ -48,7 +48,15 @@ global {
 			}
 			i <- i+1;
 		}
-		
+			
+		// Mouse leave is triggered if a button was previously in focus and no button is
+		// currently in focus or the button currently in focus is not the same as the previous one.
+		if current_button_focus != nil and (button_under_mouse = nil or button_under_mouse != current_button_focus) {
+			ask current_button_focus {
+				do mouse_leave;
+			}
+			current_button_focus <- nil;
+		}	
 
 		// Mouse enter is not triggered if an item is currently selected
 		if (selected_item = nil) {
@@ -65,15 +73,7 @@ global {
 			// until the item is released.
 			selected_item.location <- #user_location;
 		}
-		
-		// Mouse leave is triggered if a button was previously in focus and no button is
-		// currently in focus or the button currently in focus is not the same as the previous one.
-		if current_button_focus != nil and (button_under_mouse = nil or button_under_mouse != current_button_focus) {
-			ask current_button_focus {
-				do mouse_leave;
-			}
-			current_button_focus <- nil;
-		}
+
 	}
 	
 	/**

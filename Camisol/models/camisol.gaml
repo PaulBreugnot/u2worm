@@ -24,6 +24,7 @@ import "csv_function.gaml"
 
 global
 {
+	int local_time <- 0;
 	string ORGANIC <- "organic";
 	string MINERAL <- "mineral";
 	string PORE <- "pore";
@@ -294,14 +295,15 @@ global
 				//do organic_to_pore;
 			 }
 		}
-		if(cycle mod 10 = 0 and cycle > 10){
+		if(local_time mod 10 = 0 and local_time > 10){
 			do production(species_to_produce); // besoin de faire les échelles avant d'utiliser
 		}
 		
-		if(cycle mod 100 = 0 and cycle > 50 and type_apport != nil)
+		if(local_time mod 100 = 0 and local_time > 50 and type_apport != nil)
 		{
 			do apport_MO(type_apport); // besoin de faire les échelles avant d'utiliser
 		}
+		local_time <- local_time+1;
 	}
 	
 	action production(string name_species)
@@ -367,6 +369,7 @@ global
 					
 			
 					kilo_of_production <- kilo_of_production + min_ratio * 1000#kg;
+					write("New prod: " + kilo_of_production);
 					
 					ask Dam
 					{
@@ -536,12 +539,12 @@ global
 		
 		masseC<- masseC + total_perception;
 		
-		write("---------------------step "+cycle +"----------------------------------");
+		write("---------------------step "+local_time +"----------------------------------");
 		
 		return masseC;
 	}
 	
-	reflex total_masseC_init_process when: cycle = 1
+	reflex total_masseC_init_process when: local_time = 1
 	{
 		 total_masseC_init <- process_masseC();
 		 
@@ -562,19 +565,11 @@ global
 		 total_enzyme_cr_init <- total_enzyme_cr;	
 	}
 	
-	reflex total_masseC_process when: cycle >= 1
+	reflex total_masseC_process when: local_time >= 1
 	{
 		total_masseC <- process_masseC();
 	}
 	
-}
-
-species soil  schedules:[]//skills:[camisole]
-{
-	init
-	{
-		//location <- point(10#cm,10#cm,10#cm);
-	}
 }
 
 
@@ -1670,7 +1665,14 @@ experiment ex type:gui
 	}
 }
 
+experiment batch type:batch until:(cycle>50) {
 
+	reflex out_production {
+		ask simulations {
+			write kilo_of_production;
+		}
+	}
+}
 
 experiment calcul_facteur_enzyme type:gui
 {

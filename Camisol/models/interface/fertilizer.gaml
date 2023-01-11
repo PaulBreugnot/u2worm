@@ -8,6 +8,8 @@
 
 model fertilizer
 
+import "seed.gaml"
+
 /**
  * Defines features used to handle fertilizers.
  */
@@ -27,12 +29,12 @@ global {
 		
 		// Organic fertilizers
 		loop i from:1 to:7 {
-			add image_file("../../images/fertilizers/fertilizer_" + i + ".png") to:fertilizer_images;
+			add image_file(image_path + definition + "/fertilizers/fertilizer_" + i + ".png") to:fertilizer_images;
 			create OrganicFertilizer number: 1 with:(type: i) returns: new_fertilizer;
 		}
 		// Chemical fertilizers
 		loop i from:8 to:10 {
-			add image_file("../../images/fertilizers/fertilizer_" + i + ".png") to:fertilizer_images;
+			add image_file(image_path + definition + "/fertilizers/fertilizer_" + i + ".png") to:fertilizer_images;
 			create ChemicalFertilizer number: 1 with:(type: i) returns: new_fertilizer;
 		}
 	}
@@ -48,8 +50,12 @@ species Fertilizer {
 	int type <- 1 min: 1 max:10;
 	// TODO: fertilizer parameters
 	
-	float N <- 0.0;
-	float P <- 0.0;
+	float solubles <- 0.0;
+	float hemicellulose <- 0.0;
+	float cellulose <- 0.0;
+	float lignine <- 0.0;
+	float C_N <- 0.0;
+	float C_P <- 0.0;
 }
 
 species OrganicFertilizer parent: Fertilizer {

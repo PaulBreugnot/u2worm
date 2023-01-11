@@ -234,7 +234,7 @@ species RunButton parent: Button {
 	}
 	agent click {
 		if current_time < 6 {
-			ask Plot {
+			ask Plot parallel: true{
 				do grow;
 			}
 			current_time <- current_time+1;
@@ -333,7 +333,7 @@ species SeedButtonMenu parent: ButtonMenu {
 	/**
 	 * Image used to represent the menu button.
 	 */
-	image_file image <- image_file("../../images/crops/crop.png");
+	image_file image <- image_file(image_path + definition + "/crops/crop.png");
 	
 	action show_buttons {
 		// Activates the current menu
@@ -387,7 +387,7 @@ species SeedButtonMenu parent: ButtonMenu {
  * A button menu used to display available Fertilizer types, initialized in the fertilizer model.
  */
 species FertilizerButtonMenu parent: ButtonMenu {
-	image_file image <- image_file("../../images/fertilizers/fertilizer.png");
+	image_file image <- image_file(image_path + definition + "/fertilizers/fertilizer.png");
 	
 	action show_buttons {
 		// Activates the fertilizer menu

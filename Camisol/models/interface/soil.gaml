@@ -8,7 +8,7 @@
 
 model soil
 
-import "landscape.gaml"
+import "fertilizer.gaml"
 
 /**
  * Defines features used to manage the different soil types.
@@ -34,10 +34,10 @@ global {
 	action init_soils {
 		// Loads all plot images
 		loop soil_color over: soil_colors {
-			soil_icons[soil_color] <- image_file("../../images/plots/plot_" + soil_color + ".png");
+			soil_icons[soil_color] <- image_file(image_path + definition + "/plots/plot_" + soil_color + ".png");
 			soil_images[soil_color] <- [];
 			loop plot from: 1 to: 4 {
-				add image_file("../../images/plots/plot_" + plot + "_" + soil_color + ".png") to:soil_images[soil_color];
+				add image_file(image_path + definition + "/plots/plot_" + plot + "_" + soil_color + ".png") to:soil_images[soil_color];
 			}
 			create Soil number:1 with: (color: soil_color);
 		}
@@ -46,8 +46,6 @@ global {
 
 species Soil {
 	// TODO: What parameters should be associated to the soil?
-	float N <- 0.0;
-	float P <- 0.0;
 	
 	/**
 	 * The color of the soil. Brown by default.

@@ -7,6 +7,8 @@
 
 model seed
 
+import "landscape.gaml"
+
 /**
  * Defines features used to handle seeds.
  */
@@ -23,7 +25,7 @@ global {
 		write "Building available seeds...";
 		// Initializes all the available seeds
 		loop i from:1 to:19 {
-			add image_file("../../images/crops/crop_" + i + ".png") to:seed_images;
+			add image_file(image_path + definition + "/crops/crop_" + i + ".png") to:seed_images;
 			create Seed number: 1 with:(type: i);
 		}
 	}
@@ -39,8 +41,11 @@ species Seed {
 	int type <- 1 min: 1 max:19;
 
 	// TODO: parameters of each seed.
-	float N <- 0.0;
-	float P <- 0.0;
+	float C_N_seed <- 0.0;
+	float C_P_seed <- 0.0;
+	float C_N_plant <- 0.0;
+	float C_P_plant <- 0.0;
+	float harvest_index <- 0.0;
 }
 
 /**
