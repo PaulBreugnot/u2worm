@@ -50,10 +50,11 @@ experiment application type:gui {
 			image "sun" position: {0, 0, -0.001} size: {1, 0.33} file: sun refresh: false;
 			image "landscape" position: {0, 0, -0.001} size: {1, 1} file: landscape refresh: false;
 			// image "plots" position: {0, 0, -0.001} size: {1, 1} file: plots;
-			// grid HelpGrid border:#black;
+//			grid HelpGrid border:#black;
 			
 			species PlotView aspect:default;
-			image "plants" position: {0, 0, 0} size: {1, 1} file: plants refresh: false;
+			// image "plants" position: {0, 0, 0} size: {1, 1} file: plants refresh: false;
+			species SoilButtonMenu aspect: default;
 			species SoilView aspect:default;
 			species SeedButtonMenu aspect:default;
 			species SeedView aspect:default;

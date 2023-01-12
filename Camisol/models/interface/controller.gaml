@@ -43,26 +43,14 @@ global {
 		write "Building buttons...";
 		int i <- 0;
 		
-		// Creates a soil view/button for each available Soil
-		ask Soil {
-			create SoilView number:1 with: (
-				soil: self,
-				location:{(i+6.75)*cell_size, 2*cell_size}
-			) returns: new_soil_views;
-			create SoilButton number: 1 with: (
-				soil_view: new_soil_views[0],
-				location: new_soil_views[0].location,
-				button_size: 0.8*cell_size
-			);
-			i <- i+1;
-		}
+		create SoilButtonMenu;
 		
-		create SeedButtonMenu number:1 with: (
+		create SeedButtonMenu with: (
 			location:{(num_cell_width-4.5)*cell_size, 1*cell_size},
 			button_size: 0.8*cell_size
 		);
 		
-		create FertilizerButtonMenu number:1 with: (
+		create FertilizerButtonMenu with: (
 			location:{(num_cell_width-4.5)*cell_size, 2*cell_size},
 			button_size: 0.8*cell_size
 		);
@@ -250,6 +238,119 @@ species RunButton parent: Button {
 	}
 }
 
+species ButtonBackground {
+	geometry menu_background;
+	float menu_background_opacity <- 0.5;
+
+	action compute_background(list<point> coordinates) {
+		loop i from: 0 to: length(coordinates)-1 {
+			coordinates[i] <- coordinates[i]*cell_size;
+		}
+
+		list<geometry> menu_shape;
+		loop i from: 0 to: length(coordinates)-1 {
+			point prev_point <- coordinates[(i+length(coordinates)-1) mod length(coordinates)];
+			point next_point <- coordinates[(i+1) mod length(coordinates)];
+			point point1 <- {coordinates[i].x, coordinates[i].y};
+			point point2 <- {coordinates[i].x, coordinates[i].y};
+			point center <- {coordinates[i].x, coordinates[i].y};
+			float begin_angle;
+			float end_angle;
+			float radius <- 0.1*cell_size;
+			if (prev_point.x = coordinates[i].x) {
+				// By construction, next_point.y = coordinates[i].y
+				if(prev_point.y < coordinates[i].y) {
+					// .
+					// 1
+					point1 <- point1 - {0, radius};
+					if(next_point.x < coordinates[i].x) {
+						// 2.
+						//  1
+						point2 <- point2 - {radius, 0};
+						center <- center + {-radius, -radius};
+						begin_angle <- 0.0;
+						end_angle <- 90.0;
+					} else {
+						// .2
+						// 1
+						point2 <- point2 + {radius, 0};
+						center <- center + {radius, -radius};
+						begin_angle <- 180.0;
+						end_angle <- 90.0;
+					}
+				} else {
+					//1
+					//.
+					point1 <- point1 + {0, radius};
+					if(next_point.x < coordinates[i].x) {
+						//  1
+						// 2.
+						point2 <- point2 - {radius, 0};
+						center <- center + {-radius, radius};
+						begin_angle <- 0.0;
+						end_angle <- -90.0;
+					} else {
+						// 1
+						// .2
+						point2 <- point2 + {radius, 0};
+						center <- center + {radius, radius};
+						begin_angle <- 180.0;
+						end_angle <- 270.0;
+					}
+				}
+			} else {
+				// By construction, prev_point.y = coordinates[i].y
+				if(prev_point.x < coordinates[i].x) {
+					// 1.
+					point1 <- point1 - {radius, 0};
+					if(next_point.y < coordinates[i].y) {
+						// 1.
+						//  2
+						point2 <- point2 - {0, radius};
+						center <- center + {-radius, -radius};
+						begin_angle <- 90.0;
+						end_angle <- 360.0;
+					} else {
+						//  2
+						// 1.
+						point2 <- point2 + {0, radius};
+						center <- center + {-radius, radius};
+						begin_angle <- 270.0;
+						end_angle <- 360.0;
+					}
+				} else {
+					// .1
+					point1 <- point1 + {radius, 0};
+					if(next_point.y < coordinates[i].y) {
+						// .1
+						// 2
+						point2 <- point2 - {0, radius};
+						center <- center + {radius, -radius};
+						begin_angle <- 90.0;
+						end_angle <- 180.0;
+					} else {
+						// 2
+						// .1
+						point2 <- point2 + {0, radius};
+						center <- center + {radius, radius};
+						begin_angle <- 270.0;
+						end_angle <- 180.0;
+					}
+				}
+			}
+			 // add point1 to: menu_shape;
+			 // add center to: menu_shape;
+			 // add point2 to: menu_shape;
+			 write("P: " + coordinates[i]/cell_size + ": " + begin_angle + "->" + end_angle);
+			 loop j from: 0 to: 10 {
+			 	float angle <- begin_angle + j * (end_angle-begin_angle)/10;
+			 	write("    " + angle);
+			 	add center + {radius*cos(angle), radius*sin(angle)} to: menu_shape;
+			 }
+		}
+		menu_background <- polygon(menu_shape);
+	}
+}
 /**
  * ButtonMenu interface.
  * 
@@ -269,7 +370,14 @@ species ButtonMenu parent: Button {
 	 * Builds the buttons coordinates organized as a grid on the right of the environment.
 	 */
 	list<point> button_coordinates <- build_button_coordinates();
-	
+
+	ButtonBackground background;
+
+	init {
+		create ButtonBackground returns: menu_background;
+		background <- menu_background[0];
+	}
+
 	list<point> build_button_coordinates {
 		int i_button <- 0;
 		
@@ -334,6 +442,16 @@ species SeedButtonMenu parent: ButtonMenu {
 	 * Image used to represent the menu button.
 	 */
 	image_file image <- image_file(image_path + definition + "/crops/crop.png");
+
+	
+	init {
+		ask background {
+			do compute_background([
+				{12, 0.5}, {16, 0.5}, {16, 6.5}, {15, 6.5}, {15, 7.5},
+				{14, 7.5}, {14, 6.5}, {13, 6.5}, {13, 1.5}, {12, 1.5}
+			]);
+		}
+	}
 	
 	action show_buttons {
 		// Activates the current menu
@@ -376,6 +494,9 @@ species SeedButtonMenu parent: ButtonMenu {
 	}
 	
 	aspect default {
+		if(activated) {
+			draw background.menu_background color: rgb(#white, background.menu_background_opacity);
+		}
 		draw image size:icon_size;
 	}
 	aspect debug {
@@ -387,7 +508,17 @@ species SeedButtonMenu parent: ButtonMenu {
  * A button menu used to display available Fertilizer types, initialized in the fertilizer model.
  */
 species FertilizerButtonMenu parent: ButtonMenu {
+
 	image_file image <- image_file(image_path + definition + "/fertilizers/fertilizer.png");
+	
+	init {
+		ask background {
+			do compute_background([
+				{12, 1.5}, {16, 1.5}, {16, 5.5}, {13, 5.5},
+				{13, 2.5}, {12, 2.5}
+			]);
+		}
+	}
 	
 	action show_buttons {
 		// Activates the fertilizer menu
@@ -443,6 +574,9 @@ species FertilizerButtonMenu parent: ButtonMenu {
 	}
 	
 	aspect default {
+		if(activated) {
+			draw background.menu_background color: rgb(#white, background.menu_background_opacity);
+		}
 		draw image size:icon_size;
 	}
 	aspect debug {
@@ -450,14 +584,46 @@ species FertilizerButtonMenu parent: ButtonMenu {
 	}
 }
 
+species SoilButtonMenu {
+	ButtonBackground background;
+
+	init {
+		create ButtonBackground returns: button_background;
+		background <- button_background[0];
+		ask background {
+			do compute_background([
+				{6, 1.5}, {9, 1.5}, {9, 2.5}, {6, 2.5}
+			]);
+		}
+		// Creates a soil view/button for each available Soil
+		int i <- 0;
+		ask Soil {
+			create SoilView number:1 with: (
+				soil: self,
+				location:{(i+6.5)*cell_size, 2*cell_size}
+			) returns: new_soil_views;
+			create SoilButton number: 1 with: (
+				soil_view: new_soil_views[0],
+				location: new_soil_views[0].location,
+				button_size: 0.8*cell_size
+			);
+			i <- i+1;
+		}
+	}
+	
+	aspect default {
+		draw background.menu_background color: rgb(#white, background.menu_background_opacity);
+	}
+}
 
 experiment debug_controller type:gui {	
 	output {
-		display camisol type:opengl axes: false {
+		display camisol type:opengl axes: false background: #black {
 			event mouse_move action:mouse_move_buttons;
 			event mouse_down action:mouse_down_buttons;
 			event mouse_up action:mouse_up_buttons;
 			
+			species SoilButtonMenu aspect: default;
 			species SoilView aspect:default;
 			species SeedButtonMenu aspect:default;
 			species SeedView aspect:default;
@@ -465,6 +631,7 @@ experiment debug_controller type:gui {
 			species FertilizerView aspect:default;
 			species EpochView aspect: default;
 			species RunButton aspect: default;
+//			grid HelpGrid border:#black;
 		}
 	}
 }
