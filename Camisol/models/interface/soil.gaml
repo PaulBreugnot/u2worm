@@ -28,6 +28,8 @@ global {
 	 */
 	map<string, list<image_file>> soil_images;
 	
+	Soil default_soil;
+	
 	// Note: the regular init function is not used, since the controller model
 	// needs the soils but "import soil.gaml" in controller.gaml causes the
 	// soil init to be called AFTER the controller init.
@@ -39,9 +41,13 @@ global {
 			loop plot from: 1 to: 4 {
 				add image_file(image_path + definition + "/plots/plot_" + plot + "_" + soil_color + ".png") to:soil_images[soil_color];
 			}
-			create Soil number:1 with: (color: soil_color);
+			create Soil with: (color: soil_color);
+		}
+		ask Soil where (each.color = "brown") {
+			default_soil <- self;
 		}
 	}
+	
 }
 
 species Soil {

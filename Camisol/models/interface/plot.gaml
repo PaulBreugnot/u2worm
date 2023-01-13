@@ -18,9 +18,8 @@ import "camisol_adapter.gaml" as Camisol
  */
  
 global {
-	init {
+	action init_plots {
 		create Plot number:4 returns: new_plots;
-		create Soil number:4 returns: new_soils;
 		create PlotView number: 4 returns: new_plot_views;
 		
 		// Factors to convert coordinates within the SVG file in world coordinates in meters
@@ -126,7 +125,7 @@ global {
 		 */
 		 loop i from: 0 to: 3 {
 		 	new_plots[i].number <- i+1;
-		 	new_plots[i].soil <- new_soils[i];	 	
+		 	new_plots[i].soil <- default_soil;	 	
 		 	new_plot_views[i].plot <- new_plots[i];
 		 	new_plot_views[i].growth_images[0] <- image_file(image_path + definition + "/plots/plot_" + (i+1) + "_plant_1.png");
 		 }
@@ -216,10 +215,16 @@ global {
 	}
 }
 
+species EndThreadCallback {
+	action call virtual: true;
+}
+
 /**
  * A parcel that can be planted and fertilized.
  */
-species Plot {
+species Plot skills: [thread] {
+	EndThreadCallback end_thread_callback;
+	
 	/**
 	 * Plot identifier.
 	 */
@@ -252,22 +257,26 @@ species Plot {
 	
 	int micro_model_num_steps <- 1000;
 
+	bool camisol_running <- false;
 
-//	action grow {
-//		write "Starting camisol on plot " + number;
-//		ask Camisol.Simple[number-1] {
-//			ask simulation {
-//				loop i from: 0 to: 50 {
-//					write i;
-//					do _step_;
-//					ask world {
-//						cycle <- i;
-//					}
-//				}
-//				write "Done: " + kilo_of_production;
-//			}
-//		}
-//	}
+	action thread_action {
+		camisol_running <- true;
+		write "Starting camisol on plot " + number;
+		int plot_number <- number;
+		ask Camisol.Simple[number-1] {
+			ask simulation {
+				do write_production_parameters;
+				loop i from: 0 to: 50 {
+					do _step_;
+				}
+				write "Done on plot " + plot_number + "(" + kilo_of_production + "kg produced)";
+			}
+		}
+		camisol_running <- false;
+		ask end_thread_callback {
+			do call;
+		}
+	}
 }
 
 /**
@@ -325,6 +334,7 @@ experiment debug_plots type:gui {
 		create simulation;
 		ask simulation {
 			do init_soils();
+			do init_plots();
 		}
 	}
 	

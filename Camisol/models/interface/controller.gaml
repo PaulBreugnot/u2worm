@@ -25,18 +25,12 @@ global {
 	 * Buttons that should be managed by the button model.
 	 */
 	list<species<Button>> handled_buttons <- [SoilButton, SeedButton, SeedButtonMenu, FertilizerButton, FertilizerButtonMenu, EpochButton, RunButton];
-
-	/**
-	 * Mouse move buttons event handle adaptor.
-	 */
-//	action mouse_move_buttons {
-//		do mouse_move_buttons_list(handled_buttons);
-//	}
 	
 	init {
 		do init_seeds;
 		do init_fertilizers;
 		do init_soils;
+		do init_plots;
 		do init_calendar;
 		
 		write "Building buttons...";
@@ -185,14 +179,38 @@ species EpochButton parent: Button {
 	}
 }
 
+species PlotEndThreadCallback parent: EndThreadCallback {
+	RunButton run_button;
+	
+	action call {
+		// True if at least one plot is still running Camisol
+		bool camisol_running_on_plot <- false;
+		ask Plot {
+			camisol_running_on_plot <- camisol_running_on_plot or self.camisol_running;
+		}
+		if(!camisol_running_on_plot) {
+			ask run_button {
+				do end_simulation;
+			}
+		}
+	}
+}
 species RunButton parent: Button {
+	PlotEndThreadCallback plot_end_thread_callback;
+	
 	image_file button_image <- image_file(image_path + definition + "/epochs/play.png");
 	float icon_size <- button_size;
 	bool disable <- false;
 	bool camisol_running <- false;
 	
 	init {
+		create PlotEndThreadCallback with:(run_button: self) {
+			myself.plot_end_thread_callback <- self;
+		}
 		shape<-square(button_size);
+		ask Plot {
+			end_thread_callback <- myself.plot_end_thread_callback;
+		}
 	}
 	action mouse_enter {
 		if(!disable and !camisol_running and selected_epoch.epoch.time = current_time) {
@@ -203,19 +221,19 @@ species RunButton parent: Button {
 		icon_size <- button_size;
 	}
 	
-	reflex when: (cycle > 0 and cycle mod 20 = 0) {
-		ask world {
-			do pause;
-		}
-		do end_simulation;
-	}
+//	reflex when: (cycle > 0 and cycle mod 20 = 0) {
+//		ask world {
+//			do pause;
+//		}
+//		do end_simulation;
+//	}
 	
 	action launch_simulation {
 		// Runs the current epoch
 		camisol_running <- true;
 			
-		ask world {
-			do resume;
+		ask Plot {
+			do run_thread;
 		}
 	}
 

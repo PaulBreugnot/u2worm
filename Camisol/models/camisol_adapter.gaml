@@ -9,7 +9,7 @@ import "camisol.gaml"
 
 global
 {
-	geometry shape <- square(1#cm);
+//	geometry shape <- square(1#cm);
 }
 
 experiment Simple type: gui

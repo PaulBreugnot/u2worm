@@ -271,11 +271,12 @@ global
 		}
 	}
 	
-	reflex parameter_production
+	action write_production_parameters
 	{
 			write("species_to_produce "+species_to_produce);
 			write("type_apport "+type_apport);
 	}
+
 	reflex scheduleSimulation 
 	{
 		
@@ -369,15 +370,14 @@ global
 					
 			
 					kilo_of_production <- kilo_of_production + min_ratio * 1000#kg;
-					write("New prod: " + kilo_of_production);
+					// write("New prod: " + kilo_of_production);
 					
 					ask Dam
 					{
 						dim <- [dim[0] - qty_of_N_to_retrieve, dim[0] - qty_of_P_to_retrieve];
 					}
 					
-				}else
-				{
+				} else {
 					write("species : "+name_species+" not found in file");	
 				}
 			}
@@ -539,7 +539,7 @@ global
 		
 		masseC<- masseC + total_perception;
 		
-		write("---------------------step "+local_time +"----------------------------------");
+		// write("---------------------step "+local_time +"----------------------------------");
 		
 		return masseC;
 	}
@@ -1662,15 +1662,6 @@ experiment ex type:gui
 		
 		monitor "diff mass initial" value: total_masseC_init - total_masseC color: #red;
 			
-	}
-}
-
-experiment batch type:batch until:(cycle>50) {
-
-	reflex out_production {
-		ask simulations {
-			write kilo_of_production;
-		}
 	}
 }
 
