@@ -206,6 +206,14 @@ global {
 			}
 		}
 	}
+
+	reflex {
+		ask Camisol.Simple[0] parallel:true {
+			ask simulation {
+				do _step_;
+			}
+		}
+	}
 }
 
 /**
@@ -243,22 +251,23 @@ species Plot {
 	list<Harvest> harvests;
 	
 	int micro_model_num_steps <- 1000;
-	
-	action grow {
-		write "Starting camisol on plot " + number;
-		ask Camisol.Simple[number-1] {
-			ask simulation {
-				loop i from: 0 to: 50 {
-					write i;
-					do _step_;
-					ask world {
-						cycle <- i;
-					}
-				}
-				write "Done: " + kilo_of_production;
-			}
-		}
-	}
+
+
+//	action grow {
+//		write "Starting camisol on plot " + number;
+//		ask Camisol.Simple[number-1] {
+//			ask simulation {
+//				loop i from: 0 to: 50 {
+//					write i;
+//					do _step_;
+//					ask world {
+//						cycle <- i;
+//					}
+//				}
+//				write "Done: " + kilo_of_production;
+//			}
+//		}
+//	}
 }
 
 /**

@@ -8,7 +8,6 @@
 model buttons
 
 import "button.gaml"
-import "plot.gaml"
 
 /**
  * The controller model contains all the heavy application mechanic, in order to:
@@ -30,9 +29,9 @@ global {
 	/**
 	 * Mouse move buttons event handle adaptor.
 	 */
-	action mouse_move_buttons {
-		do mouse_move_buttons_list(handled_buttons);
-	}
+//	action mouse_move_buttons {
+//		do mouse_move_buttons_list(handled_buttons);
+//	}
 	
 	init {
 		do init_seeds;
@@ -60,24 +59,7 @@ global {
 			do click;
 		}
 		
-		// Init epoch views/buttons
-		i <- 0;
-		ask Epoch {
-			create EpochView number: 1 with: (
-				epoch: self,
-				location: {(1.5 + 2*i)*cell_size, 8.5*cell_size}
-			) returns: new_epoch_view;
-			create EpochButton number:1 with: (
-				epoch_view: new_epoch_view[0],
-				location:new_epoch_view[0].location,
-				button_size: cell_size
-			);
-			i <- i + 1;
-		}
-		create RunButton number:1 with: (
-			button_size: 0.8*cell_size,
-			location: {(1.5 + 2*i)*cell_size, 8.5*cell_size}
-		);
+		create EpochsMenu;
 	}
 }
 
@@ -183,23 +165,19 @@ species FertilizerButton parent: Button {
 species EpochButton parent: Button {
 	EpochView epoch_view;
 	
-	init {
-		shape<-square(button_size);
-	}
 	action mouse_enter {
-		if epoch_view.epoch.time < current_time {
+		if(selected_epoch != epoch_view) {
 			epoch_view.icon_size <- 1.1*button_size;
 		}
 	}
 	action mouse_leave {
-		if epoch_view.epoch.time < current_time {
+		if(selected_epoch != epoch_view) {
 			epoch_view.icon_size <- button_size;
 		}
 	}
 	agent click {
-		if epoch_view.epoch.time < current_time {
-			selected_epoch <- epoch_view;
-		}
+		epoch_view.icon_size <- button_size;
+		selected_epoch <- epoch_view;
 		return nil;
 	}
 	action post_click {
@@ -208,24 +186,68 @@ species EpochButton parent: Button {
 }
 
 species RunButton parent: Button {
-	image_file button_image <- image_file("../../images/play-green.png");
+	image_file button_image <- image_file(image_path + definition + "/epochs/play.png");
 	float icon_size <- button_size;
+	bool disable <- false;
+	bool camisol_running <- false;
 	
 	init {
 		shape<-square(button_size);
 	}
 	action mouse_enter {
-		icon_size <- 1.1*button_size;
+		if(!disable and !camisol_running and selected_epoch.epoch.time = current_time) {
+			icon_size <- 1.1*button_size;
+		}
 	}
 	action mouse_leave {
 		icon_size <- button_size;
 	}
-	agent click {
-		if current_time < 6 {
-			ask Plot parallel: true{
-				do grow;
-			}
+	
+	reflex when: (cycle > 0 and cycle mod 20 = 0) {
+		ask world {
+			do pause;
+		}
+		do end_simulation;
+	}
+	
+	action launch_simulation {
+		// Runs the current epoch
+		camisol_running <- true;
+			
+		ask world {
+			do resume;
+		}
+	}
+
+	action end_simulation {
+		camisol_running <- false;
+		if current_time < 5 {
 			current_time <- current_time+1;
+			self.location <- self.location + {2*cell_size, 0};
+			create Epoch with: (time: current_time) {
+				create EpochView with: (
+					epoch: self,
+					location: {(1.5 + 2*time)*cell_size, 8.5*cell_size}
+				) {
+					create EpochButton with: (
+						epoch_view: self,
+						location:self.location,
+						button_size: cell_size
+					);
+				}
+			}
+		} else {
+			disable <- true;
+		}
+	}
+	agent click {
+		if !camisol_running and current_time < 6 and selected_epoch.epoch.time = current_time {
+			icon_size <- button_size;
+			do launch_simulation;
+			
+//			ask Plot parallel: true{
+//				do grow;
+//			}
 		}
 		return nil;
 	}
@@ -238,119 +260,7 @@ species RunButton parent: Button {
 	}
 }
 
-species ButtonBackground {
-	geometry menu_background;
-	float menu_background_opacity <- 0.5;
 
-	action compute_background(list<point> coordinates) {
-		loop i from: 0 to: length(coordinates)-1 {
-			coordinates[i] <- coordinates[i]*cell_size;
-		}
-
-		list<geometry> menu_shape;
-		loop i from: 0 to: length(coordinates)-1 {
-			point prev_point <- coordinates[(i+length(coordinates)-1) mod length(coordinates)];
-			point next_point <- coordinates[(i+1) mod length(coordinates)];
-			point point1 <- {coordinates[i].x, coordinates[i].y};
-			point point2 <- {coordinates[i].x, coordinates[i].y};
-			point center <- {coordinates[i].x, coordinates[i].y};
-			float begin_angle;
-			float end_angle;
-			float radius <- 0.1*cell_size;
-			if (prev_point.x = coordinates[i].x) {
-				// By construction, next_point.y = coordinates[i].y
-				if(prev_point.y < coordinates[i].y) {
-					// .
-					// 1
-					point1 <- point1 - {0, radius};
-					if(next_point.x < coordinates[i].x) {
-						// 2.
-						//  1
-						point2 <- point2 - {radius, 0};
-						center <- center + {-radius, -radius};
-						begin_angle <- 0.0;
-						end_angle <- 90.0;
-					} else {
-						// .2
-						// 1
-						point2 <- point2 + {radius, 0};
-						center <- center + {radius, -radius};
-						begin_angle <- 180.0;
-						end_angle <- 90.0;
-					}
-				} else {
-					//1
-					//.
-					point1 <- point1 + {0, radius};
-					if(next_point.x < coordinates[i].x) {
-						//  1
-						// 2.
-						point2 <- point2 - {radius, 0};
-						center <- center + {-radius, radius};
-						begin_angle <- 0.0;
-						end_angle <- -90.0;
-					} else {
-						// 1
-						// .2
-						point2 <- point2 + {radius, 0};
-						center <- center + {radius, radius};
-						begin_angle <- 180.0;
-						end_angle <- 270.0;
-					}
-				}
-			} else {
-				// By construction, prev_point.y = coordinates[i].y
-				if(prev_point.x < coordinates[i].x) {
-					// 1.
-					point1 <- point1 - {radius, 0};
-					if(next_point.y < coordinates[i].y) {
-						// 1.
-						//  2
-						point2 <- point2 - {0, radius};
-						center <- center + {-radius, -radius};
-						begin_angle <- 90.0;
-						end_angle <- 360.0;
-					} else {
-						//  2
-						// 1.
-						point2 <- point2 + {0, radius};
-						center <- center + {-radius, radius};
-						begin_angle <- 270.0;
-						end_angle <- 360.0;
-					}
-				} else {
-					// .1
-					point1 <- point1 + {radius, 0};
-					if(next_point.y < coordinates[i].y) {
-						// .1
-						// 2
-						point2 <- point2 - {0, radius};
-						center <- center + {radius, -radius};
-						begin_angle <- 90.0;
-						end_angle <- 180.0;
-					} else {
-						// 2
-						// .1
-						point2 <- point2 + {0, radius};
-						center <- center + {radius, radius};
-						begin_angle <- 270.0;
-						end_angle <- 180.0;
-					}
-				}
-			}
-			 // add point1 to: menu_shape;
-			 // add center to: menu_shape;
-			 // add point2 to: menu_shape;
-			 write("P: " + coordinates[i]/cell_size + ": " + begin_angle + "->" + end_angle);
-			 loop j from: 0 to: 10 {
-			 	float angle <- begin_angle + j * (end_angle-begin_angle)/10;
-			 	write("    " + angle);
-			 	add center + {radius*cos(angle), radius*sin(angle)} to: menu_shape;
-			 }
-		}
-		menu_background <- polygon(menu_shape);
-	}
-}
 /**
  * ButtonMenu interface.
  * 
@@ -365,19 +275,26 @@ species ButtonMenu parent: Button {
 	/**
 	 * True iff the ButtonMenu is currently activated, i.e. it is displaying associated buttons.
 	 */
-	bool activated <- false;
+	bool active <- false;
 	/**
 	 * Builds the buttons coordinates organized as a grid on the right of the environment.
 	 */
 	list<point> button_coordinates <- build_button_coordinates();
 
-	ButtonBackground background;
-
-	init {
-		create ButtonBackground returns: menu_background;
-		background <- menu_background[0];
+	ButtonBox button_box;
+	
+	action activate {
+		active <- true;
+		ask button_box {
+			visible <- true;
+		}
 	}
-
+	action deactivate {
+		active <- false;
+		ask button_box {
+			visible <- false;
+		}
+	}
 	list<point> build_button_coordinates {
 		int i_button <- 0;
 		
@@ -415,7 +332,7 @@ species ButtonMenu parent: Button {
 	action hide_buttons virtual: true;
 	
 	action mouse_enter {
-		if(!activated) {
+		if(!active) {
 			icon_size <- 0.9*cell_size;
 		}
 	}
@@ -423,7 +340,7 @@ species ButtonMenu parent: Button {
 		icon_size <- 0.8*cell_size;
 	}
 	agent click {
-		if !activated {
+		if !active {
 			do show_buttons;
 		}
 		// Nothing to return as no selection is performed
@@ -445,17 +362,21 @@ species SeedButtonMenu parent: ButtonMenu {
 
 	
 	init {
-		ask background {
+		create ButtonBox returns: button_boxes with: (button_types: [SeedButton, SeedButtonMenu]);
+		button_box <- button_boxes[0];
+		ask button_box {
 			do compute_background([
 				{12, 0.5}, {16, 0.5}, {16, 6.5}, {15, 6.5}, {15, 7.5},
 				{14, 7.5}, {14, 6.5}, {13, 6.5}, {13, 1.5}, {12, 1.5}
 			]);
+			// Envelope of the SeedButtonMenu only
+			hidden_envelope <- envelope(myself);
 		}
 	}
 	
 	action show_buttons {
 		// Activates the current menu
-		activated <- true;
+		do activate;
 		// Hide the fertilizer menu
 		ask FertilizerButtonMenu {
 			do hide_buttons;
@@ -482,7 +403,7 @@ species SeedButtonMenu parent: ButtonMenu {
 	
 	action hide_buttons {
 		// Deactivates the seed menu
-		activated <- false;
+		do deactivate;
 		// Deletes the button and views of the menu.
 		// Notice that the available Seed are NOT deleted.
 		ask SeedButton {
@@ -494,9 +415,6 @@ species SeedButtonMenu parent: ButtonMenu {
 	}
 	
 	aspect default {
-		if(activated) {
-			draw background.menu_background color: rgb(#white, background.menu_background_opacity);
-		}
 		draw image size:icon_size;
 	}
 	aspect debug {
@@ -512,17 +430,21 @@ species FertilizerButtonMenu parent: ButtonMenu {
 	image_file image <- image_file(image_path + definition + "/fertilizers/fertilizer.png");
 	
 	init {
-		ask background {
+		create ButtonBox returns: button_boxes with: (button_types: [FertilizerButton, FertilizerButtonMenu]);
+		button_box <- button_boxes[0];
+		ask button_box {
 			do compute_background([
 				{12, 1.5}, {16, 1.5}, {16, 5.5}, {13, 5.5},
 				{13, 2.5}, {12, 2.5}
 			]);
+			// Envelope of the FertilizerButtonMenu only
+			hidden_envelope <- envelope(myself);
 		}
 	}
 	
 	action show_buttons {
 		// Activates the fertilizer menu
-		activated <- true;
+		do activate;
 		// Hides the seed menu
 		ask SeedButtonMenu {
 			do hide_buttons;
@@ -562,7 +484,7 @@ species FertilizerButtonMenu parent: ButtonMenu {
 	
 	action hide_buttons {
 		// Deactivates the seed menu
-		activated <- false;
+		do deactivate;
 		// Deletes the button and views of the menu.
 		// Notice that the available Fertilizers are NOT deleted.
 		ask FertilizerButton {
@@ -574,9 +496,6 @@ species FertilizerButtonMenu parent: ButtonMenu {
 	}
 	
 	aspect default {
-		if(activated) {
-			draw background.menu_background color: rgb(#white, background.menu_background_opacity);
-		}
 		draw image size:icon_size;
 	}
 	aspect debug {
@@ -585,12 +504,9 @@ species FertilizerButtonMenu parent: ButtonMenu {
 }
 
 species SoilButtonMenu {
-	ButtonBackground background;
-
 	init {
-		create ButtonBackground returns: button_background;
-		background <- button_background[0];
-		ask background {
+		create ButtonBox returns: button_box with:(button_types:[SoilButton]);
+		ask button_box {
 			do compute_background([
 				{6, 1.5}, {9, 1.5}, {9, 2.5}, {6, 2.5}
 			]);
@@ -610,9 +526,32 @@ species SoilButtonMenu {
 			i <- i+1;
 		}
 	}
-	
-	aspect default {
-		draw background.menu_background color: rgb(#white, background.menu_background_opacity);
+}
+
+species EpochsMenu {
+	init {
+		create ButtonBox with:(button_types:[EpochButton, RunButton]) {
+			do compute_background([
+				{1, 8}, {14, 8}, {14, 9}, {1, 9}
+			]);
+		}
+			create Epoch with: (time: current_time) {
+				create EpochView with: (
+					epoch: self,
+					location: {1.5*cell_size, 8.5*cell_size}
+				) {
+					create EpochButton with: (
+						epoch_view: self,
+						location:self.location,
+						button_size: cell_size
+					);
+					selected_epoch <- self;
+				}
+			}
+		create RunButton with: (
+			button_size: 0.8*cell_size,
+			location: {3.5*cell_size, 8.5*cell_size}
+		);
 	}
 }
 
@@ -623,7 +562,7 @@ experiment debug_controller type:gui {
 			event mouse_down action:mouse_down_buttons;
 			event mouse_up action:mouse_up_buttons;
 			
-			species SoilButtonMenu aspect: default;
+			species ButtonBox aspect: default;
 			species SoilView aspect:default;
 			species SeedButtonMenu aspect:default;
 			species SeedView aspect:default;

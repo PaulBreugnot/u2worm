@@ -7,6 +7,8 @@
 
 model button
 
+import "plot.gaml"
+
 /**
  * A generic button interface that allows to select items and to move selected items.
  */
@@ -37,17 +39,67 @@ global {
 	 * cursor when the mouse enters or leaves the button area, only if there is
 	 * currently no selected item.
 	 */
-	action mouse_move_buttons_list(list<species<Button>> handled_buttons) {
+//	action mouse_move_buttons_list(list<species<Button>> handled_buttons) {
+//		Button button_under_mouse <- nil;
+//		
+//		int i <- 0;
+//		loop while: ((button_under_mouse = nil) and (i < length(handled_buttons))) {
+//			list<Button> buttons_under_mouse <- handled_buttons[i] overlapping #user_location;
+//			if length(buttons_under_mouse) > 0 {
+//				button_under_mouse <- buttons_under_mouse[0];
+//			}
+//			i <- i+1;
+//		}
+//			
+//		// Mouse leave is triggered if a button was previously in focus and no button is
+//		// currently in focus or the button currently in focus is not the same as the previous one.
+//		if current_button_focus != nil and (button_under_mouse = nil or button_under_mouse != current_button_focus) {
+//			ask current_button_focus {
+//				do mouse_leave;
+//			}
+//			current_button_focus <- nil;
+//		}	
+//
+//		// Mouse enter is not triggered if an item is currently selected
+//		if (selected_item = nil) {
+//			// The mouse enter action is called only when the mouse enters a new button
+//			// (the action is not triggered when the mouse moves within a button)
+//			if button_under_mouse != nil and button_under_mouse != current_button_focus {
+//				current_button_focus <- button_under_mouse;
+//				ask current_button_focus {
+//					do mouse_enter;
+//				}
+//			}
+//		} else {
+//			// An item is selected, so move the item but do not enters any other button
+//			// until the item is released.
+//			selected_item.location <- #user_location;
+//		}
+//
+//	}
+	
+	action mouse_move_buttons {
 		Button button_under_mouse <- nil;
 		
 		int i <- 0;
-		loop while: ((button_under_mouse = nil) and (i < length(handled_buttons))) {
-			list<Button> buttons_under_mouse <- handled_buttons[i] overlapping #user_location;
-			if length(buttons_under_mouse) > 0 {
-				button_under_mouse <- buttons_under_mouse[0];
+		loop while: (i < length(ButtonBox)) {
+			ButtonBox current_box <- ButtonBox[i];
+			bool under_cursor <- current_box.visible? current_box.envelope covers #user_location : current_box.hidden_envelope covers #user_location;
+			// Very efficient
+			if(under_cursor) {
+				// Tries button only if within the box
+				int j <- 0;
+				loop while: ((button_under_mouse = nil) and (j < length(current_box.button_types))) {
+					list<Button> buttons_under_mouse <- current_box.button_types[j] overlapping #user_location;
+					if length(buttons_under_mouse) > 0 {
+						button_under_mouse <- buttons_under_mouse[0];
+					}
+					j <- j+1;
+				}
 			}
 			i <- i+1;
 		}
+		
 			
 		// Mouse leave is triggered if a button was previously in focus and no button is
 		// currently in focus or the button currently in focus is not the same as the previous one.
@@ -147,4 +199,128 @@ species Button {
 	 */
 	action post_click virtual: true;
 	
+}
+
+species ButtonBox {
+	geometry background;
+	rgb background_color <- rgb(#white, 0.5);
+	list<species<Button>> button_types;
+	bool visible <- true;
+	geometry envelope;
+	geometry hidden_envelope;
+
+	action compute_background(list<point> coordinates) {
+		loop i from: 0 to: length(coordinates)-1 {
+			coordinates[i] <- coordinates[i]*cell_size;
+		}
+
+		list<geometry> menu_shape;
+		loop i from: 0 to: length(coordinates)-1 {
+			point prev_point <- coordinates[(i+length(coordinates)-1) mod length(coordinates)];
+			point next_point <- coordinates[(i+1) mod length(coordinates)];
+			point point1 <- {coordinates[i].x, coordinates[i].y};
+			point point2 <- {coordinates[i].x, coordinates[i].y};
+			point center <- {coordinates[i].x, coordinates[i].y};
+			float begin_angle;
+			float end_angle;
+			float radius <- 0.1*cell_size;
+			if (prev_point.x = coordinates[i].x) {
+				// By construction, next_point.y = coordinates[i].y
+				if(prev_point.y < coordinates[i].y) {
+					// .
+					// 1
+					point1 <- point1 - {0, radius};
+					if(next_point.x < coordinates[i].x) {
+						// 2.
+						//  1
+						point2 <- point2 - {radius, 0};
+						center <- center + {-radius, -radius};
+						begin_angle <- 0.0;
+						end_angle <- 90.0;
+					} else {
+						// .2
+						// 1
+						point2 <- point2 + {radius, 0};
+						center <- center + {radius, -radius};
+						begin_angle <- 180.0;
+						end_angle <- 90.0;
+					}
+				} else {
+					//1
+					//.
+					point1 <- point1 + {0, radius};
+					if(next_point.x < coordinates[i].x) {
+						//  1
+						// 2.
+						point2 <- point2 - {radius, 0};
+						center <- center + {-radius, radius};
+						begin_angle <- 0.0;
+						end_angle <- -90.0;
+					} else {
+						// 1
+						// .2
+						point2 <- point2 + {radius, 0};
+						center <- center + {radius, radius};
+						begin_angle <- 180.0;
+						end_angle <- 270.0;
+					}
+				}
+			} else {
+				// By construction, prev_point.y = coordinates[i].y
+				if(prev_point.x < coordinates[i].x) {
+					// 1.
+					point1 <- point1 - {radius, 0};
+					if(next_point.y < coordinates[i].y) {
+						// 1.
+						//  2
+						point2 <- point2 - {0, radius};
+						center <- center + {-radius, -radius};
+						begin_angle <- 90.0;
+						end_angle <- 360.0;
+					} else {
+						//  2
+						// 1.
+						point2 <- point2 + {0, radius};
+						center <- center + {-radius, radius};
+						begin_angle <- 270.0;
+						end_angle <- 360.0;
+					}
+				} else {
+					// .1
+					point1 <- point1 + {radius, 0};
+					if(next_point.y < coordinates[i].y) {
+						// .1
+						// 2
+						point2 <- point2 - {0, radius};
+						center <- center + {radius, -radius};
+						begin_angle <- 90.0;
+						end_angle <- 180.0;
+					} else {
+						// 2
+						// .1
+						point2 <- point2 + {0, radius};
+						center <- center + {radius, radius};
+						begin_angle <- 270.0;
+						end_angle <- 180.0;
+					}
+				}
+			}
+			 // add point1 to: menu_shape;
+			 // add center to: menu_shape;
+			 // add point2 to: menu_shape;
+			 loop j from: 0 to: 10 {
+			 	float angle <- begin_angle + j * (end_angle-begin_angle)/10;
+			 	add center + {radius*cos(angle), radius*sin(angle)} to: menu_shape;
+			 }
+		}
+		background <- polygon(menu_shape);
+		envelope <- envelope(background);
+		hidden_envelope <- envelope;
+	}
+	
+	aspect default {
+		if(visible) {
+			draw background color: background_color;
+		}
+	}
 }

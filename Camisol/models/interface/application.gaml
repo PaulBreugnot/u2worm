@@ -31,7 +31,7 @@ experiment application type:gui {
 	}
 	
 	output {
-		layout #none consoles: false tabs:false toolbars:false controls:false editors: false navigator: false tray: false background: #black;
+		// layout #none consoles: false tabs:false toolbars:false controls:false editors: false navigator: false tray: false background: #black;
 
 		
 		display camisol type:opengl axes: false fullscreen: true show_fps:true background: #black {
@@ -54,7 +54,7 @@ experiment application type:gui {
 			
 			species PlotView aspect:default;
 			// image "plants" position: {0, 0, 0} size: {1, 1} file: plants refresh: false;
-			species SoilButtonMenu aspect: default;
+			species ButtonBox aspect: default;
 			species SoilView aspect:default;
 			species SeedButtonMenu aspect:default;
 			species SeedView aspect:default;

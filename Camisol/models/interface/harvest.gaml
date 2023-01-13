@@ -90,6 +90,8 @@ species Epoch {
  * Adaptor used to visualize an epoch as an icon.
  */
 species EpochView {
+	
+	image_file image;
 	/**
 	 * Epoch to visualize.
 	 */
@@ -99,24 +101,14 @@ species EpochView {
 	 */
 	float icon_size <- cell_size;
 	
+	init {
+		image <- image_file(image_path + definition + "/epochs/epoch_" + (epoch.time+1) + ".png");
+	}
 	aspect default {
-		// Default colors
-		rgb epoch_color <- #white;
-		rgb epoch_border <- #black;
-		
-		if current_time < epoch.time {
-			// Epoch not yet simulated
-			epoch_color <- epoch_color - rgb(0, 0, 0, 0.5);
-			epoch_border <- #grey;
-		} else if current_time = epoch.time {
-			// Epoch currently simulated
-			epoch_color <- #green;
-		} else if self = selected_epoch {
-			// Passed epoch
-			epoch_border <- #blue;
+		if(selected_epoch = self) {
+			draw square(icon_size) color: rgb(125, 162, 87);
 		}
-		draw square(icon_size) color: epoch_color border: epoch_border;
-		draw string(epoch.time+1) at: location+{0, 0, 0.5} color: epoch_border anchor: #center font: font("Helvetica", 25);
+		draw image size: icon_size;
 	}
 }
 
