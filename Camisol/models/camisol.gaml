@@ -5,7 +5,7 @@
 
 model camisol
 
-import "csv_function.gaml"
+import "csv_loader.gaml"
 
 //todo calcul facteur efficacité enzymatique récalcitrant
 //todo facteur mortalité virale (besoin des chiffres)
@@ -321,16 +321,14 @@ global
 				do produce_riz_or_mais("mais");
 			}
 			default {
-				
-				int index <- search_index_species(name_species);
-				if(index != -1)
-				{
-					float N_graine <- get_N(index);
-					float P_graine <- get_P(index);
+				map<string, float> crop_data <- crops_data[name_species];
+				if(length(crop_data) > 0) {
+					float N_graine <- crop_data[CSV_N];
+					float P_graine <- crop_data[CSV_P];
 					float N_plante <- N_graine;
 					float P_plante <- P_graine;	
 					
-					float harvest_index <- get_HI(index);
+					float harvest_index <- crop_data[CSV_HARVEST_INDEX];
 					
 					float N_for_graine <- masse_total_N * harvest_index;
 					float N_for_plante <- masse_total_N * (1 - harvest_index);
@@ -378,7 +376,7 @@ global
 					}
 					
 				} else {
-					write("species : "+name_species+" not found in file");	
+					write("Crop "+ name_species +" not found in crops data.");	
 				}
 			}
 		}
@@ -388,23 +386,24 @@ global
 		
 			int index_graine;
 			int index_plante;
+			map<string, float> seed_data;
+			map<string, float> plant_data;
 			if(lower_case(name_species) = "riz")
 			{
-				index_graine <- search_index_species("riz_g");
-				index_plante <- search_index_species("riz_p");
-				
-			}else{
-				index_graine <- search_index_species("mais_g");
-				index_plante <- search_index_species("mais_p");
+				seed_data <- crops_data["riz_g"];
+				plant_data <- crops_data["riz_p"];
+			} else {
+				seed_data <- crops_data["mais_g"];
+				plant_data <- crops_data["mais_p"];
 			}
 			
-			float N_graine <- get_N(index_graine);
-			float P_graine <- get_P(index_graine);
+			float N_graine <- seed_data[CSV_N];
+			float P_graine <- seed_data[CSV_P];
 			
-			float N_plante <- get_N(index_plante);
-			float P_plante <- get_P(index_plante);
+			float N_plante <- plant_data[CSV_N];
+			float P_plante <- plant_data[CSV_P];
 			
-			float harvest_index <- get_HI(index_graine);
+			float harvest_index <- plant_data[CSV_HARVEST_INDEX];
 			
 			float N_for_graine <- masse_total_N * harvest_index;
 			float N_for_plante <- masse_total_N * (1 - harvest_index);
@@ -436,8 +435,8 @@ global
 	}
 	action apport_MO(string name_MO)
 	{
-		int index_MO <- search_OM(name_MO);
-		if(index_MO != -1)
+		map<string, float> fertilizer_data <- fertilizers_data[name_MO];
+		if(length(fertilizer_data) > 0)
 		{
 			
 			// 80% soluble -> C_labile 
@@ -463,12 +462,12 @@ global
 			
 			write("qty_MO_for_model = "+qty_MO_for_model);
 			
-			float soluble <- get_soluble_with_index(index_MO);
-			float hemi <- get_hemicellulose_with_index(index_MO);
-			float celluose <- get_celluose_with_index(index_MO);
-			float lignine <- get_lignine_with_index(index_MO);
-			float CN <- get_CN_with_index(index_MO);
-			float CP <- get_CP_with_index(index_MO);
+			float soluble <- fertilizer_data[CSV_QUANTITE_SOLUBLE];
+			float hemi <- fertilizer_data[CSV_HEMICELLULOSE];
+			float celluose <- fertilizer_data[CSV_CELLULOSE];
+			float lignine <- fertilizer_data[CSV_LIGNINE];
+			float CN <- fertilizer_data[CSV_C_N];
+			float CP <- fertilizer_data[CSV_C_P];
 			
 			float soluble_Cl <- ((qty_MO_for_model * soluble / 100)) * taux_labile_soluble;
 			float N_pore <- soluble_Cl * CN;
