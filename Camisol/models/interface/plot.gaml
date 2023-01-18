@@ -47,9 +47,20 @@ global {
 					SVG_to_world_x * (412.479 - 105.002),
 					SVG_to_world_y * (228.650 - 194.409)
 				},
+				selected_plot_image_size: {
+					SVG_to_world_x * 328.423,
+					SVG_to_world_y * 55.188
+				},
+				growth_images_locations: [
+					{SVG_to_world_x * (124.060 + 276.150/2), SVG_to_world_y * (198.230 + 27/2)}
+				],
+				growth_images_sizes: [
+					{SVG_to_world_x * 276.150, SVG_to_world_y * 27}
+				],
 				seed_icon_location: {43.637484782513866#m, 93.46230227181701#m,0.0},
 				fertilizer_icon_location: {184.36069638917638#m, 91.8210529376853#m,0.0},
-				growth_images: [image_file(image_path + definition + "/plots/plot_" + 1 + "_plant_1.png")]
+				growth_images: [image_file(image_path + definition + "/plots/plot_" + 1 + "_plant_1.png")],
+				selected_image: image_file(image_path + definition + "/plots/plot_1_selected.png")
 			);
 		}
 		
@@ -81,9 +92,20 @@ global {
 					SVG_to_world_x * (370.119 - 155.802),
 					SVG_to_world_y * (192.585 - 151.179)
 				},
+				selected_plot_image_size: {
+					SVG_to_world_x * 239.530,
+					SVG_to_world_y * 65.989
+				},
+				growth_images_locations: [
+					{SVG_to_world_x * (161.920 + 203/2), SVG_to_world_y * (155.140 + 36.4/2)}
+				],
+				growth_images_sizes: [
+					{SVG_to_world_x * 203, SVG_to_world_y * 36.4}
+				],
 				seed_icon_location: {62.510271224840764#m, 78.69243296044709#m,0.0},
 				fertilizer_icon_location: {170.00144871789786#m, 76.92347306323204#m,0.0},
-				growth_images: [image_file(image_path + definition + "/plots/plot_" + 2 + "_plant_1.png")]
+				growth_images: [image_file(image_path + definition + "/plots/plot_" + 2 + "_plant_1.png")],
+				selected_image: image_file(image_path + definition + "/plots/plot_2_selected.png")
 			);
 		}
 		
@@ -111,9 +133,20 @@ global {
 					SVG_to_world_x * (350.746 - 174.287),
 					SVG_to_world_y * (150.276 - 107.657)
 				},
+				selected_plot_image_size: {
+					SVG_to_world_x * 193.803,
+					SVG_to_world_y * 59.963
+				},
+				growth_images_locations: [
+					{SVG_to_world_x * (180.340 + 161.170/2), SVG_to_world_y * (113.680 + 31.36/2)}
+				],
+				growth_images_sizes: [
+					{SVG_to_world_x * 161.170, SVG_to_world_y * 31.36}
+				],
 				seed_icon_location: {69.0747186830414#m, 58.17894706231469#m, 0.0},
 				fertilizer_icon_location: {159.74429336008703#m, 58.99936552500823#m, 0.0},
-				growth_images: [image_file(image_path + definition + "/plots/plot_" + 3 + "_plant_1.png")]
+				growth_images: [image_file(image_path + definition + "/plots/plot_" + 3 + "_plant_1.png")],
+				selected_image: image_file(image_path + definition + "/plots/plot_3_selected.png")
 			);
 		}
 		
@@ -145,33 +178,30 @@ global {
 					SVG_to_world_x * (329.928 - 187.359),
 					SVG_to_world_y * (107.802 - 87.847)
 				},
+				selected_plot_image_size: {
+					SVG_to_world_x * 158.467,
+					SVG_to_world_y * 35.853
+				},
+				growth_images_locations: [
+					{SVG_to_world_x * (196.990 + 121.990/2), SVG_to_world_y * (90.430 + 15.22/2)}
+				],
+				growth_images_sizes: [
+					{SVG_to_world_x * 121.990, SVG_to_world_y * 15.220}
+				],
 				seed_icon_location: {77.68979988923124#m, 41.3576191854663#m, 0.0},
 				fertilizer_icon_location: {150.7185905138058#m, 44.2294962136383#m, 0.0},
-				growth_images: [image_file(image_path + definition + "/plots/plot_" + 4 + "_plant_1.png")]
+				growth_images: [image_file(image_path + definition + "/plots/plot_" + 4 + "_plant_1.png")],
+				selected_image: image_file(image_path + definition + "/plots/plot_4_selected.png")
 			);
 		}
 		
 		create Camisol.Simple number: 4;
-		/*
-		 * Plant growth images
-		 */
-//		 loop i from: 0 to: 3 {
-//		 	new_plots[i].number <- i+1;
-//		 	new_plots[i].soil <- default_soil;	 	
-//		 	new_plot_views[i].plot <- new_plots[i];
-//		 	new_plot_views[i].growth_images[0] <- image_file(image_path + definition + "/plots/plot_" + (i+1) + "_plant_1.png");
-//		 }
 	}
 	
 	/**
 	 * Reference to the plot under the cursor. Used to preview seeds and soils.
 	 */
 	PlotView current_plot_focus;
-	/**
-	 * Holds a reference to the original soil so that we can get back to it after a soil preview.
-	 */
-	Soil current_plot_focus_old_soil;
-	bool soil_changed;
 	
 	SoilView selected_soil;
 	SeedView selected_seed;
@@ -182,41 +212,28 @@ global {
 		// No plot under focus or same plot
 		if length(plots_under_mouse) = 0 or plots_under_mouse[0] != current_plot_focus {
 			if (current_plot_focus != nil) {
-				// If the plot has not been planted
-				if(current_plot_focus.plot.seed = nil) {
-					// Growth state set back to 0
-					current_plot_focus.plot.growth_state <- 0;
-				}
-				// If the soil has not changed after the preview
-				if(current_plot_focus_old_soil != nil and !soil_changed) {
-					current_plot_focus.plot.soil <- current_plot_focus_old_soil;
-					current_plot_focus_old_soil <- nil;
-				}
+				current_plot_focus.selected <- false;
 				current_plot_focus <- nil;
 			}
 		}
 		// New plot under focus case
 		if length(plots_under_mouse) > 0 and plots_under_mouse[0] != current_plot_focus {
 			current_plot_focus <- plots_under_mouse[0];
-			// Simulates a growth state of 1 for not planted plots, for visual purpose only
-			if (selected_seed != nil and current_plot_focus.plot.growth_state = 0) {
-				current_plot_focus.plot.growth_state <- 1;
-			} else if (selected_soil != nil) {
-				// Saves current soil
-				current_plot_focus_old_soil <- current_plot_focus.plot.soil;
-				// Preview the selected soil
-				current_plot_focus.plot.soil <- selected_soil.soil;
-				// False until the soil is actually changed by a click
-				soil_changed <- false;
+			if (selected_seed != nil or selected_soil != nil or selected_fertilizer != nil) {
+				current_plot_focus.selected <- true;
 			}
 		}
 	}
 	
 	action mouse_down_plots {
 		if current_plot_focus != nil {
+			current_plot_focus.selected <- false;
 			if selected_seed != nil {
-				// Only if the plot is not yet planted (note: the mouse move event sets the growth state to 1 for those plots)
-				if current_plot_focus.plot.growth_state = 1 {
+				// Only if the plot is not grown yet
+				if current_plot_focus.plot.growth_state <= 1 {
+					ask current_plot_focus.plot {
+						do plant(selected_seed.seed);
+					}
 					current_plot_focus.plot.seed <- selected_seed.seed;
 					write "Seed " + selected_seed.seed.type + " planted to " + current_plot_focus.plot.number;
 				}
@@ -235,7 +252,6 @@ global {
 				// TODO: copy soil parameters (other than color, already handled by the move/preview action) from the selected soil to the plot's soil
 				current_plot_focus.plot.soil <- selected_soil.soil;
 				write "Soil of plot " + current_plot_focus.plot.number + " set to " + selected_soil.soil.color;
-				soil_changed <- true;
 			}
 		}
 	}
@@ -295,6 +311,10 @@ species Plot skills: [thread] {
 
 	bool camisol_running <- false;
 
+	action plant(Seed seed_to_plant) {
+		seed<-seed_to_plant;
+		growth_state<-1;
+	}
 	action thread_action {
 		camisol_running <- true;
 		write "Starting camisol on plot " + number;
@@ -350,13 +370,15 @@ species PlotView {
 	Plot plot;
 	float button_box_width <- 0.0;
 	ButtonBox fertilizers_button_box;
-	point plot_image_location;
 	list<FertilizerHandfulButton> fertilizer_handful_buttons;
+	bool selected <- false;
 
 	/**
 	 * Images of the plot for each growth_state level.
 	 */
 	list<image_file> growth_images <- [nil, nil, nil, nil];
+	image_file selected_image;
+	
 	/**
 	 * Location of the seed icon for the current plot.
 	 */
@@ -365,7 +387,14 @@ species PlotView {
 	 * Location of the fertilizer icon for the current plot.
 	 */
 	point fertilizer_icon_location;
+	point plot_image_location;
+	list<point> growth_images_locations;
+	
 	point plot_image_size;
+	point selected_plot_image_size;
+	list<point> growth_images_sizes;
+	
+	
 	/**
 	 * Size of seed and fertilizer icons.
 	 */
@@ -440,19 +469,24 @@ species PlotView {
 		draw fertilizers_button_box.hidden_envelope color: fertilizers_button_box.background_color border:#black;
 	}
 	aspect default {
-//		loop i from: 0 to: length(plot.fertilizers) {
-//			draw fertilizer_images[plot.fertilizers[i].type-1] at: (fertilizer_icon_location+{i*fertilizer_icon_sep, 0}) size:icon_size;
-//		}
-		if plot.seed != nil {
-			draw seed_images[plot.seed.type-1] at: seed_icon_location size:icon_size;
-		}
-		if plot.soil != nil {
-			// draw soil_images[plot.soil.color][plot.number-1] at: {env_width/2, env_height/2, 0};
-			draw soil_images[plot.soil.color][plot.number-1] at: plot_image_location size:plot_image_size;
-		}
-//		if plot.growth_state > 0 {
-//			draw growth_images[plot.growth_state-1] at: {env_width/2, env_height/2, 0};
-//		}
+			if plot.seed != nil {
+				draw seed_images[plot.seed.type-1] at: seed_icon_location size:icon_size;
+			}
+			
+			if selected {
+				if selected_soil != nil {
+					// Preview soil instead of the selection image
+					draw soil_images[selected_soil.soil.color][plot.number-1] at: plot_image_location size:plot_image_size;	
+				} else {
+					draw selected_image at: plot_image_location size:selected_plot_image_size;
+				}
+			} else {
+				// draw soil_images[plot.soil.color][plot.number-1] at: {env_width/2, env_height/2, 0};
+				draw soil_images[plot.soil.color][plot.number-1] at: plot_image_location size:plot_image_size;
+			}
+			if plot.growth_state > 0 {
+				draw growth_images[plot.growth_state-1] at: growth_images_locations[plot.growth_state-1] size: growth_images_sizes[plot.growth_state-1];
+			}
 	}
 }
 
