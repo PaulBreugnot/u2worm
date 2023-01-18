@@ -8,8 +8,7 @@
 
 model plot
 
-import "harvest.gaml"
-import "soil.gaml"
+import "button.gaml"
 
 import "camisol_adapter.gaml" as Camisol
 
@@ -19,116 +18,149 @@ import "camisol_adapter.gaml" as Camisol
  
 global {
 	action init_plots {
-		create Plot number:4 returns: new_plots;
-		create PlotView number: 4 returns: new_plot_views;
-		
 		// Factors to convert coordinates within the SVG file in world coordinates in meters
 		float SVG_to_world_x <- env_width/582.850;
 		float SVG_to_world_y <- env_height/330.320;
+
+		create Plot with: (number: 1, soil: default_soil) {
+			create PlotView with: (
+				plot: self,
+				// Coordinates gathered manually from debug_plot
+				shape: polygon([
+					{63.568172454833984#m,89.06570434570312#m,0.0},
+					{87.54286193847656#m,89.22566986083984#m,0.0},
+					{145.56124877929688#m,89.5452880859375#m,0.0},
+					{162.02391052246094#m,88.90589141845703#m,0.0},
+					{180.08412170410156#m,100.41363525390625#m,0.0},
+					{153.07284545898438#m,103.29051971435547#m,0.0},
+					{46.46635437011719#m,103.76995086669922#m,0.0},
+					{52.54005432128906#m,99.93405151367188#m,0.0},
+					{57.494747161865234#m,92.90177917480469#m,0.0}
+				]),
+				// Computes the center coordinate of the plot in world coordinates (meters)
+				plot_image_location: {
+					SVG_to_world_x * (105.002 + (412.479 - 105.002)/2),
+					SVG_to_world_y * (194.409 + (228.650 - 194.409)/2)
+				},
+				// Image size in meter
+				plot_image_size: {
+					SVG_to_world_x * (412.479 - 105.002),
+					SVG_to_world_y * (228.650 - 194.409)
+				},
+				seed_icon_location: {43.637484782513866#m, 93.46230227181701#m,0.0},
+				fertilizer_icon_location: {184.36069638917638#m, 91.8210529376853#m,0.0},
+				growth_images: [image_file(image_path + definition + "/plots/plot_" + 1 + "_plant_1.png")]
+			);
+		}
 		
-		/*
-		 * Polygon shapes gather manually from clicks in the debug_plots experiment.
-		 * Shapes are only used to catch mouse clicks on plots.
-		 */
-		new_plot_views[0].shape <- polygon([
-			{49.62765121459961#m, 103.64986419677734#m,0.0},
-			{55.96125030517578#m, 100.33258056640625#m,0.0},
-			{66.51646423339844#m, 90.68199920654297#m,0.0},
-			{164.2290496826172#m, 90.07862091064453#m,0.0},
-			{182.02249145507812#m, 101.23721313476562#m,0.0},
-			{155.78465270996094#m, 103.0467758178711#m,0.0},
-			{49.326107025146484#m, 103.64986419677734#m,0.0}
-			]);
-		// Computes the center coordinate of the plot in world coordinates (meters)
-		new_plot_views[0].location <- {
-			SVG_to_world_x * (105.002 + (412.479 - 105.002)/2),
-			SVG_to_world_y * (194.409 + (228.650 - 194.409)/2)
-		};
-		// Image size in meter
-		new_plot_views[0].plot_image_size <- {
-			SVG_to_world_x * (412.479 - 105.002),
-			SVG_to_world_y * (228.650 - 194.409)
-		};
-		new_plot_views[0].seed_icon_location <- {43.637484782513866#m, 93.46230227181701#m,0.0};
-		new_plot_views[0].fertilizer_icon_location <- {184.36069638917638#m, 91.8210529376853#m,0.0};
+		create Plot with: (number: 2, soil: default_soil) {
+			create PlotView with: (
+				plot: self,
+				// Coordinates gathered manually from debug_plot
+				shape: polygon([
+					{68.88167572021484#m,85.81029510498047#m,0.0},
+					{77.08274841308594#m,72.2039566040039#m,0.0},
+					{100.75379943847656#m,69.40814208984375#m,0.0},
+					{118.83322143554688#m,69.2217788696289#m,0.0},
+					{142.31826782226562#m,71.83123016357422#m,0.0},
+					{155.9242401123047#m,75.5588607788086#m,0.0},
+					{161.52137192122848#m,87.30346384544302#m,0.0},
+					{157.04278564453125#m,86.369384765625#m,0.0},
+					{152.9420623779297#m,87.30138397216797#m,0.0},
+					{120.13812255859375#m,84.8782958984375#m,0.0},
+					{89.94327545166016#m,86.369384765625#m,0.0},
+					{68.6953125#m,85.99665832519531#m,0.0}
+				]),
+				// Computes the center coordinate of the plot in world coordinates (meters)
+				plot_image_location: {
+					SVG_to_world_x * (155.802 + (370.119 - 155.802)/2),
+					SVG_to_world_y * (151.179 + (192.585 - 151.179)/2)
+				},
+				// Image size in meter
+				plot_image_size: {
+					SVG_to_world_x * (370.119 - 155.802),
+					SVG_to_world_y * (192.585 - 151.179)
+				},
+				seed_icon_location: {62.510271224840764#m, 78.69243296044709#m,0.0},
+				fertilizer_icon_location: {170.00144871789786#m, 76.92347306323204#m,0.0},
+				growth_images: [image_file(image_path + definition + "/plots/plot_" + 2 + "_plant_1.png")]
+			);
+		}
 		
-		new_plot_views[1].shape <- polygon([
-			{71.12135314941406#m, 85.66154479980469#m, 0.0},
-			{79.50666809082031#m, 72.84355926513672#m, 0.0},
-			{113.16856384277344#m, 70.32786560058594#m, 0.0},
-			{158.45059204101562#m, 76.4373779296875#m, 0.0},
-			{163.72146606445312#m, 86.61988830566406#m, 0.0},
-			{155.2181854248047#m, 87.3386001586914#m, 0.0},
-			{117.36358642578125#m, 84.703125#m, 0.0},
-			{91.84754943847656#m, 86.02091979980469#m, 0.0}
-		]);
-		// Computes the center coordinate of the plot in world coordinates (meters)
-		new_plot_views[1].location <- {
-			SVG_to_world_x * (155.802 + (370.119 - 155.802)/2),
-			SVG_to_world_y * (151.179 + (192.585 - 151.179)/2)
-		};
-		// Image size in meter
-		new_plot_views[1].plot_image_size <- {
-			SVG_to_world_x * (370.119 - 155.802),
-			SVG_to_world_y * (192.585 - 151.179)
-		};
-		new_plot_views[1].seed_icon_location <- {62.510271224840764#m, 78.69243296044709#m,0.0};
-		new_plot_views[1].fertilizer_icon_location <- {170.00144871789786#m, 79.92347306323204#m,0.0};
+		create Plot with: (number: 3, soil: default_soil) {
+			create PlotView with: (
+				plot: self,
+				// Coordinates gathered manually from debug_plot
+				shape: polygon([
+					{81.577392578125#m,51.642005920410156#m,0.0},
+					{113.87451171875#m,49.19090270996094#m,0.0},
+					{131.4650115966797#m,51.06534194946289#m,0.0},
+					{146.60440063476562#m,52.07450485229492#m,0.0},
+					{153.24830455490866#m,68.22027926859504#m,0.0},
+					{134.64045835249556#m,66.92201832277529#m,0.0},
+					{122.3814468383789#m,64.9069595336914#m,0.0},
+					{76.67540740966797#m,65.62792205810547#m,0.0}
+				]),
+				// Computes the center coordinate of the plot in world coordinates (meters)
+				plot_image_location: {
+					SVG_to_world_x * (174.287 + (350.746 - 174.287)/2),
+					SVG_to_world_y * (107.657 + (150.276 - 107.657)/2)
+				},
+				// Image size in meter
+				plot_image_size: {
+					SVG_to_world_x * (350.746 - 174.287),
+					SVG_to_world_y * (150.276 - 107.657)
+				},
+				seed_icon_location: {69.0747186830414#m, 58.17894706231469#m, 0.0},
+				fertilizer_icon_location: {159.74429336008703#m, 58.99936552500823#m, 0.0},
+				growth_images: [image_file(image_path + definition + "/plots/plot_" + 3 + "_plant_1.png")]
+			);
+		}
 		
-		new_plot_views[2].shape <- polygon([
-			{79.18619537353516#m, 64.98503875732422#m, 0.0},
-			{83.85208129882812#m, 53.604713439941406#m, 0.0},
-			{115.26211547851562#m, 51.10100173950195#m, 0.0},
-			{149.17575073242188#m, 53.604713439941406#m, 0.0},
-			{155.4347686767578#m, 67.37484741210938#m, 0.0},
-			{126.5286636352539#m, 64.52976989746094#m, 0.0}
-		]);
-		// Computes the center coordinate of the plot in world coordinates (meters)
-		new_plot_views[2].location <- {
-			SVG_to_world_x * (174.287 + (350.746 - 174.287)/2),
-			SVG_to_world_y * (107.657 + (150.276 - 107.657)/2)
-		};
-		// Image size in meter
-		new_plot_views[2].plot_image_size <- {
-			SVG_to_world_x * (350.746 - 174.287),
-			SVG_to_world_y * (150.276 - 107.657)
-		};
-		new_plot_views[2].seed_icon_location <- {69.0747186830414#m, 58.17894706231469#m, 0.0};
-		new_plot_views[2].fertilizer_icon_location <- {159.74429336008703#m, 58.99936552500823#m, 0.0};
-		
-		new_plot_views[3].shape <- polygon([
-			{84.64569854736328#m, 47.21467208862305#m, 0.0},
-			{91.24068450927734#m, 42.133304595947266#m, 0.0},
-			{113.29595947265625#m, 40.94395065307617#m, 0.0},
-			{129.9456024169922#m, 42.45760726928711#m, 0.0},
-			{138.81112670898438#m, 42.99821853637695#m, 0.0},
-			{145.94662475585938#m, 48.51198959350586#m, 0.0},
-			{123.56702423095703#m, 47.106571197509766#m, 0.0},
-			{105.836181640625#m, 47.106571197509766#m, 0.0}		
-		]);
-		// Computes the center coordinate of the plot in world coordinates (meters)
-		new_plot_views[3].location <- {
-			SVG_to_world_x * (187.359 + (329.928 - 187.359)/2),
-			SVG_to_world_y * (87.847 + (107.802 - 87.847)/2)
-		};
-		// Image size in meter
-		new_plot_views[3].plot_image_size <- {
-			SVG_to_world_x * (329.928 - 187.359),
-			SVG_to_world_y * (107.802 - 87.847)
-		};
-		new_plot_views[3].seed_icon_location <- {77.68979988923124#m, 41.3576191854663#m, 0.0};
-		new_plot_views[3].fertilizer_icon_location <- {150.7185905138058#m, 44.2294962136383#m, 0.0};
+		create Plot with: (number: 4, soil: default_soil) {
+			create PlotView with: (
+				plot: self,
+				// Coordinates gathered manually from debug_plot
+				shape: polygon([
+					{82.53433990478516#m,47.36542510986328#m,0.0},
+					{88.92381286621094#m,41.295223236083984#m,0.0},
+					{101.54296875#m,40.815921783447266#m,0.0},
+					{113.04410552978516#m,40.17705535888672#m,0.0},
+					{124.70464324951172#m,40.97563552856445#m,0.0},
+					{128.3787384033203#m,42.25352478027344#m,0.0},
+					{137.3238067626953#m,42.413394927978516#m,0.0},
+					{144.0327911376953#m,48.80302429199219#m,0.0},
+					{129.17832634098838#m,48.62767017124233#m,0.0},
+					{124.0657958984375#m,47.20555114746094#m,0.0},
+					{92.09748645444498#m,47.98819593804603#m,0.0},
+					{82.37462615966797#m,47.36542510986328#m,0.0}
+				]),
+				// Computes the center coordinate of the plot in world coordinates (meters)
+				plot_image_location: {
+					SVG_to_world_x * (187.359 + (329.928 - 187.359)/2),
+					SVG_to_world_y * (87.847 + (107.802 - 87.847)/2)
+				},
+				// Image size in meter
+				plot_image_size: {
+					SVG_to_world_x * (329.928 - 187.359),
+					SVG_to_world_y * (107.802 - 87.847)
+				},
+				seed_icon_location: {77.68979988923124#m, 41.3576191854663#m, 0.0},
+				fertilizer_icon_location: {150.7185905138058#m, 44.2294962136383#m, 0.0},
+				growth_images: [image_file(image_path + definition + "/plots/plot_" + 4 + "_plant_1.png")]
+			);
+		}
 		
 		create Camisol.Simple number: 4;
 		/*
 		 * Plant growth images
 		 */
-		 loop i from: 0 to: 3 {
-		 	new_plots[i].number <- i+1;
-		 	new_plots[i].soil <- default_soil;	 	
-		 	new_plot_views[i].plot <- new_plots[i];
-		 	new_plot_views[i].growth_images[0] <- image_file(image_path + definition + "/plots/plot_" + (i+1) + "_plant_1.png");
-		 }
+//		 loop i from: 0 to: 3 {
+//		 	new_plots[i].number <- i+1;
+//		 	new_plots[i].soil <- default_soil;	 	
+//		 	new_plot_views[i].plot <- new_plots[i];
+//		 	new_plot_views[i].growth_images[0] <- image_file(image_path + definition + "/plots/plot_" + (i+1) + "_plant_1.png");
+//		 }
 	}
 	
 	/**
@@ -178,9 +210,8 @@ global {
 				soil_changed <- false;
 			}
 		}
-
-		
 	}
+	
 	action mouse_down_plots {
 		if current_plot_focus != nil {
 			if selected_seed != nil {
@@ -193,8 +224,11 @@ global {
 			if selected_fertilizer != nil {
 				// Only if the plot has not grown yet
 				if current_plot_focus.plot.growth_state <= 1 {
-					current_plot_focus.plot.fertilizer <- selected_fertilizer.fertilizer;
-					write "Plot " + current_plot_focus.plot.number + " fertilized with " + selected_fertilizer.fertilizer.type;
+					if length(current_plot_focus.plot.fertilizers) < 6 {
+						ask current_plot_focus {
+							do add_fertilizer(selected_fertilizer.fertilizer);
+						}
+					}
 				}
 			}
 			if selected_soil != nil {
@@ -219,6 +253,7 @@ species EndThreadCallback {
 	action call virtual: true;
 }
 
+
 /**
  * A parcel that can be planted and fertilized.
  */
@@ -238,9 +273,10 @@ species Plot skills: [thread] {
 	 */
 	Seed seed;
 	/**
-	 * Fertilizer currently applied (nil if none is applied).
+	 * Handfuls of fertilizers currently applied (empty if none is applied).
 	 */
-	Fertilizer fertilizer;
+	list<Fertilizer> fertilizers;
+
 	/**
 	 * The growth state:
 	 * - 0: no seed
@@ -279,6 +315,31 @@ species Plot skills: [thread] {
 	}
 }
 
+
+species FertilizerHandfulButton parent: Button {
+	PlotView plot_view;
+	int index;
+	
+	action mouse_enter {
+		
+	}
+	action mouse_leave {
+		
+	}
+	agent click {
+		ask plot_view {
+			do remove_fertilizer(myself);
+		}
+		return nil;
+	}
+	action post_click {
+	}
+	
+	aspect default {
+		draw fertilizer_images[plot_view.plot.fertilizers[index].type-1] size:button_size;
+	}
+}
+
 /**
  * Adaptor used to visualise a Plot.
  */
@@ -287,6 +348,11 @@ species PlotView {
 	 * Visualised plot.
 	 */
 	Plot plot;
+	float button_box_width <- 0.0;
+	ButtonBox fertilizers_button_box;
+	point plot_image_location;
+	list<FertilizerHandfulButton> fertilizer_handful_buttons;
+
 	/**
 	 * Images of the plot for each growth_state level.
 	 */
@@ -303,24 +369,86 @@ species PlotView {
 	/**
 	 * Size of seed and fertilizer icons.
 	 */
-	float icon_size <- 0.5*cell_size;
+	float icon_size <- 0.9*cell_size;
+	float fertilizer_icon_sep <- 0.8*cell_size;
+	
+	init {
+		create ButtonBox with: (
+			button_types: [FertilizerHandfulButton], visible: false, envelope: nil, hidden_envelope: nil, layer: -1) {
+			myself.fertilizers_button_box <- self;
+		}
+	}
+	
+	action add_fertilizer(Fertilizer fertilizer) {
+		if length(plot.fertilizers) = 0 {
+			button_box_width <- button_box_width+icon_size;
+		} else {
+			button_box_width <- button_box_width+fertilizer_icon_sep;
+		}
+		fertilizers_button_box.hidden_envelope <- rectangle(
+			fertilizer_icon_location + {-icon_size/2, icon_size/2},
+			fertilizer_icon_location + {-icon_size/2+button_box_width, -icon_size/2}
+		);
+		create FertilizerHandfulButton with:(
+			location:fertilizer_icon_location+{length(plot.fertilizers)*fertilizer_icon_sep, 0},
+			button_size: icon_size,
+			plot_view: self, index: length(plot.fertilizers)
+		) {
+			add self to:myself.fertilizer_handful_buttons;
+		}
+		add fertilizer to: plot.fertilizers;
+		write plot.fertilizers;
+		write "Plot " + current_plot_focus.plot.number + " fertilized with " + selected_fertilizer.fertilizer.type;	
+	}
+	
+	action remove_fertilizer(FertilizerHandfulButton handful) {
+		write "Fertilizer " + plot.fertilizers[handful.index].type + " removed from plot " + plot.number;
+		remove from: plot.fertilizers index: handful.index;
+		remove from: fertilizer_handful_buttons index: handful.index;
+		int i <- handful.index;
+		loop while: i < length(fertilizer_handful_buttons) {
+			ask fertilizer_handful_buttons[i] {
+				index <- index-1;
+				location <- location - {myself.fertilizer_icon_sep, 0};
+			}
+			i <- i+1;
+		}
+		ask handful {
+			write "kill " + self;
+			do die;
+		}
+		ask world {
+			do mouse_move_buttons;
+		}
+		if length(plot.fertilizers) = 0 {
+			button_box_width <- 0.0;
+		} else {
+			button_box_width <- button_box_width-fertilizer_icon_sep;
+		}
+		fertilizers_button_box.hidden_envelope <- rectangle(
+			fertilizer_icon_location + {-icon_size/2, icon_size/2},
+			fertilizer_icon_location + {-icon_size/2+button_box_width, -icon_size/2}
+		);
+		write plot.fertilizers;
+	}
 	
 	/**
 	 * Can be used to visualize the plot shape.
 	 */
 	aspect debug {
 		draw shape border:#black;
+		draw fertilizers_button_box.hidden_envelope color: fertilizers_button_box.background_color border:#black;
 	}
 	aspect default {
-		if plot.fertilizer != nil {
-			draw fertilizer_images[plot.fertilizer.type-1] at: fertilizer_icon_location size:icon_size;
-		}
+//		loop i from: 0 to: length(plot.fertilizers) {
+//			draw fertilizer_images[plot.fertilizers[i].type-1] at: (fertilizer_icon_location+{i*fertilizer_icon_sep, 0}) size:icon_size;
+//		}
 		if plot.seed != nil {
 			draw seed_images[plot.seed.type-1] at: seed_icon_location size:icon_size;
 		}
 		if plot.soil != nil {
 			// draw soil_images[plot.soil.color][plot.number-1] at: {env_width/2, env_height/2, 0};
-			draw soil_images[plot.soil.color][plot.number-1] at: location size:plot_image_size;
+			draw soil_images[plot.soil.color][plot.number-1] at: plot_image_location size:plot_image_size;
 		}
 //		if plot.growth_state > 0 {
 //			draw growth_images[plot.growth_state-1] at: {env_width/2, env_height/2, 0};

@@ -7,7 +7,7 @@
 
 model buttons
 
-import "button.gaml"
+import "plot.gaml"
 
 /**
  * The controller model contains all the heavy application mechanic, in order to:
@@ -50,7 +50,11 @@ global {
 		
 		ask SeedButtonMenu {
 			// Shows the seed button at initialization
-			do click;
+			do show_buttons;
+		}
+		ask FertilizerButtonMenu {
+			// Hide fertilizer button background
+			do deactivate;
 		}
 		
 		create EpochsMenu;
@@ -358,7 +362,9 @@ species ButtonMenu parent: Button {
 		icon_size <- 0.8*cell_size;
 	}
 	agent click {
-		if !active {
+		if active {
+			do hide_buttons;
+		} else {
 			do show_buttons;
 		}
 		// Nothing to return as no selection is performed
@@ -380,15 +386,14 @@ species SeedButtonMenu parent: ButtonMenu {
 
 	
 	init {
-		create ButtonBox returns: button_boxes with: (button_types: [SeedButton, SeedButtonMenu]);
-		button_box <- button_boxes[0];
-		ask button_box {
+		create ButtonBox with: (button_types: [SeedButton, SeedButtonMenu]) {
 			do compute_background([
 				{12, 0.5}, {16, 0.5}, {16, 6.5}, {15, 6.5}, {15, 7.5},
 				{14, 7.5}, {14, 6.5}, {13, 6.5}, {13, 1.5}, {12, 1.5}
 			]);
 			// Envelope of the SeedButtonMenu only
 			hidden_envelope <- envelope(myself);
+			myself.button_box <- self;
 		}
 	}
 	
@@ -397,7 +402,9 @@ species SeedButtonMenu parent: ButtonMenu {
 		do activate;
 		// Hide the fertilizer menu
 		ask FertilizerButtonMenu {
-			do hide_buttons;
+			if active {
+				do hide_buttons;
+			}
 		}
 		// Builds the seed menu
 		int i <- 0;
@@ -448,15 +455,14 @@ species FertilizerButtonMenu parent: ButtonMenu {
 	image_file image <- image_file(image_path + definition + "/fertilizers/fertilizer.png");
 	
 	init {
-		create ButtonBox returns: button_boxes with: (button_types: [FertilizerButton, FertilizerButtonMenu]);
-		button_box <- button_boxes[0];
-		ask button_box {
+		create ButtonBox with: (button_types: [FertilizerButton, FertilizerButtonMenu]) {
 			do compute_background([
 				{12, 1.5}, {16, 1.5}, {16, 5.5}, {13, 5.5},
 				{13, 2.5}, {12, 2.5}
 			]);
 			// Envelope of the FertilizerButtonMenu only
 			hidden_envelope <- envelope(myself);
+			myself.button_box <- self;
 		}
 	}
 	
@@ -465,7 +471,9 @@ species FertilizerButtonMenu parent: ButtonMenu {
 		do activate;
 		// Hides the seed menu
 		ask SeedButtonMenu {
-			do hide_buttons;
+			if active {
+				do hide_buttons;	
+			}
 		}
 		int i <- 1;
 		// First button block
@@ -523,8 +531,7 @@ species FertilizerButtonMenu parent: ButtonMenu {
 
 species SoilButtonMenu {
 	init {
-		create ButtonBox returns: button_box with:(button_types:[SoilButton]);
-		ask button_box {
+		create ButtonBox with:(button_types:[SoilButton]) {
 			do compute_background([
 				{6, 1.5}, {9, 1.5}, {9, 2.5}, {6, 2.5}
 			]);
@@ -553,19 +560,19 @@ species EpochsMenu {
 				{1, 8}, {14, 8}, {14, 9}, {1, 9}
 			]);
 		}
-			create Epoch with: (time: current_time) {
-				create EpochView with: (
-					epoch: self,
-					location: {1.5*cell_size, 8.5*cell_size}
-				) {
-					create EpochButton with: (
-						epoch_view: self,
-						location:self.location,
-						button_size: cell_size
-					);
-					selected_epoch <- self;
-				}
+		create Epoch with: (time: current_time) {
+			create EpochView with: (
+				epoch: self,
+				location: {1.5*cell_size, 8.5*cell_size}
+			) {
+				create EpochButton with: (
+					epoch_view: self,
+					location:self.location,
+					button_size: cell_size
+				);
+				selected_epoch <- self;
 			}
+		}
 		create RunButton with: (
 			button_size: 0.8*cell_size,
 			location: {3.5*cell_size, 8.5*cell_size}

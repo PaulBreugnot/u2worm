@@ -7,12 +7,14 @@
 
 model button
 
-import "plot.gaml"
+import "harvest.gaml"
+import "soil.gaml"
 
 /**
  * A generic button interface that allows to select items and to move selected items.
  */
 global {
+	list<ButtonBox> button_boxes;
 	/**
 	 * The button currently under mouse.
 	 */
@@ -31,62 +33,28 @@ global {
 	 */
 	bool disable_up <- false;
 	
+	action add_button_box(ButtonBox button_box) {
+		add button_box to: button_boxes;
+		button_boxes <- button_boxes sort_by (each.layer);
+	}
 	/**
-	 * Find buttons among the specified handled_buttons species that are under the
-	 * cursor, and handles the move of currently selected item under the mouse cursor.
+	 * Find buttons that are under the cursor, and handles the move of currently
+	 * selected item under the mouse cursor.
 	 * 
 	 * The mouse_enter and mouse_leave actions are called on the button under the
 	 * cursor when the mouse enters or leaves the button area, only if there is
 	 * currently no selected item.
 	 */
-//	action mouse_move_buttons_list(list<species<Button>> handled_buttons) {
-//		Button button_under_mouse <- nil;
-//		
-//		int i <- 0;
-//		loop while: ((button_under_mouse = nil) and (i < length(handled_buttons))) {
-//			list<Button> buttons_under_mouse <- handled_buttons[i] overlapping #user_location;
-//			if length(buttons_under_mouse) > 0 {
-//				button_under_mouse <- buttons_under_mouse[0];
-//			}
-//			i <- i+1;
-//		}
-//			
-//		// Mouse leave is triggered if a button was previously in focus and no button is
-//		// currently in focus or the button currently in focus is not the same as the previous one.
-//		if current_button_focus != nil and (button_under_mouse = nil or button_under_mouse != current_button_focus) {
-//			ask current_button_focus {
-//				do mouse_leave;
-//			}
-//			current_button_focus <- nil;
-//		}	
-//
-//		// Mouse enter is not triggered if an item is currently selected
-//		if (selected_item = nil) {
-//			// The mouse enter action is called only when the mouse enters a new button
-//			// (the action is not triggered when the mouse moves within a button)
-//			if button_under_mouse != nil and button_under_mouse != current_button_focus {
-//				current_button_focus <- button_under_mouse;
-//				ask current_button_focus {
-//					do mouse_enter;
-//				}
-//			}
-//		} else {
-//			// An item is selected, so move the item but do not enters any other button
-//			// until the item is released.
-//			selected_item.location <- #user_location;
-//		}
-//
-//	}
-	
 	action mouse_move_buttons {
 		Button button_under_mouse <- nil;
 		
-		int i <- 0;
-		loop while: (i < length(ButtonBox)) {
-			ButtonBox current_box <- ButtonBox[i];
-			bool under_cursor <- current_box.visible? current_box.envelope covers #user_location : current_box.hidden_envelope covers #user_location;
-			// Very efficient
-			if(under_cursor) {
+		int i <- length(button_boxes)-1;
+		loop while: (i >= 0 and button_under_mouse = nil) {
+			ButtonBox current_box <- button_boxes[i];
+			// Covers is very efficient when applied to envoloppes
+			bool box_under_cursor <- current_box.visible ? current_box.envelope covers #user_location : current_box.hidden_envelope covers #user_location;
+			// Actually checks buttons only if the mouse is within the envelope of the button box
+			if(box_under_cursor) {
 				// Tries button only if within the box
 				int j <- 0;
 				loop while: ((button_under_mouse = nil) and (j < length(current_box.button_types))) {
@@ -97,7 +65,7 @@ global {
 					j <- j+1;
 				}
 			}
-			i <- i+1;
+			i <- i-1;
 		}
 		
 			
@@ -202,12 +170,19 @@ species Button {
 }
 
 species ButtonBox {
+	int layer <- 0;
 	geometry background;
 	rgb background_color <- rgb(#white, 0.5);
 	list<species<Button>> button_types;
 	bool visible <- true;
 	geometry envelope;
 	geometry hidden_envelope;
+
+	init {
+		ask world {
+			do add_button_box(myself);
+		}
+	}
 
 	action compute_background(list<point> coordinates) {
 		loop i from: 0 to: length(coordinates)-1 {
@@ -305,13 +280,13 @@ species ButtonBox {
 					}
 				}
 			}
-			 // add point1 to: menu_shape;
-			 // add center to: menu_shape;
-			 // add point2 to: menu_shape;
-			 loop j from: 0 to: 10 {
-			 	float angle <- begin_angle + j * (end_angle-begin_angle)/10;
-			 	add center + {radius*cos(angle), radius*sin(angle)} to: menu_shape;
-			 }
+			// add point1 to: menu_shape;
+			// add center to: menu_shape;
+			// add point2 to: menu_shape;
+			loop j from: 0 to: 10 {
+				float angle <- begin_angle + j * (end_angle-begin_angle)/10;
+				add center + {radius*cos(angle), radius*sin(angle)} to: menu_shape;
+			}
 		}
 		background <- polygon(menu_shape);
 		envelope <- envelope(background);
