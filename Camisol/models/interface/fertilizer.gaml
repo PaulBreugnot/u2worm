@@ -9,6 +9,7 @@
 model fertilizer
 
 import "seed.gaml"
+import "../csv_loader.gaml"
 
 /**
  * Defines features used to handle fertilizers.
@@ -20,22 +21,30 @@ global {
 	 */
 	list<image_file> fertilizer_images;
 	
+	list<string> organic_fertilizers <- [
+		"Corne de zebu", "Cendre d'eucalyptus", "Mada Compost", "Vermicompost moyen",
+		"Fumier traditionnel Itasy", "Fientes de volailles"
+	];
+	list<string> chemical_fertilizers <- [
+		"Hyperfos", "Guanomad"
+	];
+	
 	// Note: the regular init function is not used, since the controller model
 	// needs the fertilizers but "import fertilizer.gaml" in controller.gaml causes the
 	// fertilizer init to be called AFTER the controller init.
 	action init_fertilizers {
 		write "Building available fertilizers...";
 		// Initializes all the available fertilizers
-		
+		write fertilizers_data;
 		// Organic fertilizers
-		loop i from:1 to:7 {
-			add image_file(image_path + definition + "/fertilizers/fertilizer_" + i + ".png") to:fertilizer_images;
-			create OrganicFertilizer number: 1 with:(type: i) returns: new_fertilizer;
+		loop i from:0 to:length(organic_fertilizers)-1 {
+			add image_file(image_path + definition + "/fertilizers/" + organic_fertilizers[i] + ".png") to:fertilizer_images;
+			create OrganicFertilizer number: 1 with:(type: i+1, name: organic_fertilizers[i]) returns: new_fertilizer;
 		}
 		// Chemical fertilizers
-		loop i from:8 to:10 {
-			add image_file(image_path + definition + "/fertilizers/fertilizer_" + i + ".png") to:fertilizer_images;
-			create ChemicalFertilizer number: 1 with:(type: i) returns: new_fertilizer;
+		loop i from:0 to:length(chemical_fertilizers)-1 {
+			add image_file(image_path + definition + "/fertilizers/" + chemical_fertilizers[i] + ".png") to:fertilizer_images;
+			create ChemicalFertilizer number: 1 with:(type: i+length(organic_fertilizers)+1, name: chemical_fertilizers[i]) returns: new_fertilizer;
 		}
 	}
 }
@@ -47,8 +56,24 @@ species Fertilizer {
 	/**
 	 * Type of fertilizer.
 	 */
-	int type <- 1 min: 1 max:10;
-	// TODO: fertilizer parameters
+	int type;
+	
+	string name;
+	
+	init {
+		map<string, float> fertilizer_data <- fertilizers_data[name];
+		if(length(fertilizer_data) = 0) {
+			error "Fertilizer " + name + " not found in the provided CSV data.";
+		} else {
+			solubles <- fertilizer_data[CSV_QUANTITE_SOLUBLE];
+			hemicellulose <- fertilizer_data[CSV_HEMICELLULOSE];
+			cellulose <- fertilizer_data[CSV_CELLULOSE];
+			lignine <- fertilizer_data[CSV_LIGNINE];
+			C_N <- fertilizer_data[CSV_C_N];
+			C_P <- fertilizer_data[CSV_C_P];
+			sample_dose <- fertilizer_data[CSV_DOSE_ESSAI];
+		}
+	}
 	
 	float solubles <- 0.0;
 	float hemicellulose <- 0.0;
@@ -56,6 +81,7 @@ species Fertilizer {
 	float lignine <- 0.0;
 	float C_N <- 0.0;
 	float C_P <- 0.0;
+	float sample_dose <- 0.0;
 }
 
 species OrganicFertilizer parent: Fertilizer {

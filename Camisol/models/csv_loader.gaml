@@ -18,6 +18,7 @@ global
 	string CSV_LIGNINE <- "Lignine";
 	string CSV_C_N <- "C:N";
 	string CSV_C_P <- "C:P";
+	string CSV_DOSE_ESSAI <- "Dose d'essai (kg/ha)";
 	
 	// Crop fields headers
 	string CSV_N <- "N(kg/tonne)";
@@ -39,7 +40,7 @@ global
 		}
 	}
 	
-	init {
+	action load_csv_data {
 		write "Loading fertilizers CSV data...";
 		csv_file fertilizer_csv <- csv_file("../includes/qualite_amendements_organiques.csv", false); // Do not handle header
 		do load_csv_into_map(fertilizer_csv, fertilizers_data);

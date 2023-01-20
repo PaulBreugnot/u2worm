@@ -27,6 +27,7 @@ global {
 	list<species<Button>> handled_buttons <- [SoilButton, SeedButton, SeedButtonMenu, FertilizerButton, FertilizerButtonMenu, EpochButton, RunButton];
 	
 	init {
+		do load_csv_data;
 		do init_seeds;
 		do init_fertilizers;
 		do init_soils;
@@ -491,6 +492,7 @@ species FertilizerButtonMenu parent: ButtonMenu {
 			) returns: new_button;
 			i<-i+1;
 		}
+		i<-8;
 		// Second button block
 		ask ChemicalFertilizer {
 			// Initializes a view/button for all chemical fertilizers

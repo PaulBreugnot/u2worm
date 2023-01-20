@@ -13,12 +13,7 @@ global
 }
 
 experiment Simple type: gui
-{
-	/*bool ini_new_soil(map<string, float> sc ){
-		//soil_caracteristics <- sc;
-		return true;
-	}*/
-	
+{	
 	float kilo_of_production_adapt <- kilo_of_production;
 	
 	action extract_N_P(float N, float P)

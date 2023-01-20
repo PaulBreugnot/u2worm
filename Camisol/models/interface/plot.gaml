@@ -317,15 +317,34 @@ species Plot skills: [thread] {
 	}
 	action thread_action {
 		camisol_running <- true;
+		Plot current_plot <- self;
 		write "Starting camisol on plot " + number;
-		int plot_number <- number;
 		ask Camisol.Simple[number-1] {
+			// Fertilize
+			ask world {
+				loop fertilizer over: current_plot.fertilizers {
+					write "Fertilizes plot " + current_plot.number + " with " + fertilizer;
+					do fertilize
+						solubles: fertilizer.solubles
+						hemicellulose: fertilizer.hemicellulose
+						cellulose: fertilizer.cellulose
+						lignine: fertilizer.lignine
+						C_N: fertilizer.C_N
+						C_P: fertilizer.C_P
+						sample_dose: fertilizer.sample_dose;
+				}
+			}
+			// Simulate
 			ask simulation {
 				do write_production_parameters;
-				loop i from: 0 to: 50 {
+				loop i from: 0 to: 5 {
 					do _step_;
 				}
-				write "Done on plot " + plot_number + "(" + kilo_of_production + "kg produced)";
+				write "Done on plot " + current_plot.number + "(" + kilo_of_production + "kg produced)";
+			}
+			// Harvest crops
+			ask world {
+				
 			}
 		}
 		camisol_running <- false;
