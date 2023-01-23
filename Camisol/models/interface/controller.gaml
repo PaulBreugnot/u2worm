@@ -83,7 +83,7 @@ species SoilButton parent: Button {
 				location:#user_location
 			);
 			selected_soil<-new_soil_icon[0];
-			write "Selected soil: " + selected_soil.soil.color;
+			write "Selected soil: " + selected_soil.soil.to_string();
 		}
 		return selected_soil;
 	}
@@ -113,7 +113,7 @@ species SeedButton parent: Button {
 			// Creates a new SeedView bound to the the same Seed as the button
 			create SeedView number:1 returns:new_seed_view with:(seed:self.seed_view.seed,icon_size:0.8*cell_size,location:#user_location);
 			selected_seed<-new_seed_view[0];
-			write "Selected seed: " + selected_seed.seed.type;
+			write "Selected seed: " + selected_seed.seed.to_string();
 		}
 		return selected_seed;
 	}
@@ -146,7 +146,7 @@ species FertilizerButton parent: Button {
 				location:#user_location
 			);
 			selected_fertilizer<-new_fertilizer_view[0];
-			write "Selected fertilizer: " + selected_fertilizer.fertilizer.type;
+			write "Selected fertilizer: " + selected_fertilizer.fertilizer.to_string();
 		}
 		return selected_fertilizer;
 	}
@@ -388,9 +388,15 @@ species SeedButtonMenu parent: ButtonMenu {
 	
 	init {
 		create ButtonBox with: (button_types: [SeedButton, SeedButtonMenu]) {
+			// Full crops layout
+//			do compute_background([
+//				{12, 0.5}, {16, 0.5}, {16, 6.5}, {15, 6.5}, {15, 7.5},
+//				{14, 7.5}, {14, 6.5}, {13, 6.5}, {13, 1.5}, {12, 1.5}
+//			]);
+
+			// Real crops layout
 			do compute_background([
-				{12, 0.5}, {16, 0.5}, {16, 6.5}, {15, 6.5}, {15, 7.5},
-				{14, 7.5}, {14, 6.5}, {13, 6.5}, {13, 1.5}, {12, 1.5}
+				{12, 0.5}, {16, 0.5}, {16, 5.5}, {13, 5.5}, {13, 1.5}, {12, 1.5}
 			]);
 			// Envelope of the SeedButtonMenu only
 			hidden_envelope <- envelope(myself);

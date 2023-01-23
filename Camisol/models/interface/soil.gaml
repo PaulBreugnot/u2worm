@@ -57,6 +57,10 @@ species Soil {
 	 * The color of the soil. Brown by default.
 	 */
 	string color <- "brown" among: soil_colors;
+	
+	string to_string {
+		return "Soil(" + color + ")";
+	}
 }
 
 /**

@@ -24,6 +24,7 @@ global
 	string CSV_N <- "N(kg/tonne)";
 	string CSV_P <- "P(kg/tonne)";
 	string CSV_HARVEST_INDEX <- "Harvest index";
+	string CSV_N_FROM_SOIL <- "N from soil";
 	
 	
 	map<string, map<string, float>> fertilizers_data;
@@ -54,6 +55,13 @@ global
 }
 
 experiment debug_csv_loader type:gui {
+	action _init_ {
+		create simulation {
+			ask world {
+				do load_csv_data;
+			}
+		}
+	}
 	output {
 		display test {
 			

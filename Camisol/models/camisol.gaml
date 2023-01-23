@@ -140,22 +140,20 @@ global
 	list<particle> minerals_particles -> {particle where(each.my_type = MINERAL)};
 	
 	
-	float masse_atome_N <- 17.0067;
-	float masse_atome_P <- 30.97;
+//	float masse_atome_N <- 17.0067;
+//	float masse_atome_P <- 30.97;
 	
-	float masse_atomique_N_in_kg <- 2.3258671 * 10^-26#kg;
-	float masse_atomique_P_in_kg <- 5.14332 * 10^-26#kg;
+//	float masse_atomique_N_in_kg <- 2.3258671 * 10^-26#kg;
+//	float masse_atomique_P_in_kg <- 5.14332 * 10^-26#kg;
 		
-	float masse_total_N -> {sum(pores_particles collect (each.dam.dim[0])) * masse_atomique_N_in_kg};
-	float masse_total_P -> {sum(pores_particles collect (each.dam.dim[1])) * masse_atomique_P_in_kg};
+//	float masse_total_N -> {sum(pores_particles collect (each.dam.dim[0])) * masse_atomique_N_in_kg};
+//	float masse_total_P -> {sum(pores_particles collect (each.dam.dim[1])) * masse_atomique_P_in_kg};
+	float masse_total_N -> {sum(pores_particles collect (each.dam.dim[0]))};
+	float masse_total_P -> {sum(pores_particles collect (each.dam.dim[1]))};
 	
 	float pop_init_Cop_R;
 	float pop_init_Cop_K;
 	float pop_init_Oligo;
-	
-	string species_to_produce <- "riz";
-	float kilo_of_production <- 0.0;
-	
 	
 	// 5E8 -> 5E9 bacterie / gramme de sol
 	/*
@@ -174,11 +172,12 @@ global
 	
 	map<string,float> soil_characteristics <-   map(["C"::0.02157#gram/(#cm*#cm),"N"::0.00132#gram/(#cm*#cm),"P"::0.00077#gram/(#cm*#cm)]);	
 	float step_value <- 1#hour;
-
-
+	
+	float camisol_area {
+		return shape.area;
+	}
  	init
 	{
-		
 		step <- step_value;
 		pop_init <- 0.05 * 1.5#gram/(#cm*#cm)*world.shape.area;
 		pop_init <- (pop_init / 2);
@@ -203,10 +202,10 @@ global
 		/*Jean*/
 		
 		/*Bernard Et Al 2021 -> Bouzac 2015*/
-		float phospore_in_dim <- (1.43#gram * 10^-6) * total_model_weight;
+		float phospore_in_dim <- (1.43#gram * 10^-6) * total_model_weight; //TODO: pas homogène
 		float phospore_in_dim_in_pore <- phospore_in_dim / nb_pores;
 		
-		float azote_in_dim <- (4.74#gram * 10^-6) * total_model_weight;
+		float azote_in_dim <- (4.74#gram * 10^-6) * total_model_weight; //TODO: pas homogène
 		float azote_in_dim_in_pore <- phospore_in_dim / nb_pores;
 		/*Bernard Et Al 2021 -> Bouzac 2015*/
 		
@@ -269,12 +268,6 @@ global
 			nb_nematode <- nb_nematode + 1;
 		}
 	}
-	
-	action write_production_parameters
-	{
-			write("species_to_produce "+species_to_produce);
-			// write("type_apport "+type_apport);
-	}
 
 	reflex scheduleSimulation 
 	{
@@ -306,189 +299,7 @@ global
 		local_time <- local_time+1;
 	}
 	
-//	action production(string name_species)
-//	{	
-//		switch(lower_case(name_species))
-//		{
-//			// n et p dans le dim
-//			match "riz"
-//			{
-//				do produce_riz_or_mais("riz");
-//			} 
-//			match "mais" 
-//			{
-//				do produce_riz_or_mais("mais");
-//			}
-//			default {
-//				map<string, float> crop_data <- crops_data[name_species];
-//				if(length(crop_data) > 0) {
-//					float N_graine <- crop_data[CSV_N];
-//					float P_graine <- crop_data[CSV_P];
-//					float N_plante <- N_graine;
-//					float P_plante <- P_graine;	
-//					
-//					float harvest_index <- crop_data[CSV_HARVEST_INDEX];
-//					
-//					float N_for_graine <- masse_total_N * harvest_index;
-//					float N_for_plante <- masse_total_N * (1 - harvest_index);
-//					
-//					float P_for_graine <- masse_total_P * harvest_index;
-//					float P_for_plante <- masse_total_P * (1 - harvest_index);
-//					
-//					float ratio_dispo_N_graine <- N_for_graine / N_graine;
-//					float ratio_dispo_P_graine <- P_for_graine / P_graine;
-//					
-//					float ratio_dispo_N_plante <- N_for_plante / N_plante;
-//					float ratio_dispo_P_plante <- N_for_plante / N_plante;
-//					
-//					if(lower_case(name_species) = "vesce" or lower_case(name_species) = "arachide " or lower_case(name_species) = "haricot" or lower_case(name_species) = "soja" or lower_case(name_species) = "guianensis" )
-//					{
-//						// all N is taken from ambient air
-//						float min_ratio <- min([ratio_dispo_P_graine,ratio_dispo_P_plante]);
-//						float qty_of_P_to_retrieve <- min_ratio * (ratio_dispo_P_plante+ratio_dispo_P_graine);
-//			
-//						kilo_of_production <- kilo_of_production + min_ratio * 1000#kg;
-//						
-//						ask Dam
-//						{
-//							dim <- [dim[0], dim[1]-qty_of_P_to_retrieve];
-//						}
-//			
-//						return;
-//					}
-//					
-//					float min_ratio_N <- min([ratio_dispo_N_graine,ratio_dispo_N_plante]);
-//					float min_ratio_P <- min([ratio_dispo_P_graine,ratio_dispo_P_plante]);
-//					
-//					float min_ratio <- min([min_ratio_N,min_ratio_P]);
-//				
-//					float qty_of_N_to_retrieve <- min_ratio * (ratio_dispo_N_plante+ratio_dispo_N_graine);
-//					float qty_of_P_to_retrieve <- min_ratio * (ratio_dispo_P_plante+ratio_dispo_P_graine);
-//					
-//			
-//					kilo_of_production <- kilo_of_production + min_ratio * 1000#kg;
-//					// write("New prod: " + kilo_of_production);
-//					
-//					ask Dam
-//					{
-//						dim <- [dim[0] - qty_of_N_to_retrieve, dim[0] - qty_of_P_to_retrieve];
-//					}
-//					
-//				} else {
-//					write("Crop "+ name_species +" not found in crops data.");	
-//				}
-//			}
-//		}
-//	}
-//	
-//	
-//	action produce_riz_or_mais(string name_species){
-//		
-//			int index_graine;
-//			int index_plante;
-//			map<string, float> seed_data;
-//			map<string, float> plant_data;
-//			if(lower_case(name_species) = "riz")
-//			{
-//				seed_data <- crops_data["riz_g"];
-//				plant_data <- crops_data["riz_p"];
-//			} else {
-//				seed_data <- crops_data["mais_g"];
-//				plant_data <- crops_data["mais_p"];
-//			}
-//			
-//			float N_graine <- seed_data[CSV_N];
-//			float P_graine <- seed_data[CSV_P];
-//			
-//			float N_plante <- plant_data[CSV_N];
-//			float P_plante <- plant_data[CSV_P];
-//			
-//			float harvest_index <- plant_data[CSV_HARVEST_INDEX];
-//			
-//			float N_for_graine <- masse_total_N * harvest_index;
-//			float N_for_plante <- masse_total_N * (1 - harvest_index);
-//			
-//			float P_for_graine <- masse_total_P * harvest_index;
-//			float P_for_plante <- masse_total_P * (1 - harvest_index);
-//			
-//			float ratio_dispo_N_graine <- N_for_graine / N_graine;
-//			float ratio_dispo_P_graine <- P_for_graine / P_graine;
-//			
-//			float ratio_dispo_N_plante <- N_for_plante / N_plante;
-//			float ratio_dispo_P_plante <- N_for_plante / N_plante;
-//			
-//			float min_ratio_N <- min([ratio_dispo_N_graine,ratio_dispo_N_plante]);
-//			float min_ratio_P <- min([ratio_dispo_P_graine,ratio_dispo_P_plante]);
-//			
-//			float min_ratio <- min([min_ratio_N,min_ratio_P]);
-//			
-//			float qty_of_N_to_retrieve <- min_ratio * (N_for_graine + N_for_plante);
-//			float qty_of_P_to_retrieve <- min_ratio * (P_for_graine + P_for_plante);
-//			
-//			kilo_of_production <- kilo_of_production + min_ratio * 1000#kg;
-//			
-//			ask Dam
-//			{
-//				dim <- [dim[0] - qty_of_N_to_retrieve, dim[1] - qty_of_P_to_retrieve];
-//			}
-//		
-//	}
-/** Insert the global definitions, variables and actions here */
-	action fertilize(
-		float solubles,
-		float hemicellulose,
-		float cellulose,
-		float lignine,
-		float C_N,
-		float C_P,
-		float sample_dose
-	) {
-		// 80% soluble -> C_labile 
-		// 20% soluble -> DOM
-		
-		// hemi + celluose -> C_labile_organics
-		// lignine -> C_recalcitrant_organics
-		
-		float soluble_labile_rate <- 0.8;
-		
-		//10% de carbone
-		
-		float hectare <- 10000#m2;
-		float model_size <- (1*#cm)^2; // todo selon l'echelle
-		
-		float model_ratio <- model_size / hectare;
-		
-		float quantity_for_model <- sample_dose * model_ratio;
-		
-		// write("Fertilizer quantity for model: "+ qty_for_model);
-		
-		float soluble_Cl <- ((quantity_for_model * solubles / 100)) * soluble_labile_rate;
-		float N_pore <- soluble_Cl * C_N;
-		float P_pore <- soluble_Cl * C_P;
-		
-		float soluble_dom <- ((quantity_for_model * solubles / 100)) * (1 - soluble_labile_rate);
-		float N_dom <- soluble_dom * C_N;
-		float P_dom <- soluble_dom * C_N;
-		
-		float labile_organic <- ((quantity_for_model * hemicellulose/ 100)) + ((quantity_for_model * cellulose/ 100));
-		float recalcitrant_organic <- ((quantity_for_model * lignine/ 100));
-		float N_organic <- (labile_organic+recalcitrant_organic) * C_N;
-		float P_organic <- (labile_organic+recalcitrant_organic) * C_N;
-		
-		ask pores_particles{
-			self.C_labile <- self.C_labile + soluble_Cl;
-			self.N <- self.N + N_pore;
-			self.P <- self.P + P_pore;
-			
-			self.dam.dom <- [self.dam.dom[0] + (N_dom/nb_pores),self.dam.dom[1] + (P_dom/nb_pores),self.dam.dom[2] + (soluble_dom/nb_pores)];
-		}
-		ask organics_particles{
-			self.C_labile <- self.C_labile + labile_organic;
-			self.C_recalcitrant <- self.C_recalcitrant + recalcitrant_organic;
-			self.N <- self.N + N_organic;
-			self.P <- self.P + P_organic;
-		}
-	}
+	
 	
 	reflex heatmap 
 	{

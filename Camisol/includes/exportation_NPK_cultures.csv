@@ -1,21 +1,20 @@
-Espèce; N(kg/tonne); P(kg/tonne); Harvest index
-
-Riz_g; 16.0; 3.5; 0.44
-Riz_p; 12.5; 1.5; 0.44
-Mais_g; 20.0; 3.5; 0.42
-Mais_p; 14.0; 1.5; 0.42
-Ble; 27.5; 4.0; 0.41
-Sorgho; 16.5; 3.5; 0.27
-Mil; 17.5; 4.0; 0.26 
-Brachiaria; 20.0; 2.5; 0.0
-Soja; 75.0; 11.0; 0.3
-Arachide; 45.0; 6.0; 0.49
-Haricot; 37.5; 5.0; 0.33
-Vesce; 27.5; 3.0; 0.0
-Guianensis; 27.5; 3.0; 0.0
-Pomme de terre; 4.5; 1.75; 0.82
-Manioc; 4.5; 0.7; 0.8
-Patate douce; 5; 1.0; 0.65
-Coton; 22.5; 7.5; 0.33
-Tomate; 1.5; 0.35; 0.85
-Choux; 4.0 ; 0.75; 0.8
+Espèce, N(kg/tonne), P(kg/tonne), Harvest index,N from soil
+Riz_g,16,3.5,0.44,1
+Riz_p,12.5,1.5,0.44,1
+Mais_g,20,3.5,0.42,1
+Mais_p,14,1.5,0.42,1
+Ble,27.5,4,0.41,1
+Sorgho,16.5,3.5,0.27,1
+Mil,17.5,4,0.26,1
+Brachiaria,20,2.5,0,1
+Soja,75,11,0.3,0
+Arachide,45,6,0.49,0
+Haricot,37.5,5,0.33,0
+Vesce,27.5,3,0,0
+Guianensis,27.5,3,0,0
+Pomme de terre,4.5,1.75,0.82,1
+Manioc,4.5,0.7,0.8,1
+Patate douce,5,1,0.65,1
+Coton,22.5,7.5,0.33,1
+Tomate,1.5,0.35,0.85,1
+Choux,4,0.75,0.8,1

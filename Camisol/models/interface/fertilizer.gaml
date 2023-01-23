@@ -9,7 +9,6 @@
 model fertilizer
 
 import "seed.gaml"
-import "../csv_loader.gaml"
 
 /**
  * Defines features used to handle fertilizers.
@@ -35,7 +34,6 @@ global {
 	action init_fertilizers {
 		write "Building available fertilizers...";
 		// Initializes all the available fertilizers
-		write fertilizers_data;
 		// Organic fertilizers
 		loop i from:0 to:length(organic_fertilizers)-1 {
 			add image_file(image_path + definition + "/fertilizers/" + organic_fertilizers[i] + ".png") to:fertilizer_images;
@@ -57,8 +55,6 @@ species Fertilizer {
 	 * Type of fertilizer.
 	 */
 	int type;
-	
-	string name;
 	
 	init {
 		map<string, float> fertilizer_data <- fertilizers_data[name];
@@ -82,6 +78,10 @@ species Fertilizer {
 	float C_N <- 0.0;
 	float C_P <- 0.0;
 	float sample_dose <- 0.0;
+	
+	string to_string {
+		return "Fertilizer(" + name + ")";
+	}
 }
 
 species OrganicFertilizer parent: Fertilizer {

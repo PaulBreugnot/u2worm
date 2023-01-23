@@ -321,7 +321,7 @@ species Plot skills: [thread] {
 		write "Starting camisol on plot " + number;
 		ask Camisol.Simple[number-1] {
 			// Fertilize
-			ask world {
+			ask simulation {
 				loop fertilizer over: current_plot.fertilizers {
 					write "Fertilizes plot " + current_plot.number + " with " + fertilizer;
 					do fertilize
@@ -333,18 +333,26 @@ species Plot skills: [thread] {
 						C_P: fertilizer.C_P
 						sample_dose: fertilizer.sample_dose;
 				}
-			}
-			// Simulate
-			ask simulation {
-				do write_production_parameters;
-				loop i from: 0 to: 5 {
+				
+				// Simulate
+				write "Producing " + current_plot.seed.name + " on plot " + current_plot.number;
+				loop i from: 0 to: 200 {
 					do _step_;
 				}
-				write "Done on plot " + current_plot.number + "(" + kilo_of_production + "kg produced)";
-			}
-			// Harvest crops
-			ask world {
-				
+				// Harvest crops
+				Seed crop <- current_plot.seed;
+				if (crop != nil) {
+					write crop.N_seed;
+					float harvest <- production(
+						N_seed: crop.N_seed,
+						P_seed: crop.P_seed,
+						N_plant: crop.N_plant,
+						P_plant: crop.P_plant,
+						harvest_index: crop.harvest_index,
+						N_from_soil: crop.N_from_soil,
+						plot_surface: 100*(#m^2));
+					write string(harvest) + "kg of " + current_plot.seed.name + " produced on plot " + current_plot.number;
+				}
 			}
 		}
 		camisol_running <- false;
