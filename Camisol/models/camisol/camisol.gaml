@@ -22,6 +22,7 @@ model camisol
 //todo intégration de u2worm dans le modèle
 //todo ajout des popultation dans les nouveaux pores (anciens organics)
 
+// TODO: Expliquer les total_masseC
 global
 {
 	int local_time <- 0;
@@ -159,6 +160,7 @@ global
 	/*
 	 * A modifier................................................ 
 	 */
+	 // TODO: ??
 	float pop_init <-  0.05*1.5#gram/(#cm*#cm)*world.shape.area;
 	
 	float bulk_density <- 1.17#gram/(#cm*#cm*#cm);
@@ -168,6 +170,7 @@ global
 	 * 4% de la surface dans les sols sont colonisés
 	 * Calculer la carring capacity (une bactérie mesure 1micron) et comparé au 4% de la litterature.
 	 */
+	// TODO: ??
 	float K_init <- 10*pop_init;
 	
 	map<string,float> soil_characteristics <-   map(["C"::0.02157#gram/(#cm*#cm),"N"::0.00132#gram/(#cm*#cm),"P"::0.00077#gram/(#cm*#cm)]);	
@@ -265,7 +268,6 @@ global
 		{
 			my_pore <- one_of(pores_particles); 
 			location <- my_pore.location;
-			nb_nematode <- nb_nematode + 1;
 		}
 	}
 
@@ -285,7 +287,7 @@ global
 		{
 			 if(self.C_labile < self.C_labile_init){
 			 	
-				//do organic_to_pore;
+				//do organic_to_pore; // TODO: ???
 			 }
 		}
 		if(local_time mod 10 = 0 and local_time > 10){
@@ -307,7 +309,7 @@ global
 		
 		ask particle
 		{
-			add sum(populations collect(each.CO2_producted)) to: co2_value;
+			add sum(populations collect(each.CO2_produced)) to: co2_value;
 		}
 		
 		min_heatmap <- min(co2_value);
@@ -528,13 +530,15 @@ species Dam
 grid particle width: grid_width height: grid_height neighbors: 4
 {
 	string my_type <- one_of([ORGANIC, MINERAL, PORE]); // todo pas dependre de l'aléa mais des chiffres pour la répartition des types
+	
+	// TODO: différence entre le dam et ces variables C/N/P?
 	float C_labile;
 	float C_labile_init;
 	float C_recalcitrant;
 	float C_recalcitrant_init;
-	
 	float N;
 	float P;
+	
 	Dam dam;
 
 	float ratio_organics_total <- 0.0; // selon l'echlle changer la facon de répartir les type de cases
@@ -546,7 +550,7 @@ grid particle width: grid_width height: grid_height neighbors: 4
 	list<particle> my_neighbors_local <- neighbors;
 	
 	float total_bacteria_C -> {sum(populations collect(each.C))};
-	float K_C;
+	float K_C; // TODO: description? rapport K/C à préserver dans la particule? Quantité de K dans la particule?
 	
 	list<microbes_P> populations<- [];
 	
@@ -591,6 +595,7 @@ grid particle width: grid_width height: grid_height neighbors: 4
 	}
 		
 	/*
+	 * TODO: ???
 	 *  [Croissance, Ratio Carbone/respiration, Qte de matiere ingérée,
 	 *  4,5 10-13g masse d'une bactérie (avec eau) (2micrometre) (Masse volumique 0.9 Kg/l)  et 10-14g de carbone 
 	 *  K masse Carbone biomasse
@@ -605,32 +610,36 @@ grid particle width: grid_width height: grid_height neighbors: 4
 		float total_N_wanted <- sum(populations collect(each.N_wanted));
 		float total_P_wanted <- sum(populations collect(each.P_wanted));
 		
-		float C_Soil <- min([dam.available_C, total_C_wanted]);
-		float N_Soil <- min([dam.available_N, total_N_wanted]);
-		float P_Soil <- min([dam.available_P, total_P_wanted]);
+		float total_C_consumed <- min([dam.available_C, total_C_wanted]);
+		float total_N_consumed <- min([dam.available_N, total_N_wanted]);
+		float total_P_consumed <- min([dam.available_P, total_P_wanted]);
 		
 		
 		ask populations 
 		{
+			// Proportion of the total_*_consumed that will be consumed by the current microbe population
 			float C_rate  <- total_C_wanted > 0 ? (C_wanted / total_C_wanted) : 0;
 			float N_rate  <- total_N_wanted > 0 ? (N_wanted / total_N_wanted) : 0;
 			float P_rate  <- total_P_wanted > 0 ? (P_wanted / total_P_wanted) : 0;
 			
-			float C_consum <- C_Soil * C_rate;
-			float N_consum <- N_Soil * N_rate;
-			float P_consum <- P_Soil * P_rate;
+			// If total_*_consumed = total_*_wanted, *_consum = *_wanted for all microbe population
+			float C_consumed <- total_C_consumed * C_rate;
+			float N_consumed <- total_N_consumed * N_rate;
+			float P_consumed <- total_P_consumed * P_rate;
 			
-			perception_C <- perception_C + C_consum;
-			perception_N <- perception_N + N_consum;
-			perception_P <- perception_P + P_consum;
+			// Makes the C/N/P available for the microbe population
+			perception_C <- C_consumed;
+			perception_N <- N_consumed;
+			perception_P <- P_consumed;
 			
-			C_consum <- min([myself.dam.dom[2],C_consum]);
-			P_consum <- min([myself.dam.dom[1],P_consum]);
-			N_consum <- min([myself.dam.dom[0],N_consum]);
+			// TODO: check if this is really necessary
+			C_consumed <- min([myself.dam.dom[2],C_consumed]);
+			P_consumed <- min([myself.dam.dom[1],P_consumed]);
+			N_consumed <- min([myself.dam.dom[0],N_consumed]);
 
-			myself.dam.dom[2]<- myself.dam.dom[2] - C_consum;			
-			myself.dam.dom[1]<- myself.dam.dom[1] - P_consum;			
-			myself.dam.dom[0]<- myself.dam.dom[0] - N_consum;
+			myself.dam.dom[0] <- myself.dam.dom[0] - N_consumed;
+			myself.dam.dom[1] <- myself.dam.dom[1] - P_consumed;
+			myself.dam.dom[2] <- myself.dam.dom[2] - C_consumed;
 		}
 		
 		float end <- process_masseC_particle();
@@ -641,6 +650,7 @@ grid particle width: grid_width height: grid_height neighbors: 4
 		//assert(end = init);	
 	}
 	
+	// TODO: apparently not used for now
 	action organic_to_pore
 	{
 		write("organics to pore : "+nb_pores);
@@ -772,7 +782,7 @@ grid particle width: grid_width height: grid_height neighbors: 4
 			match ORGANIC {heat <- #green;}
 			match PORE 
 			{
-				float current <- sum(populations collect(each.CO2_producted));
+				float current <- sum(populations collect(each.CO2_produced));
 				float normalized_value <- (255-0)* ((current-min_heatmap)/(max_heatmap-min_heatmap)) +0;
 				heat <- rgb(normalized_value as int, 0, 0);
 			}	
@@ -799,7 +809,7 @@ grid particle width: grid_width height: grid_height neighbors: 4
 species microbes_P 
 {
 	float threshold_DOC <- 0.5; // seuil de dormance
-	float taux_respiration <- 0.5;
+	float taux_respiration <- 0.5; // TODO: unit?
 	float dividing_time <- 0.0;
 	//taux labile récalcitrant
 	float L_R_rate; // labile_recalcitrante_rate
@@ -839,7 +849,7 @@ species microbes_P
 	float C_assimilation_speed -> {C_actif * (step / dividing_time) / (1 - taux_respiration)};
 	
 	
-	float CO2_producted <- 0.0;
+	float CO2_produced <- 0.0;
 	
 	particle porous_cell;
 	
@@ -885,7 +895,7 @@ species microbes_P
 		float init <- process_masseC_microbe();
 		cytosol_C <- cytosol_C  - cytosol_respiration; 
 		
-		CO2_producted <- CO2_producted + cytosol_respiration;
+		CO2_produced <- CO2_produced + cytosol_respiration;
 		total_co2_exp <- total_co2_exp + cytosol_respiration;
 		
 		float end <- process_masseC_microbe();
@@ -977,14 +987,12 @@ species microbes_P
 	{
 		
 		float init <- process_masseC_microbe();
-		CO2_producted <- 0.0;
+		CO2_produced <- 0.0;
 		
 		if(C_wanted = 0)
 		{
 			facteur_dormance <- 0.0;
-			
-		}else
-		{
+		} else {
 			facteur_dormance <- min([(perception_C / C_wanted), 1]);
 		}
 		
@@ -995,11 +1003,12 @@ species microbes_P
 		cytosol_N <- cytosol_N + perception_N * facteur_dormance;
 		cytosol_P <- cytosol_P + perception_P * facteur_dormance;
 		
-		float init_cytosol_C <- cytosol_C;
-		
+		// Breathed carbon quantity from cytosol, rejected as CO2
 		float cytosol_respiration <- (taux_respiration) * cytosol_C ;
-		float cytosol_division <- ((1-taux_respiration) * cytosol_C) * division_enzyme_rate;
-		float cytosol_enzyme <- ((1-taux_respiration) * cytosol_C) * (1 - division_enzyme_rate);
+		// Part of the left cytosol C dedicated to cell division
+		float cytosol_division <- (cytosol_C-cytosol_respiration) * division_enzyme_rate;
+		// Left cytosol C is used to produce enzymes
+		float cytosol_enzyme <- cytosol_C - cytosol_respiration - cytosol_division;
 		
 		float weight_at_T <- (C_actif * weight_bacterie_in_one_pore) / C_init;
 		float qty_C_for_population <- weight_at_T * (activite_enzymatique_per_hour) / masse_microbienne_etude; // qty C / per hour
@@ -1007,11 +1016,6 @@ species microbes_P
 		//write("masse micro "+qty_C_for_population);
 		
 		cytosol_enzyme_facteur <- cytosol_enzyme;
-		
-		//assert(init_cytosol_C = (cytosol_respiration + cytosol_division + cytosol_enzyme) );
-		if( init_cytosol_C != (cytosol_respiration + cytosol_division + cytosol_enzyme )){
-			//write(" "+init_cytosol_C+" ?? "+ (cytosol_respiration + cytosol_division + cytosol_enzyme) );
-		}
 		
 		
 		do respirate(cytosol_respiration);
@@ -1139,15 +1143,15 @@ species oligotrophe_K parent:microbes_P
 
 species nematode
 {
-	float threshold_DOC <- 0.5; // à vérifier
+	float threshold_DOC <- 0.5; // TODO: à vérifier
 	
-	float C_N <- 6.0;
-	float C_P <- 47.0;
-	float CO2_efficiency <- 0.84;
-	float t1 <- 0.5; // à vérifier
+	float C_N <- 6.0; // TODO: source?
+	float C_P <- 47.0; // TODO: source?
+	float CO2_efficiency <- 0.84; // TODO: source?
+	float t1 <- 0.5; // TODO: à vérifier
 	
 	// quantity of C N P
-	float C <- (470#gram * 10^-6);
+	float C <- (470#gram * 10^-6); // TODO: source?
 	float N <- (470#gram * 10^-6)/C_N;
 	float P <- (470#gram * 10^-6)/C_P;
 	
@@ -1173,6 +1177,7 @@ species nematode
 	{
 		do perceive;
 		awake <- (available_C / wanted_C) >= threshold_DOC;
+		// write (available_C / wanted_C);
 		
 		if(awake)
 		{
@@ -1231,9 +1236,7 @@ species nematode
 		float qty_P_necromasse <- carbone_assimilation/C_P;
 		
 		// necromasse nematode
-		my_pore.C_labile <- my_pore.C_labile + carbone_assimilation;
-		my_pore.N <- my_pore.N + qty_N_necromasse;
-		my_pore.P <- my_pore.P + qty_P_necromasse;
+		do recracher(carbone_assimilation, qty_N_necromasse, qty_P_necromasse);
 		
 		stomack_N <- stomack_N - qty_N_necromasse;
 		stomack_P <- stomack_P - qty_P_necromasse;
@@ -1256,7 +1259,6 @@ species nematode
  	action predating
  	{
 		float C_to_catch <- min([available_C, wanted_C]);
-		float C_acc <-  C_to_catch;
 		
 		float total_C <- 0.0;
 		float total_N <- 0.0;
@@ -1264,36 +1266,39 @@ species nematode
 		
 		ask shuffle(my_pore.populations)
 		{	
-			float localCC <- (C + cytosol_C) / myself.available_C *C_to_catch;
-			float local_C_to_catch <- min([localCC, C_acc]);
+			// available_C = sum(C + cytocol_C) on all the population. So, if C_to_catch = available_C,
+			// all the C is consumed from each pore. Else if C_to_catch = wanted_C, an equal proportion
+			// of wanted_C/available_C is consumed from each pore such as the total C consumed is equal to
+			// wanted_C.
+			float total_C_catched_from_pore <- C_to_catch / myself.available_C * (C + cytosol_C);
 			
-			float localC;
+			float C_catched_from_colony;
 			//élément dans la partie structure
 			if(C+cytosol_C = 0){
-				localC <- 0.0;
+				C_catched_from_colony <- 0.0; // No C is catched from this pore
 			}else{
-				localC <- C/(C+cytosol_C) *localCC;
+				// A proportion of C/total_microbe_C is catched from the colony's C deposit
+				C_catched_from_colony <- C/(C+cytosol_C) * total_C_catched_from_pore;
 			}
-			float localN <- min([N, localC / C_N]);
-			float localP <- min([P, localC / C_P]);
+			float N_catched_from_colony <- min([N, C_catched_from_colony / C_N]);
+			float P_catched_from_colony <- min([P, C_catched_from_colony / C_P]);
 			
 			//élément dans la partie cytosol
-			float localCytosol <- localCC - localC ;
-			float local_cyt_N <- min([(localCytosol / C_N), cytosol_N ]);
-			float local_cyt_P <- min([(localCytosol / C_P), cytosol_P]);
+			float C_catched_from_cytosol <- total_C_catched_from_pore - C_catched_from_colony ;
+			float N_catched_from_cytosol <- min([cytosol_N, (C_catched_from_cytosol / C_N)]);
+			float P_catched_from_cytosol <- min([cytosol_P, (C_catched_from_cytosol / C_P)]);
 
-			C <- C - localC ;
-			N <- N - localN;
-			P <- P - localP;
+			C <- C - C_catched_from_colony;
+			N <- N - N_catched_from_colony;
+			P <- P - P_catched_from_colony;
 			
-			cytosol_C <- cytosol_C  - localCytosol;
-			cytosol_N <- cytosol_N  - local_cyt_N;
-			cytosol_P <- cytosol_P  - local_cyt_P;
+			cytosol_C <- cytosol_C  - C_catched_from_cytosol;
+			cytosol_N <- cytosol_N  - N_catched_from_cytosol;
+			cytosol_P <- cytosol_P  - P_catched_from_cytosol;
 			
-			total_C <- total_C + (localCytosol + localC);
-			total_N <- total_N + (local_cyt_N +  localN);
-			total_P <- total_P + (local_cyt_P +  localP);
-			
+			total_C <- total_C + C_catched_from_colony + C_catched_from_cytosol;
+			total_N <- total_N + N_catched_from_colony + N_catched_from_cytosol;
+			total_P <- total_P + P_catched_from_colony + P_catched_from_cytosol;
 		}
 		
 		do recracher(total_C*t1,total_N*t1,total_P*t1);
@@ -1422,9 +1427,9 @@ experiment ex type:gui
 		{
 			chart "C02" type: series
 			{
-				data "CO2 copiotrophe_R" value: sum(copiotrophe_R collect(each.CO2_producted)) color: #blue style: spline;
-				data "CO2 copiotrophe_K" value: sum(copiotrophe_K collect(each.CO2_producted)) color: #red style: spline;
-				data "CO2 oligotophe" value: sum(oligotrophe_K collect(each.CO2_producted)) color: #green style: spline;
+				data "CO2 copiotrophe_R" value: sum(copiotrophe_R collect(each.CO2_produced)) color: #blue style: spline;
+				data "CO2 copiotrophe_K" value: sum(copiotrophe_K collect(each.CO2_produced)) color: #red style: spline;
+				data "CO2 oligotophe" value: sum(oligotrophe_K collect(each.CO2_produced)) color: #green style: spline;
 				data "CO2 nematode" value: sum(nematode collect(each.CO2_production)) color: #purple style: spline;
 			}
 		
@@ -1489,9 +1494,9 @@ experiment calcul_facteur_enzyme type:gui
 		{
 			chart "C02" type: series
 			{
-				data "CO2 copiotrophe_R" value: sum(copiotrophe_R collect(each.CO2_producted)) color: #blue style: spline;
-				data "CO2 copiotrophe_K" value: sum(copiotrophe_K collect(each.CO2_producted)) color: #red style: spline;
-				data "CO2 oligotophe" value: sum(oligotrophe_K collect(each.CO2_producted)) color: #green style: spline;
+				data "CO2 copiotrophe_R" value: sum(copiotrophe_R collect(each.CO2_produced)) color: #blue style: spline;
+				data "CO2 copiotrophe_K" value: sum(copiotrophe_K collect(each.CO2_produced)) color: #red style: spline;
+				data "CO2 oligotophe" value: sum(oligotrophe_K collect(each.CO2_produced)) color: #green style: spline;
 			}
 		}
 		display "C in pore" type: java2D 

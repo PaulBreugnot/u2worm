@@ -256,13 +256,13 @@ global {
 		}
 	}
 
-	reflex {
-		ask Camisol.Simple[0] parallel:true {
-			ask simulation {
-				do _step_;
-			}
-		}
-	}
+//	reflex {
+//		ask Camisol.Simple[0] parallel:true {
+//			ask simulation {
+//				do _step_;
+//			}
+//		}
+//	}
 }
 
 species EndThreadCallback {
@@ -336,7 +336,7 @@ species Plot skills: [thread] {
 				
 				// Simulate
 				write "Producing " + current_plot.seed.name + " on plot " + current_plot.number;
-				loop i from: 0 to: 200 {
+				loop i from: 0 to: 20 {
 					do _step_;
 				}
 				// Harvest crops
