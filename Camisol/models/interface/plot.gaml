@@ -336,7 +336,8 @@ species Plot skills: [thread] {
 				
 				// Simulate
 				write "Producing " + current_plot.seed.name + " on plot " + current_plot.number;
-				loop i from: 0 to: 20 {
+				write "Step: " + 6*#month/step;
+				loop i from: 0 to: 6*#month/step {
 					do _step_;
 				}
 				// Harvest crops
