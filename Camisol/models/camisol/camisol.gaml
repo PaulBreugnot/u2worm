@@ -46,7 +46,7 @@ global {
 	map<string,float> soil_characteristics <-   map(["C"::0.02157#gram/(#cm*#cm),"N"::0.00132#gram/(#cm*#cm),"P"::0.00077#gram/(#cm*#cm)]);
 	
 	init {
-		step <- 12#h;
+		step <- 1#h;
 		// Counts the number of PORES after the initialization of the grid
 		int pores_count <- length(PoreParticle);
 		ask PoreParticle {
@@ -209,68 +209,71 @@ experiment camisol_no_output {
 
 experiment camisol_output {
 	// Test to reactivate bacterias
-//	reflex add_N_P when: cycle mod 300 = 0 {
-//		ask simulation {
-//			ask PoreParticle {
-//				ask dam {
-//					int pores_count <- length(PoreParticle);
-//					float carbon_in_all_pore <- total_model_weight * carbone_concentration_in_dam; 
-//					float carbon_in_pore <- carbon_in_all_pore / pores_count;
-//					
-//					float azote_in_all_pore <- total_model_weight * azote_concentration_in_dam;
-//					float azote_in_pore <- azote_in_all_pore / pores_count;
-//					
-//					float phosphore_in_all_pore <- total_model_weight * phosphore_concentration_in_dam;
-//					float phosphore_in_pore <- phosphore_in_all_pore / pores_count;
-//					dom[0] <- dom[0] + azote_in_pore;
-//					dom[1] <- dom[1] + phosphore_in_pore;
-//					dom[2] <- dom[2] + carbon_in_pore;
-//				}
-//			}
-//		}
-//	}
+	reflex add_N_P when: cycle mod 300 = 0 {
+		ask simulation {
+			ask PoreParticle {
+				ask dam {
+					int pores_count <- length(PoreParticle);
+					float carbon_in_all_pore <- total_model_weight * carbone_concentration_in_dam; 
+					float carbon_in_pore <- carbon_in_all_pore / pores_count;
+					
+					float azote_in_all_pore <- total_model_weight * azote_concentration_in_dam;
+					float azote_in_pore <- azote_in_all_pore / pores_count;
+					
+					float phosphore_in_all_pore <- total_model_weight * phosphore_concentration_in_dam;
+					float phosphore_in_pore <- phosphore_in_all_pore / pores_count;
+					dom[0] <- dom[0] + azote_in_pore;
+					dom[1] <- dom[1] + phosphore_in_pore;
+					dom[2] <- dom[2] + carbon_in_pore;
+				}
+			}
+		}
+	}
 	
 	output {
+//		display grid {
+//			grid Particle;
+//		}
+		
 		display "awake population" type: java2D {
 			chart "awake population" type: series {
-				data "CopioR awake %" value: (sum(Copiotrophe_R collect (each.awake_population)) / length(Copiotrophe_R)) * 100;
-				data "CopioK awake %" value: (sum(Copiotrophe_K collect (each.awake_population)) / length(Copiotrophe_K)) * 100;
-				data "Oligo awake %" value: (sum(Oligotrophe_K collect (each.awake_population)) / length(Oligotrophe_K)) * 100;
-				data "Nematode awake %" value: (sum(Nematode collect (each.awake as int)) / nematodes_count) * 100;
+				data "CopioR awake %" value: (sum(Copiotrophe_R collect (each.awake_population)) / length(Copiotrophe_R)) * 100 style:spline;
+				data "CopioK awake %" value: (sum(Copiotrophe_K collect (each.awake_population)) / length(Copiotrophe_K)) * 100 style:spline;
+				data "Oligo awake %" value: (sum(Oligotrophe_K collect (each.awake_population)) / length(Oligotrophe_K)) * 100 style:spline;
+				data "Nematode awake %" value: (sum(Nematode collect (each.awake as int)) / length(Nematode)) * 100 style:spline;
 			}
 		}
 		
 		display "dam" type: java2D {
 			chart "dam" type:series {
-				data "N (dom)" value: (sum(Dam collect each.dom[0]));
-				data "P (dom)" value: (sum(Dam collect each.dom[1]));
-				data "C (dom)" value: (sum(Dam collect each.dom[2]));
-				data "N (dim)" value: (sum(Dam collect each.dim[0]));
-				data "P (dim)" value: (sum(Dam collect each.dim[1]));
+				data "N (dom)" value: (sum(Dam collect each.dom[0])) style:spline;
+				data "P (dom)" value: (sum(Dam collect each.dom[1])) style:spline;
+				data "C (dom)" value: (sum(Dam collect each.dom[2])) style:spline;
+				data "N (dim)" value: (sum(Dam collect each.dim[0])) style:spline;
+				data "P (dim)" value: (sum(Dam collect each.dim[1])) style:spline;
 			}
 		}
 		
-		display "CO2" type: java2D {
-			chart "Emitted CO2" type:series {
-				data "CO2" value: total_CO2_produced;
-			}
-		}
+//		display "CO2" type: java2D {
+//			chart "Emitted CO2" type:series {
+//				data "CO2" value: total_CO2_produced;
+//			}
+//		}
 		
 		display "organics" type:java2D {
 			chart "Organics composition" type:series {
-				data "C_labile" value: (sum(OrganicParticle collect each.C_labile));
-				data "C_recalcitrant" value: (sum(OrganicParticle collect each.C_recalcitrant));
-				data "N" value: (sum(OrganicParticle collect each.N));
-				data "P" value: (sum(OrganicParticle collect each.P));
+				data "C_labile" value: (sum(OrganicParticle collect each.C_labile)) style:spline;
+				data "C_recalcitrant" value: (sum(OrganicParticle collect each.C_recalcitrant)) style:spline;
+				data "N" value: (sum(OrganicParticle collect each.N)) style:spline;
+				data "P" value: (sum(OrganicParticle collect each.P)) style:spline;
 			}
 		}
 		
 		display "populations" type:java2D {
 			chart "Bacteria populations" type:series {
-				data "Copiotrophe K" value: (sum(Copiotrophe_K collect each.C));
-				data "Copiotrophe R" value: (sum(Copiotrophe_R collect each.C));
-				data "Oligotrophe K" value: (sum(Oligotrophe_K collect each.C));
-				data "Nematodes" value: (sum(Nematode collect each.C));
+				data "Copiotrophe K" value: (sum(Copiotrophe_K collect each.C)) style:spline;
+				data "Copiotrophe R" value: (sum(Copiotrophe_R collect each.C)) style:spline;
+				data "Oligotrophe K" value: (sum(Oligotrophe_K collect each.C)) style:spline;
 			}
 		}
 	}

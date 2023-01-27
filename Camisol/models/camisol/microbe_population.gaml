@@ -60,7 +60,7 @@ species MicrobePopulation
 	 O : C * (step/368) / (1-0.7)s
 	 */
 	// Quantité de carbone voulue par la colonie
-	float C_assimilation_speed -> {C_actif * (step / dividing_time) * (1 - taux_respiration)};
+	float C_assimilation_speed -> {C_actif * (step / dividing_time) / (1 - taux_respiration)};
 	
 	
 	float CO2_produced <- 0.0;
