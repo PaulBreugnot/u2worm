@@ -11,7 +11,7 @@ model landscape
  * Defines the base environment size and backgrounds.
  */
 global {
-	string definition <- "1080p";
+	string definition <- "720p";
 	string image_path <- "../../images/";
 	file landscape <- file(image_path + definition + "/landscape.png");
 	image_file sun <- image_file(image_path + "common/sun.png");

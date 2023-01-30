@@ -44,17 +44,11 @@ global {
 	/**
 	 * The locations at which each harvest can be represent for each plot.
 	 */
-//	list<point> harvest_locations <- [
-//		{0.5*cell_size, 2.8*cell_size}, // Plot 0
-//		{0.5*cell_size, 3.8*cell_size}, // Plot 1
-//		{0.5*cell_size, 5.2*cell_size}, // Plot 2
-//		{0.5*cell_size, 6.5*cell_size}  // Plot 3
-//	];
 	list<point> harvest_locations <- [
-		{114#m, 96#m}, // Plot 0
-		{114#m, 77#m}, // Plot 1
-		{114#m, 57#m}, // Plot 2
-		{114#m, 43#m}  // Plot 3
+		{114#m, 96#m}, // Plot 1
+		{114#m, 77#m}, // Plot 2
+		{114#m, 57#m}, // Plot 3
+		{114#m, 43#m}  // Plot 4
 	];
 	/**
 	 * Images used to represent a crop quantity. A quantity can only have the
@@ -72,6 +66,7 @@ global {
 	list<float> harvest_thresholds <- [
 		20.0, 100.0, 500.0
 	];
+	
 	/**
 	 * Currently selected epoch to visualize.
 	 */
@@ -79,11 +74,8 @@ global {
 	
 	action init_calendar {
 		loop i from: 0 to: 5 {
-			create Epoch number: 1 with: (time: i) returns: _epochs;
+			create Epoch number: 1 with: (time: i);
 		}
-	}
-	
-	init {
 	}
 }
 
@@ -139,11 +131,11 @@ species Harvest {
 	/**
 	 * Crop type harvested.
 	 */
-	int seed;
+	Seed seed;
 	/**
 	 * Fertilizer type.
 	 */
-	list<int> fertilizers;
+	list<Fertilizer> fertilizers;
 	/**
 	 * Quantity of crops harvested (between 1 and 3)
 	 */
@@ -181,13 +173,15 @@ species HarvestView {
 				at: harvest_icon_location;	
 		}
 		loop i from: 0 to: length(harvest.fertilizers)-1 {
-			draw fertilizer_images[harvest.fertilizers[i]-1]
+			draw fertilizer_images[harvest.fertilizers[i].type-1]
 				size: 0.9*cell_size
 				at: fertilizer_icon_location + {i*fertilizer_icon_sep, 0};
 		}
-		draw seed_images[harvest.seed-1]
-			size: 0.9*cell_size
-			at: seed_icon_location;
+		if(harvest.seed != nil) {
+			draw seed_images[harvest.seed.type-1]
+				size: 0.9*cell_size
+				at: seed_icon_location;
+		}
 	}
 }
 
@@ -211,7 +205,7 @@ experiment debug_harvest type: gui {
 				}
 
 				loop i from:0 to:3 {
-					create Harvest number:1 with:(plot: i, seed:i, fertilizers: [i], quantity: (current_time+i+2) mod 3) returns: harvests;
+					create Harvest number:1 with:(plot: i, seed:Seed[i], fertilizers: [Fertilizer[i]], quantity: (current_time+i+2) mod 3) returns: harvests;
 					create HarvestView number:1 with:(harvest: harvests[0]);
 				}
 				current_time <- current_time+1;

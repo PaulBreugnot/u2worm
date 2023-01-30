@@ -10,7 +10,7 @@ model mockcamisoladapter
 
 global {
 	init {
-		step <- 1#month;
+		step <- 10#m;
 	}
 	
 	float production(float N_seed, float P_seed, float N_plant, float P_plant, float harvest_index, float N_from_soil, float plot_surface) {

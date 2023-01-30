@@ -54,16 +54,24 @@ global {
 					SVG_to_world_y * 55.188
 				},
 				growth_images_locations: [
-					{SVG_to_world_x * (124.060 + 276.150/2), SVG_to_world_y * (198.230 + 27/2)}
+					{SVG_to_world_x * (124.060 + 276.150/2), SVG_to_world_y * (198.230 + 27/2)}, // Plant 1 (seeds)
+					{SVG_to_world_x * (120.790 + 282.451/2), SVG_to_world_y * (196.318 + 28.612/2)}, // Plant 2
+					{SVG_to_world_x * (118.849 + 289.851/2), SVG_to_world_y * (193.130 + 30.881/2)} // Plant 3
 				],
 				growth_images_sizes: [
-					{SVG_to_world_x * 276.150, SVG_to_world_y * 27}
+					{SVG_to_world_x * 276.150, SVG_to_world_y * 27}, // Plant 1 (seeds)
+					{SVG_to_world_x * 282.451, SVG_to_world_y * 28.612}, // Plant 2
+					{SVG_to_world_x * 289.851, SVG_to_world_y * 30.881} // Plant 2
 				],
 				seed_icon_location: {43.637484782513866#m, 93.46230227181701#m,0.0},
 				fertilizer_icon_location: {184.36069638917638#m, 91.8210529376853#m,0.0},
-				growth_images: [image_file(image_path + definition + "/plots/plot_" + 1 + "_plant_1.png")],
+				growth_images: [],
 				selected_image: image_file(image_path + definition + "/plots/plot_1_selected.png")
-			);
+			) {
+				loop i from: 1 to: 3 {
+					add image_file(image_path + definition + "/plots/plot_" + myself.number + "_plant_" + i + ".png") to: growth_images;
+				}
+			}
 		}
 		
 		create Plot with: (number: 2, soil: default_soil) {
@@ -99,16 +107,24 @@ global {
 					SVG_to_world_y * 65.989
 				},
 				growth_images_locations: [
-					{SVG_to_world_x * (161.920 + 203/2), SVG_to_world_y * (155.140 + 36.4/2)}
+					{SVG_to_world_x * (161.920 + 203/2), SVG_to_world_y * (155.140 + 36.4/2)},
+					{SVG_to_world_x * (160.987 + 204.835/2), SVG_to_world_y * (153.649 + 38.061/2)},
+					{SVG_to_world_x * (160.190 + 206.870/2), SVG_to_world_y * (152.117 + 38.920/2)}
 				],
 				growth_images_sizes: [
-					{SVG_to_world_x * 203, SVG_to_world_y * 36.4}
+					{SVG_to_world_x * 203, SVG_to_world_y * 36.4},
+					{SVG_to_world_x * 204.835, SVG_to_world_y * 38.061},
+					{SVG_to_world_x * 206.870, SVG_to_world_y * 38.920}
 				],
 				seed_icon_location: {62.510271224840764#m, 78.69243296044709#m,0.0},
 				fertilizer_icon_location: {170.00144871789786#m, 76.92347306323204#m,0.0},
-				growth_images: [image_file(image_path + definition + "/plots/plot_" + 2 + "_plant_1.png")],
+				growth_images: [],
 				selected_image: image_file(image_path + definition + "/plots/plot_2_selected.png")
-			);
+			) {
+				loop i from: 1 to: 3 {
+					add image_file(image_path + definition + "/plots/plot_" + myself.number + "_plant_" + i + ".png") to: growth_images;
+				}
+			}
 		}
 		
 		create Plot with: (number: 3, soil: default_soil) {
@@ -140,16 +156,24 @@ global {
 					SVG_to_world_y * 59.963
 				},
 				growth_images_locations: [
-					{SVG_to_world_x * (180.340 + 161.170/2), SVG_to_world_y * (113.680 + 31.36/2)}
+					{SVG_to_world_x * (180.340 + 161.170/2), SVG_to_world_y * (113.680 + 31.36/2)},
+					{SVG_to_world_x * (178.630 + 165.582/2), SVG_to_world_y * (112.933 + 31.967/2)},
+					{SVG_to_world_x * (177.880 + 168.110/2), SVG_to_world_y * (108.953 + 36.047/2)}
 				],
 				growth_images_sizes: [
-					{SVG_to_world_x * 161.170, SVG_to_world_y * 31.36}
+					{SVG_to_world_x * 161.170, SVG_to_world_y * 31.36},
+					{SVG_to_world_x * 165.582, SVG_to_world_y * 31.967},
+					{SVG_to_world_x * 168.110, SVG_to_world_y * 36.047}
 				],
 				seed_icon_location: {69.0747186830414#m, 58.17894706231469#m, 0.0},
 				fertilizer_icon_location: {159.74429336008703#m, 58.99936552500823#m, 0.0},
-				growth_images: [image_file(image_path + definition + "/plots/plot_" + 3 + "_plant_1.png")],
+				growth_images: [],
 				selected_image: image_file(image_path + definition + "/plots/plot_3_selected.png")
-			);
+			) {
+				loop i from: 1 to: 3 {
+					add image_file(image_path + definition + "/plots/plot_" + myself.number + "_plant_" + i + ".png") to: growth_images;
+				}
+			}
 		}
 		
 		create Plot with: (number: 4, soil: default_soil) {
@@ -185,16 +209,24 @@ global {
 					SVG_to_world_y * 35.853
 				},
 				growth_images_locations: [
-					{SVG_to_world_x * (196.990 + 121.990/2), SVG_to_world_y * (90.430 + 15.22/2)}
+					{SVG_to_world_x * (196.990 + 121.990/2), SVG_to_world_y * (90.430 + 15.22/2)},
+					{SVG_to_world_x * (193.560 + 130.789/2), SVG_to_world_y * (89.407 + 16.233/2)},
+					{SVG_to_world_x * (192.590 + 134.940/2), SVG_to_world_y * (86.738 + 18.682/2)}
 				],
 				growth_images_sizes: [
-					{SVG_to_world_x * 121.990, SVG_to_world_y * 15.220}
+					{SVG_to_world_x * 121.990, SVG_to_world_y * 15.220},
+					{SVG_to_world_x * 130.789, SVG_to_world_y * 16.233},
+					{SVG_to_world_x * 134.940, SVG_to_world_y * 18.682}
 				],
 				seed_icon_location: {77.68979988923124#m, 41.3576191854663#m, 0.0},
 				fertilizer_icon_location: {150.7185905138058#m, 44.2294962136383#m, 0.0},
-				growth_images: [image_file(image_path + definition + "/plots/plot_" + 4 + "_plant_1.png")],
+				growth_images: [],
 				selected_image: image_file(image_path + definition + "/plots/plot_4_selected.png")
-			);
+			) {
+				loop i from: 1 to: 3 {
+					add image_file(image_path + definition + "/plots/plot_" + myself.number + "_plant_" + i + ".png") to: growth_images;
+				}
+			}
 		}
 		
 		create Camisol.Simple number: 4;
@@ -330,9 +362,15 @@ species Plot skills: [thread] {
 				}
 				
 				// Simulate
-				write "Step: " + 6*#month/step;
-				loop i from: 0 to: 6*#month/step {
+				int max_step <- int(6*#month/step);
+				write "Step: " + max_step;
+				loop i from: 0 to: max_step {
 					do _step_;
+					ask current_plot {
+						if(seed != nil) {
+							growth_state <- 1 + int((2*i)/max_step);
+						}
+					}
 				}
 				// Harvest crops
 				Seed crop <- current_plot.seed;
@@ -352,19 +390,15 @@ species Plot skills: [thread] {
 		}
 		write "Ending camisol simulation on plot " + number;
 		
-		create Harvest number: 1 with: (
+		create Harvest with: (
 			time: current_time,
 			plot: self.number,
-			seed: self.seed = nil? -1 : self.seed.type,
-			fertilizers: self.fertilizers collect each.type,
+			seed: self.seed,
+			fertilizers: self.fertilizers collect each, // List copy
 			quantity: harvest
 		) {
-			write "Plot " + myself.number + ":" + myself.harvests;
 			add self to: myself.harvests;
 		}
-		self.growth_state <- 0;
-		self.seed <- nil;
-		self.fertilizers <- [];
 		
 		camisol_running <- false;
 		if(end_thread_callback != nil) {
@@ -380,6 +414,7 @@ species Plot skills: [thread] {
 species FertilizerHandfulButton parent: Button {
 	PlotView plot_view;
 	int index;
+	bool hidden <- false;
 	
 	action mouse_enter {
 		
@@ -396,8 +431,14 @@ species FertilizerHandfulButton parent: Button {
 	action post_click {
 	}
 	
+	action hide {
+		hidden <- true;
+	}
+	action show {
+		hidden <- false;
+	}
 	aspect default {
-		if(enabled) {
+		if(!hidden) {
 			draw fertilizer_images[plot_view.plot.fertilizers[index].type-1] size:button_size;
 		}
 	}
@@ -468,7 +509,6 @@ species PlotView {
 			add self to:myself.fertilizer_handful_buttons;
 		}
 		add fertilizer to: plot.fertilizers;
-		write plot.fertilizers;
 		write "Plot " + current_plot_focus.plot.number + " fertilized with " + selected_fertilizer.fertilizer.type;	
 	}
 	
@@ -485,7 +525,6 @@ species PlotView {
 			i <- i+1;
 		}
 		ask handful {
-			write "kill " + self;
 			do die;
 		}
 		ask world {
@@ -500,7 +539,6 @@ species PlotView {
 			fertilizer_icon_location + {-icon_size/2, icon_size/2},
 			fertilizer_icon_location + {-icon_size/2+button_box_width, -icon_size/2}
 		);
-		write plot.fertilizers;
 	}
 	
 	/**
@@ -545,7 +583,16 @@ experiment debug_plots type:gui {
 		ask simulation {
 			do init_soils();
 			do init_plots();
-			current_time <- -1;
+			do init_calendar();
+			create EpochView with: (epoch: ((Epoch where (each.time=current_time))[0])) {
+				selected_epoch <- self;
+			}
+		}
+	}
+	
+	reflex grow {
+		ask Plot {
+			growth_state <- (growth_state + 1) mod 4;
 		}
 	}
 	
@@ -568,8 +615,8 @@ experiment debug_plots type:gui {
 			event mouse_move action:mouse_move_plots;
 			event mouse_down action:mouse_down_plots;
 			
-			image "plots" position: {0, 0, 0} size: {1, 1} file: plots;
-			species PlotView aspect:debug;
+			// image "plots" position: {0, 0, 0} size: {1, 1} file: plots;
+			species PlotView aspect:default;
 			// grid HelpGrid border:#black;
 		}
 	}

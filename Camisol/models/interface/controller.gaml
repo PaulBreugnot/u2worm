@@ -17,6 +17,11 @@ import "plot.gaml"
  * - ...
  */
 global {
+	string NORMAL <- "NORMAL";
+	string SIMULATION <- "SIMULATION";
+	string HARVEST <- "HARVEST";
+	string mode <- NORMAL among: [NORMAL, SIMULATION, HARVEST];
+	
 	// Helper values that can be used to place UI elements
 	float num_cell_width <- env_width / cell_size;
 	float num_cell_height <- env_height / cell_size;
@@ -25,7 +30,7 @@ global {
 	 * Buttons that should be managed by the button model.
 	 */
 	list<species<Button>> handled_buttons <- [SoilButton, SeedButton, SeedButtonMenu, FertilizerButton, FertilizerButtonMenu, EpochButton, RunButton];
-	
+
 	init {
 		do load_csv_data;
 		do init_seeds;
@@ -59,6 +64,46 @@ global {
 		}
 		
 		create EpochsMenu;
+	}
+	
+	action mouse_down_harvest {
+		if mode = HARVEST {
+			if(current_plot_focus != nil) {
+				ask current_plot_focus {
+					if(self.plot.growth_state > 0) {
+						create HarvestView with: (
+							harvest: self.plot.harvests[current_time],
+							seed_icon_location: self.seed_icon_location,
+							harvest_icon_location: harvest_locations[self.plot.number-1],
+							fertilizer_icon_location: self.fertilizer_icon_location
+						);
+						self.plot.growth_state <- 0;
+						self.plot.seed <- nil;
+					}
+					self.plot.fertilizers <- [];
+					self.fertilizers_button_box.hidden_envelope <- nil;
+					ask fertilizer_handful_buttons {
+						do die;
+					}
+				}
+				int global_growth <- 0;
+				ask Plot {
+					global_growth <- global_growth + growth_state;
+				}
+				if(global_growth = 0) {
+					// All plots are harvested
+					ask RunButton {
+						do go_to_next_epoch;
+					}
+					ask EpochButton {
+						// Re-enables only EpochButtons.
+						// Other buttons will be re-enabled when the current epoch is selected.
+						do enable;
+					}
+					mode <- NORMAL;
+				}
+			}
+		}
 	}
 }
 
@@ -187,8 +232,16 @@ species EpochButton parent: Button {
 					// Clears all current harvest view, if any
 					do die;
 				}
-				ask FertilizerHandfulButton + SeedButton + FertilizerButton + SoilButton {
+				ask FertilizerHandfulButton + SeedButton + FertilizerButton {
 					do enable;
+				}
+				ask FertilizerHandfulButton {
+					do show;
+				}
+				if(current_time = 0) {
+					ask SoilButton {
+						do enable;
+					}
 				}
 				if(current_time < 6) {
 					ask RunButton {
@@ -203,6 +256,10 @@ species EpochButton parent: Button {
 	action display_harvest {
 		ask FertilizerHandfulButton + SeedButton + FertilizerButton + SoilButton + RunButton {
 			do disable;
+		}
+		ask FertilizerHandfulButton {
+			// Hides the current fertilizers
+			do hide;
 		}
 		ask HarvestView {
 			// Clears all current harvest view, if any
@@ -244,7 +301,6 @@ species RunButton parent: Button {
 	
 	image_file button_image <- image_file(image_path + definition + "/epochs/play.png");
 	float icon_size <- button_size;
-	bool camisol_running <- false;
 	
 	init {
 		create PlotEndThreadCallback with:(run_button: self) {
@@ -256,9 +312,7 @@ species RunButton parent: Button {
 		}
 	}
 	action mouse_enter {
-		if(!camisol_running) {
-			icon_size <- 1.1*button_size;
-		}
+		icon_size <- 1.1*button_size;
 	}
 	action mouse_leave {
 		icon_size <- button_size;
@@ -266,21 +320,67 @@ species RunButton parent: Button {
 	
 	action launch_simulation {
 		// Runs the current epoch
-		camisol_running <- true;
-			
+		mode <- SIMULATION;
+		
+		ask FertilizerHandfulButton + SeedButton + FertilizerButton + SoilButton + EpochButton + RunButton {
+			// Disables all buttons while the Camisol simulations are running
+			do disable;
+		}
+		
+		ask world {
+			// Only used to update the growth display
+			do resume;
+		}
 		ask Plot {
 			do run_thread;
 		}
 	}
 
 	action end_simulation {
-		camisol_running <- false;
-//		if current_time = 0 {
-//			// Soil can only be set at the first epoch
-//			ask SoilButton {
-//				do disable;
-//			}
-//		}
+		ask world {
+			do pause;
+		}
+		int global_growth <- 0;
+		ask PlotView {
+			global_growth <- global_growth + plot.growth_state;
+			if(plot.seed = nil) {
+				// Nothing to harvest on this plot, but still needs an harvest view
+				create HarvestView with: (
+					harvest: self.plot.harvests[current_time],
+					seed_icon_location: self.seed_icon_location,
+					harvest_icon_location: harvest_locations[self.plot.number-1],
+					fertilizer_icon_location: self.fertilizer_icon_location
+				);
+				self.plot.fertilizers <- [];
+				self.fertilizers_button_box.hidden_envelope <- nil;
+				ask fertilizer_handful_buttons {
+					do die;
+				}
+			}
+		}
+		if(global_growth = 0) {
+			// No harvest to do, all plots were empty
+			ask RunButton {
+				do go_to_next_epoch;
+			}
+			ask EpochButton {
+				// Re-enables only EpochButtons.
+				// Other buttons will be re-enabled when the current epoch is selected.
+				do enable;
+			}
+			mode <- NORMAL;
+		} else {
+			mode <- HARVEST;
+		}
+	}
+	
+	action go_to_next_epoch {
+		if current_time = 0 {
+			// Soil can only be set at the first epoch
+			ask SoilButton {
+				do disable;
+			}
+		}
 		current_time <- current_time+1;
 		if current_time < 6 {
 			self.location <- self.location + {2*cell_size, 0};
@@ -296,18 +396,14 @@ species RunButton parent: Button {
 					);
 				}
 			}
-			ask EpochButton where (each.epoch_view.epoch.time = current_time-1) {
-				do display_harvest;
-			}
 		} else {
 			do disable;
 		}
 	}
+	
 	agent click {
-		if !camisol_running {
-			icon_size <- button_size;
-			do launch_simulation;
-		}
+		icon_size <- button_size;
+		do launch_simulation;
 		return nil;
 	}
 	action post_click {
@@ -466,7 +562,7 @@ species SeedButtonMenu parent: ButtonMenu {
 				location: myself.button_coordinates[i],
 				seed_view: new_seed_view[0],
 				button_size: 0.8*cell_size,
-				enabled: selected_epoch = nil or selected_epoch.epoch.time = current_time
+				enabled: mode=NORMAL and (selected_epoch = nil or selected_epoch.epoch.time = current_time)
 			);
 			i <- i+1;
 		}
@@ -534,7 +630,7 @@ species FertilizerButtonMenu parent: ButtonMenu {
 				location: new_fertilizer_view[0].location, // Same location as the associated view
 				fertilizer_view: new_fertilizer_view[0],
 				button_size: 0.8*cell_size,
-				enabled: selected_epoch = nil or selected_epoch.epoch.time = current_time
+				enabled: mode=NORMAL and (selected_epoch = nil or selected_epoch.epoch.time = current_time)
 			) returns: new_button;
 			i<-i+1;
 		}

@@ -31,7 +31,6 @@ experiment application type:gui {
 	
 	output {
 		// layout #none consoles: false tabs:false toolbars:false controls:false editors: false navigator: false tray: false background: #black;
-
 		
 		display camisol type:opengl axes: false fullscreen: true show_fps:true background: #black {
 			camera #from_above dynamic:false locked:true distance:min([env_width/2/tan(45/2), env_height/2/tan(45/2)]);
@@ -45,6 +44,8 @@ experiment application type:gui {
 			// Plot actions
 			event mouse_move action:mouse_move_plots;
 			event mouse_down action:mouse_down_plots;
+			// Harvest actions
+			event mouse_down action:mouse_down_harvest;
 			
 			image "sun" position: {0, 0, -0.001} size: {1, 0.33} file: sun refresh: false;
 			image "landscape" position: {0, 0, -0.001} size: {1, 1} file: landscape refresh: false;
