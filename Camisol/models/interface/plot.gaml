@@ -10,13 +10,15 @@ model plot
 
 import "button.gaml"
 
-import "camisol_adapter.gaml" as Camisol
+import "mock_camisol_adapter.gaml" as Camisol
 
 /**
  * Defines the Plot features that allow a parcel to be planted and fertilized.
  */
  
 global {
+	float fertilizer_icon_sep <- 0.8*cell_size;
+	
 	action init_plots {
 		// Factors to convert coordinates within the SVG file in world coordinates in meters
 		float SVG_to_world_x <- env_width/582.850;
@@ -255,14 +257,6 @@ global {
 			}
 		}
 	}
-
-//	reflex {
-//		ask Camisol.Simple[0] parallel:true {
-//			ask simulation {
-//				do _step_;
-//			}
-//		}
-//	}
 }
 
 species EndThreadCallback {
@@ -318,7 +312,8 @@ species Plot skills: [thread] {
 	action thread_action {
 		camisol_running <- true;
 		Plot current_plot <- self;
-		write "Starting camisol on plot " + number;
+		float harvest;
+		write "Starting camisol simulation on plot " + number;
 		ask Camisol.Simple[number-1] {
 			// Fertilize
 			ask simulation {
@@ -335,7 +330,6 @@ species Plot skills: [thread] {
 				}
 				
 				// Simulate
-				write "Producing " + current_plot.seed.name + " on plot " + current_plot.number;
 				write "Step: " + 6*#month/step;
 				loop i from: 0 to: 6*#month/step {
 					do _step_;
@@ -343,8 +337,8 @@ species Plot skills: [thread] {
 				// Harvest crops
 				Seed crop <- current_plot.seed;
 				if (crop != nil) {
-					write crop.N_seed;
-					float harvest <- production(
+					write "Producing " + current_plot.seed.name + " on plot " + current_plot.number;
+					harvest <- production(
 						N_seed: crop.N_seed,
 						P_seed: crop.P_seed,
 						N_plant: crop.N_plant,
@@ -356,9 +350,28 @@ species Plot skills: [thread] {
 				}
 			}
 		}
+		write "Ending camisol simulation on plot " + number;
+		
+		create Harvest number: 1 with: (
+			time: current_time,
+			plot: self.number,
+			seed: self.seed = nil? -1 : self.seed.type,
+			fertilizers: self.fertilizers collect each.type,
+			quantity: harvest
+		) {
+			write "Plot " + myself.number + ":" + myself.harvests;
+			add self to: myself.harvests;
+		}
+		self.growth_state <- 0;
+		self.seed <- nil;
+		self.fertilizers <- [];
+		
 		camisol_running <- false;
-		ask end_thread_callback {
-			do call;
+		if(end_thread_callback != nil) {
+			// Only called from one plot, that waits until all other plots have finished
+			ask end_thread_callback {
+				do call;
+			}			
 		}
 	}
 }
@@ -384,7 +397,9 @@ species FertilizerHandfulButton parent: Button {
 	}
 	
 	aspect default {
-		draw fertilizer_images[plot_view.plot.fertilizers[index].type-1] size:button_size;
+		if(enabled) {
+			draw fertilizer_images[plot_view.plot.fertilizers[index].type-1] size:button_size;
+		}
 	}
 }
 
@@ -427,7 +442,6 @@ species PlotView {
 	 * Size of seed and fertilizer icons.
 	 */
 	float icon_size <- 0.9*cell_size;
-	float fertilizer_icon_sep <- 0.8*cell_size;
 	
 	init {
 		create ButtonBox with: (
@@ -466,7 +480,7 @@ species PlotView {
 		loop while: i < length(fertilizer_handful_buttons) {
 			ask fertilizer_handful_buttons[i] {
 				index <- index-1;
-				location <- location - {myself.fertilizer_icon_sep, 0};
+				location <- location - {fertilizer_icon_sep, 0};
 			}
 			i <- i+1;
 		}
@@ -493,10 +507,13 @@ species PlotView {
 	 * Can be used to visualize the plot shape.
 	 */
 	aspect debug {
-		draw shape border:#black;
-		draw fertilizers_button_box.hidden_envelope color: fertilizers_button_box.background_color border:#black;
+		if (selected_epoch.epoch.time = current_time) {
+			draw shape border:#black;
+			draw fertilizers_button_box.hidden_envelope color: fertilizers_button_box.background_color border:#black;
+		}
 	}
 	aspect default {
+		if (selected_epoch.epoch.time = current_time) {
 			if plot.seed != nil {
 				draw seed_images[plot.seed.type-1] at: seed_icon_location size:icon_size;
 			}
@@ -515,6 +532,9 @@ species PlotView {
 			if plot.growth_state > 0 {
 				draw growth_images[plot.growth_state-1] at: growth_images_locations[plot.growth_state-1] size: growth_images_sizes[plot.growth_state-1];
 			}
+		} else {
+			draw soil_images[plot.soil.color][plot.number-1] at: plot_image_location size:plot_image_size;
+		}
 	}
 }
 
@@ -525,6 +545,7 @@ experiment debug_plots type:gui {
 		ask simulation {
 			do init_soils();
 			do init_plots();
+			current_time <- -1;
 		}
 	}
 	
@@ -547,7 +568,8 @@ experiment debug_plots type:gui {
 			event mouse_move action:mouse_move_plots;
 			event mouse_down action:mouse_down_plots;
 			
-			species PlotView aspect:default;
+			image "plots" position: {0, 0, 0} size: {1, 1} file: plots;
+			species PlotView aspect:debug;
 			// grid HelpGrid border:#black;
 		}
 	}

@@ -85,7 +85,9 @@ global {
 			if button_under_mouse != nil and button_under_mouse != current_button_focus {
 				current_button_focus <- button_under_mouse;
 				ask current_button_focus {
-					do mouse_enter;
+					if enabled {
+						do mouse_enter;
+					}
 				}
 			}
 		} else {
@@ -102,10 +104,12 @@ global {
 	action mouse_down_buttons {
 		if current_button_focus != nil and selected_item = nil {
 			ask current_button_focus {
-				last_clicked_button <- self;
-				selected_item <- self.click();
-				// Disables the mouse_up event just following this mouse_down
-				disable_up <- true;
+				if enabled {
+					last_clicked_button <- self;
+					selected_item <- self.click();
+					// Disables the mouse_up event just following this mouse_down
+					disable_up <- true;
+				}
 			}
 		}
 	}
@@ -133,6 +137,8 @@ species Button {
 	 * Base button size. The default shape of the button is a circle of diameter button_size.
 	 */
 	float button_size;
+	
+	bool enabled <- true;
 	
 	init {
 		shape <- circle(0.5*button_size); // 0.5 factor for radius
@@ -167,6 +173,13 @@ species Button {
 	 */
 	action post_click virtual: true;
 	
+	action disable {
+		enabled <- false;
+	}
+	
+	action enable {
+		enabled <- true;
+	}
 }
 
 species ButtonBox {

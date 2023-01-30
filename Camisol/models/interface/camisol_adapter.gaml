@@ -50,7 +50,7 @@ global {
 		write "Required N: " + required_N;
 		write "Required P: " + required_P;
 		float available_N <- sum(Dam collect each.dim[0]);
-		float available_P <- sum(Dam collect each.dim[0]);
+		float available_P <- sum(Dam collect each.dim[1]);
 		write "Available N: " + available_N;
 		write "Available P: " + available_P;
 		float total_biomass_production <- min([

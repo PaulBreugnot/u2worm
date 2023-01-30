@@ -175,9 +175,47 @@ species EpochButton parent: Button {
 		}
 	}
 	agent click {
-		epoch_view.icon_size <- button_size;
-		selected_epoch <- epoch_view;
+		if(selected_epoch != epoch_view) {
+			epoch_view.icon_size <- button_size;
+			selected_epoch <- epoch_view;
+
+			if(selected_epoch.epoch.time != current_time) {
+
+				do display_harvest;
+			} else {
+				ask HarvestView {
+					// Clears all current harvest view, if any
+					do die;
+				}
+				ask FertilizerHandfulButton + SeedButton + FertilizerButton + SoilButton {
+					do enable;
+				}
+				if(current_time < 6) {
+					ask RunButton {
+						do enable;
+					}
+				}
+			}
+		}
 		return nil;
+	}
+	
+	action display_harvest {
+		ask FertilizerHandfulButton + SeedButton + FertilizerButton + SoilButton + RunButton {
+			do disable;
+		}
+		ask HarvestView {
+			// Clears all current harvest view, if any
+			do die;
+		}
+		ask PlotView {
+			create HarvestView with: (
+				harvest: self.plot.harvests[selected_epoch.epoch.time],
+				seed_icon_location: self.seed_icon_location,
+				harvest_icon_location: harvest_locations[self.plot.number-1],
+				fertilizer_icon_location: self.fertilizer_icon_location
+			);
+		}
 	}
 	action post_click {
 		// Nothing to do
@@ -189,14 +227,15 @@ species PlotEndThreadCallback parent: EndThreadCallback {
 	
 	action call {
 		// True if at least one plot is still running Camisol
-		bool camisol_running_on_plot <- false;
-		ask Plot {
-			camisol_running_on_plot <- camisol_running_on_plot or self.camisol_running;
-		}
-		if(!camisol_running_on_plot) {
-			ask run_button {
-				do end_simulation;
+		bool camisol_running_on_plot <- true;
+		loop while: camisol_running_on_plot {
+			camisol_running_on_plot <- false;
+			ask Plot {
+				camisol_running_on_plot <- camisol_running_on_plot or self.camisol_running;
 			}
+		}
+		ask run_button {
+			do end_simulation;
 		}
 	}
 }
@@ -205,7 +244,6 @@ species RunButton parent: Button {
 	
 	image_file button_image <- image_file(image_path + definition + "/epochs/play.png");
 	float icon_size <- button_size;
-	bool disable <- false;
 	bool camisol_running <- false;
 	
 	init {
@@ -213,25 +251,18 @@ species RunButton parent: Button {
 			myself.plot_end_thread_callback <- self;
 		}
 		shape<-square(button_size);
-		ask Plot {
+		ask Plot[0] {
 			end_thread_callback <- myself.plot_end_thread_callback;
 		}
 	}
 	action mouse_enter {
-		if(!disable and !camisol_running and selected_epoch.epoch.time = current_time) {
+		if(!camisol_running) {
 			icon_size <- 1.1*button_size;
 		}
 	}
 	action mouse_leave {
 		icon_size <- button_size;
 	}
-	
-//	reflex when: (cycle > 0 and cycle mod 20 = 0) {
-//		ask world {
-//			do pause;
-//		}
-//		do end_simulation;
-//	}
 	
 	action launch_simulation {
 		// Runs the current epoch
@@ -244,8 +275,14 @@ species RunButton parent: Button {
 
 	action end_simulation {
 		camisol_running <- false;
-		if current_time < 5 {
-			current_time <- current_time+1;
+//		if current_time = 0 {
+//			// Soil can only be set at the first epoch
+//			ask SoilButton {
+//				do disable;
+//			}
+//		}
+		current_time <- current_time+1;
+		if current_time < 6 {
 			self.location <- self.location + {2*cell_size, 0};
 			create Epoch with: (time: current_time) {
 				create EpochView with: (
@@ -259,18 +296,17 @@ species RunButton parent: Button {
 					);
 				}
 			}
+			ask EpochButton where (each.epoch_view.epoch.time = current_time-1) {
+				do display_harvest;
+			}
 		} else {
-			disable <- true;
+			do disable;
 		}
 	}
 	agent click {
-		if !camisol_running and current_time < 6 and selected_epoch.epoch.time = current_time {
+		if !camisol_running {
 			icon_size <- button_size;
 			do launch_simulation;
-			
-//			ask Plot parallel: true{
-//				do grow;
-//			}
 		}
 		return nil;
 	}
@@ -387,7 +423,9 @@ species SeedButtonMenu parent: ButtonMenu {
 
 	
 	init {
-		create ButtonBox with: (button_types: [SeedButton, SeedButtonMenu]) {
+		create ButtonBox with: (
+			button_types: [SeedButton, SeedButtonMenu]
+		) {
 			// Full crops layout
 //			do compute_background([
 //				{12, 0.5}, {16, 0.5}, {16, 6.5}, {15, 6.5}, {15, 7.5},
@@ -427,7 +465,8 @@ species SeedButtonMenu parent: ButtonMenu {
 			create SeedButton number: 1 with: (
 				location: myself.button_coordinates[i],
 				seed_view: new_seed_view[0],
-				button_size: 0.8*cell_size
+				button_size: 0.8*cell_size,
+				enabled: selected_epoch = nil or selected_epoch.epoch.time = current_time
 			);
 			i <- i+1;
 		}
@@ -494,7 +533,8 @@ species FertilizerButtonMenu parent: ButtonMenu {
 			create FertilizerButton number: 1 with: (
 				location: new_fertilizer_view[0].location, // Same location as the associated view
 				fertilizer_view: new_fertilizer_view[0],
-				button_size: 0.8*cell_size
+				button_size: 0.8*cell_size,
+				enabled: selected_epoch = nil or selected_epoch.epoch.time = current_time
 			) returns: new_button;
 			i<-i+1;
 		}
@@ -510,7 +550,8 @@ species FertilizerButtonMenu parent: ButtonMenu {
 			create FertilizerButton number: 1 with: (
 				location: new_fertilizer_view[0].location, // Same location as the associated view
 				fertilizer_view: new_fertilizer_view[0],
-				button_size: 0.8*cell_size
+				button_size: 0.8*cell_size,
+				enabled: selected_epoch = nil or selected_epoch.epoch.time = current_time
 			) returns: new_button;
 			i<-i+1;
 		}

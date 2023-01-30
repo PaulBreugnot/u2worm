@@ -18,6 +18,8 @@ import "fertilizer.gaml"
  * On the final interface, the harvest can only be visualized for a single epoch.
  */
 global {
+	float fertilizer_icon_sep <- 0.8*cell_size;
+	
 	/**
 	 * Current time, initialize at 0. One unit of time represents a complete cycle growth.
 	 */
@@ -35,18 +37,24 @@ global {
 	 * Scales each quantity image.
 	 */
 	list<point> harvest_sizes <- [
-		{cell_size, cell_size/harvest_images_ratio[0]}, // Basket
-		{0.8*cell_size*harvest_images_ratio[1], 0.8*cell_size}, // Bag
+		{0.7*cell_size, 0.7*cell_size/harvest_images_ratio[0]}, // Basket
+		{0.9*cell_size*harvest_images_ratio[1], 0.9*cell_size}, // Bag
 		{0.8*cell_size*harvest_images_ratio[2], 0.8*cell_size}  // Barrow
 	];
 	/**
 	 * The locations at which each harvest can be represent for each plot.
 	 */
+//	list<point> harvest_locations <- [
+//		{0.5*cell_size, 2.8*cell_size}, // Plot 0
+//		{0.5*cell_size, 3.8*cell_size}, // Plot 1
+//		{0.5*cell_size, 5.2*cell_size}, // Plot 2
+//		{0.5*cell_size, 6.5*cell_size}  // Plot 3
+//	];
 	list<point> harvest_locations <- [
-		{0.5*cell_size, 2.8*cell_size}, // Plot 0
-		{0.5*cell_size, 3.8*cell_size}, // Plot 1
-		{0.5*cell_size, 5.2*cell_size}, // Plot 2
-		{0.5*cell_size, 6.5*cell_size}  // Plot 3
+		{114#m, 96#m}, // Plot 0
+		{114#m, 77#m}, // Plot 1
+		{114#m, 57#m}, // Plot 2
+		{114#m, 43#m}  // Plot 3
 	];
 	/**
 	 * Images used to represent a crop quantity. A quantity can only have the
@@ -61,6 +69,9 @@ global {
 		image_file(image_path + definition + "/harvest/barrow.png")
 	];
 	
+	list<float> harvest_thresholds <- [
+		20.0, 100.0, 500.0
+	];
 	/**
 	 * Currently selected epoch to visualize.
 	 */
@@ -132,11 +143,19 @@ species Harvest {
 	/**
 	 * Fertilizer type.
 	 */
-	int fertilizer;
+	list<int> fertilizers;
 	/**
 	 * Quantity of crops harvested (between 1 and 3)
 	 */
-	int quantity;
+	float quantity;
+	
+	int quantity_index <- 0;
+	
+	init {
+		loop while: (quantity_index < length(harvest_thresholds) and quantity > harvest_thresholds[quantity_index]) {
+			quantity_index <- quantity_index+1;
+		}
+	}
 }
 
 /**
@@ -148,20 +167,27 @@ species HarvestView {
 	 */
 	Harvest harvest;
 	
+	point seed_icon_location;
+	point harvest_icon_location;
+	point fertilizer_icon_location;
+	
 	init {
-		location <- harvest_locations[harvest.plot];
 	}
 	
 	aspect default {
-		draw harvest_images[harvest.quantity]
-			size: harvest_sizes[harvest.quantity]
-			at: location+{cell_size+harvest_sizes[harvest.quantity].x/2, 0};
-		draw fertilizer_images[harvest.fertilizer]
-			size: 0.5*cell_size
-			at: location + {0.1*cell_size, 0};
-		draw seed_images[harvest.seed]
-			size: 0.5*cell_size
-			at: location + {0.7*cell_size, 0};
+		if harvest.quantity_index > 0 {
+			draw harvest_images[harvest.quantity_index-1]
+				size: harvest_sizes[harvest.quantity_index-1]
+				at: harvest_icon_location;	
+		}
+		loop i from: 0 to: length(harvest.fertilizers)-1 {
+			draw fertilizer_images[harvest.fertilizers[i]-1]
+				size: 0.9*cell_size
+				at: fertilizer_icon_location + {i*fertilizer_icon_sep, 0};
+		}
+		draw seed_images[harvest.seed-1]
+			size: 0.9*cell_size
+			at: seed_icon_location;
 	}
 }
 
@@ -185,7 +211,7 @@ experiment debug_harvest type: gui {
 				}
 
 				loop i from:0 to:3 {
-					create Harvest number:1 with:(plot: i, seed:i, fertilizer: i, quantity: (current_time+i+2) mod 3) returns: harvests;
+					create Harvest number:1 with:(plot: i, seed:i, fertilizers: [i], quantity: (current_time+i+2) mod 3) returns: harvests;
 					create HarvestView number:1 with:(harvest: harvests[0]);
 				}
 				current_time <- current_time+1;

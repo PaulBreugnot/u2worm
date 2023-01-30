@@ -8,7 +8,6 @@
 model application
 
 import "controller.gaml"
-import "plot.gaml"
 
 /**
  * Main application. All the features of the interface models are imported in
@@ -63,6 +62,7 @@ experiment application type:gui {
 			species FertilizerView aspect:default;
 			species EpochView aspect:default;
 			species RunButton aspect: default;
+			species HarvestView aspect: default;
 		}
 	}
 }
