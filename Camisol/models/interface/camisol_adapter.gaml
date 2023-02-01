@@ -110,9 +110,9 @@ global {
 		
 		ask PoreParticle {
 			ask organic_particle {
-				self.C_labile <- self.C_labile + soluble_Cl;
-				self.N <- self.N + N_pore;
-				self.P <- self.P + P_pore;
+				self.C_labile <- self.C_labile + soluble_Cl/length(PoreParticle);
+				self.N <- self.N + N_pore/length(PoreParticle);
+				self.P <- self.P + P_pore/length(PoreParticle);
 			}
 			
 			self.dam.dom <- [
@@ -121,12 +121,13 @@ global {
 				self.dam.dom[2] + (soluble_dom/length(PoreParticle))
 			];
 		}
+		int num_organics <- length(OrganicParticle)-length(PoreParticle);
 		ask OrganicParticle{
 			if(!in_pore) {
-				self.C_labile <- self.C_labile + labile_organic;
-				self.C_recalcitrant <- self.C_recalcitrant + recalcitrant_organic;
-				self.N <- self.N + N_organic;
-				self.P <- self.P + P_organic;
+				self.C_labile <- self.C_labile + labile_organic/num_organics;
+				self.C_recalcitrant <- self.C_recalcitrant + recalcitrant_organic/num_organics;
+				self.N <- self.N + N_organic/num_organics;
+				self.P <- self.P + P_organic/num_organics;
 			}
 		}
 	}
