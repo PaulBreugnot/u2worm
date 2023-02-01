@@ -34,7 +34,8 @@ species Nematode
 	PoreParticle current_pore;
 	
 	bool awake <- true;
-	float predation_rate <- 0.00001#gram/#day; // 0.5E-9#gram/#mn; 
+//	float predation_rate <- 0.5e-9#gram/#mn;
+	float predation_rate <- 0.00001#gram/#day; // 0.5E-9#gram/#mn;
 	
 	//un nematode mange entre 10K et 100k bacteries par jour -> moins de 10k il dort (ref article de colman)
 	float wanted_C <- predation_rate * step;
@@ -154,16 +155,16 @@ species Nematode
 			
 			//élément dans la partie cytosol
 			float C_catched_from_cytosol <- total_C_catched_from_pore - C_catched_from_colony ;
-			float N_catched_from_cytosol <- min([cytosol_N, (C_catched_from_cytosol / C_N)]);
-			float P_catched_from_cytosol <- min([cytosol_P, (C_catched_from_cytosol / C_P)]);
+			float N_catched_from_cytosol <- C_catched_from_cytosol / C_N;
+			float P_catched_from_cytosol <- C_catched_from_cytosol / C_P;
 
-			C <- C - C_catched_from_colony;
-			N <- N - N_catched_from_colony;
-			P <- P - P_catched_from_colony;
+			C <- max([0.0, C - C_catched_from_colony]);
+			N <- max([0.0, N - N_catched_from_colony]);
+			P <- max([0.0, P - P_catched_from_colony]);
 			
-			cytosol_C <- cytosol_C  - C_catched_from_cytosol;
-			cytosol_N <- cytosol_N  - N_catched_from_cytosol;
-			cytosol_P <- cytosol_P  - P_catched_from_cytosol;
+			cytosol_C <- max([0.0, cytosol_C  - C_catched_from_cytosol]);
+			cytosol_N <- max([0.0, cytosol_N  - N_catched_from_cytosol]);
+			cytosol_P <- max([0.0, cytosol_P  - P_catched_from_cytosol]);
 			
 			total_C <- total_C + C_catched_from_colony + C_catched_from_cytosol;
 			total_N <- total_N + N_catched_from_colony + N_catched_from_cytosol;

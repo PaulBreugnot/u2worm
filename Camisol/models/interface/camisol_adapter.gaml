@@ -96,17 +96,17 @@ global {
 		// write("Fertilizer quantity for model: "+ qty_for_model);
 		
 		float soluble_Cl <- ((quantity_for_model * solubles / 100)) * soluble_labile_rate;
-		float N_pore <- soluble_Cl * C_N;
-		float P_pore <- soluble_Cl * C_P;
+		float N_pore <- soluble_Cl / C_N;
+		float P_pore <- soluble_Cl / C_P;
 		
 		float soluble_dom <- ((quantity_for_model * solubles / 100)) * (1 - soluble_labile_rate);
-		float N_dom <- soluble_dom * C_N;
-		float P_dom <- soluble_dom * C_N;
+		float N_dom <- soluble_dom / C_N;
+		float P_dom <- soluble_dom / C_P;
 		
 		float labile_organic <- ((quantity_for_model * hemicellulose/ 100)) + ((quantity_for_model * cellulose/ 100));
 		float recalcitrant_organic <- ((quantity_for_model * lignine/ 100));
-		float N_organic <- (labile_organic+recalcitrant_organic) * C_N;
-		float P_organic <- (labile_organic+recalcitrant_organic) * C_N;
+		float N_organic <- (labile_organic+recalcitrant_organic) / C_N;
+		float P_organic <- (labile_organic+recalcitrant_organic) / C_P;
 		
 		ask PoreParticle {
 			ask organic_particle {
@@ -132,10 +132,34 @@ global {
 	}
 }
 
-experiment TestProduction type:gui {
+experiment TestCamisolWithFertilizer {
 	action _init_ {
 		create simulation;
 		ask simulation {
+			// Mada Compost
+//			do fertilize
+//				solubles: 26.66
+//				hemicellulose: 4.72
+//				cellulose: 55.19
+//				lignine: 13.43
+//				C_N: 12.25
+//				C_P: 35.0
+//				sample_dose: 3000.0;
+			// Guanomad
+//			do fertilize
+//				solubles: 82.2
+//				hemicellulose: 9.6
+//				cellulose: 7.8
+//				lignine: 0.43
+//				C_N: 3.55
+//				C_P: 0.65
+//				sample_dose: 500.0;
+		}
+	}
+	
+	reflex fert when: cycle mod 300 = 0 {
+		ask simulation {
+			loop i from: 0 to: 2 {
 			// Mada Compost
 			do fertilize
 				solubles: 26.66
@@ -145,6 +169,79 @@ experiment TestProduction type:gui {
 				C_N: 12.25
 				C_P: 35.0
 				sample_dose: 3000.0;
+				
+			}
+		}
+	}
+	output {
+//		display grid {
+//			grid Particle;
+//		}
+		
+		display "awake population" type: java2D {
+			chart "awake population" type: series {
+				data "CopioR awake %" value: (sum(Copiotrophe_R collect (each.awake_population)) / length(Copiotrophe_R)) * 100 style:spline color: #red;
+				data "CopioK awake %" value: (sum(Copiotrophe_K collect (each.awake_population)) / length(Copiotrophe_K)) * 100 style:spline color: #green;
+				data "Oligo awake %" value: (sum(Oligotrophe_K collect (each.awake_population)) / length(Oligotrophe_K)) * 100 style:spline color: #blue;
+			}
+		}
+		
+		display "Nematode" type: java2D {
+			chart "Awake nematodes" type: series {
+				data "Nematode awake %" value: (sum(Nematode collect (each.awake as int)) / length(Nematode)) * 100 style:spline color: #yellow;
+			}
+		}
+		
+		display "dam" type: java2D {
+			chart "dam" type:series {
+				data "N (dom)" value: (sum(Dam collect each.dom[0])) style:spline;
+				data "P (dom)" value: (sum(Dam collect each.dom[1])) style:spline;
+				data "C (dom)" value: (sum(Dam collect each.dom[2])) style:spline;
+				data "N (dim)" value: (sum(Dam collect each.dim[0])) style:spline;
+				data "P (dim)" value: (sum(Dam collect each.dim[1])) style:spline;
+			}
+		}
+		
+//		display "CO2" type: java2D {
+//			chart "Emitted CO2" type:series {
+//				data "CO2" value: total_CO2_produced;
+//			}
+//		}
+		
+		display "organics" type:java2D {
+			chart "Organics composition" type:series {
+				data "C_labile" value: (sum(OrganicParticle collect each.C_labile)) style:spline;
+				data "C_recalcitrant" value: (sum(OrganicParticle collect each.C_recalcitrant)) style:spline;
+				data "N" value: (sum(OrganicParticle collect each.N)) style:spline;
+				data "P" value: (sum(OrganicParticle collect each.P)) style:spline;
+			}
+		}
+		
+		display "populations" type:java2D {
+			chart "Bacteria populations" type:series {
+				data "Copiotrophe R (C)" value: (sum(Copiotrophe_R collect each.C)) style:spline color: #red;
+				data "Copiotrophe K (C)" value: (sum(Copiotrophe_K collect each.C)) style:spline color: #green;
+				data "Oligotrophe K (C)" value: (sum(Oligotrophe_K collect each.C)) style:spline color: #blue;
+			}
+		}
+	}
+}
+
+experiment TestProduction type:gui {
+	action _init_ {
+		create simulation;
+		ask simulation {
+			loop i from: 0 to: 3 {
+			// Mada Compost
+			do fertilize
+				solubles: 26.66
+				hemicellulose: 4.72
+				cellulose: 55.19
+				lignine: 13.43
+				C_N: 12.25
+				C_P: 35.0
+				sample_dose: 3000.0;
+			}
 			// Guanomad
 //			do fertilize
 //				solubles: 82.2

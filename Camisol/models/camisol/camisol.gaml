@@ -231,16 +231,17 @@ experiment camisol_output {
 	}
 	
 	output {
-//		display grid {
-//			grid Particle;
-//		}
-		
 		display "awake population" type: java2D {
 			chart "awake population" type: series {
-				data "CopioR awake %" value: (sum(Copiotrophe_R collect (each.awake_population)) / length(Copiotrophe_R)) * 100 style:spline;
-				data "CopioK awake %" value: (sum(Copiotrophe_K collect (each.awake_population)) / length(Copiotrophe_K)) * 100 style:spline;
-				data "Oligo awake %" value: (sum(Oligotrophe_K collect (each.awake_population)) / length(Oligotrophe_K)) * 100 style:spline;
-				data "Nematode awake %" value: (sum(Nematode collect (each.awake as int)) / length(Nematode)) * 100 style:spline;
+				data "CopioR awake %" value: (sum(Copiotrophe_R collect (each.awake_population)) / length(Copiotrophe_R)) * 100 style:spline color: #red;
+				data "CopioK awake %" value: (sum(Copiotrophe_K collect (each.awake_population)) / length(Copiotrophe_K)) * 100 style:spline color: #green;
+				data "Oligo awake %" value: (sum(Oligotrophe_K collect (each.awake_population)) / length(Oligotrophe_K)) * 100 style:spline color: #blue;
+			}
+		}
+		
+		display "Nematode" type: java2D {
+			chart "Awake nematodes" type: series {
+				data "Nematode awake %" value: (sum(Nematode collect (each.awake as int)) / length(Nematode)) * 100 style:spline color: #yellow;
 			}
 		}
 		
@@ -271,9 +272,9 @@ experiment camisol_output {
 		
 		display "populations" type:java2D {
 			chart "Bacteria populations" type:series {
-				data "Copiotrophe K" value: (sum(Copiotrophe_K collect each.C)) style:spline;
-				data "Copiotrophe R" value: (sum(Copiotrophe_R collect each.C)) style:spline;
-				data "Oligotrophe K" value: (sum(Oligotrophe_K collect each.C)) style:spline;
+				data "Copiotrophe R" value: (sum(Copiotrophe_R collect each.C)) style:spline color: #red;
+				data "Copiotrophe K" value: (sum(Copiotrophe_K collect each.C)) style:spline color: #green;
+				data "Oligotrophe K" value: (sum(Oligotrophe_K collect each.C)) style:spline color: #blue;
 			}
 		}
 	}

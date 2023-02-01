@@ -26,7 +26,9 @@ global {
 species MicrobePopulation
 {
 	string bacteria_name;
-	float taux_respiration <- 0.5;
+	float respiration_rate <- 0.5;
+	float division_enzyme_rate <- 0.0;
+	
 	float dividing_time <- 0.0;
 	//taux labile récalcitrant
 	float L_R_rate; // labile_recalcitrante_rate
@@ -60,21 +62,18 @@ species MicrobePopulation
 	 O : C * (step/368) / (1-0.7)s
 	 */
 	// Quantité de carbone voulue par la colonie
-	float C_assimilation_speed -> {C_actif * (step / dividing_time) / (1 - taux_respiration)};
+	float C_assimilation_speed -> {C_actif * (step / dividing_time) / (division_enzyme_rate * (1 - respiration_rate))};
 	
 	
 	float CO2_produced <- 0.0;
 	
-	float C_wanted -> { C_assimilation_speed };
+	float C_wanted -> { max([0.0, C_assimilation_speed - cytosol_C]) };
 	float N_wanted -> { (C+cytosol_C+C_wanted) / C_N - (cytosol_N + N)};
 	float P_wanted -> { (C+cytosol_C+C_wanted) / C_P - (cytosol_P + P)};
 	
-	float division_enzyme_rate <- 0.0;
-	float cytosol_enzyme_facteur <- 0.0;
-	
 	Dam dam;
 	
-	action respirate(float cytosol_respiration) // pas de perte c
+	action respirate(float cytosol_respiration)
 	{
 		cytosol_C <- cytosol_C  - cytosol_respiration; 
 		
@@ -82,10 +81,11 @@ species MicrobePopulation
 		total_CO2_produced <- total_CO2_produced + cytosol_respiration;
 	}
 	
-	action growth(float cytosol_division, float total_C_in_pore, float pore_carrying_capacity) // pas de perte c
+	action growth(float cytosol_division, float total_C_in_pore, float pore_carrying_capacity)
 	{
-		// quantity de carbone cytosol -> structurel
-		float new_individual <- C * (step / dividing_time) * (1 - total_C_in_pore / pore_carrying_capacity);
+		// quantity de carbone cytosol -> structurel.
+		// Unconsumed C/N/P stays in the cytosol
+		float new_individual <- C * (step/dividing_time) * (1 - total_C_in_pore / pore_carrying_capacity);
 		
 		//new_individual <- min([new_individual , cytosol_C]);
 		new_individual <- min([new_individual , cytosol_division]);
@@ -138,33 +138,22 @@ species MicrobePopulation
 		
 		awake_population <- max([awake_population,wakeup_factor]);
 		
+		float limiting_factor <- min([perception_C, perception_C/C_N, perception_C/C_P]);
 	
-		cytosol_C <- cytosol_C + perception_C * awake_population;
-		cytosol_N <- cytosol_N + perception_N * awake_population;
-		cytosol_P <- cytosol_P + perception_P * awake_population;
+		cytosol_C <- cytosol_C + perception_C;
+		cytosol_N <- cytosol_N + perception_N;
+		cytosol_P <- cytosol_P + perception_P;
 		
 		// Breathed carbon quantity from cytosol, rejected as CO2
-		float cytosol_respiration <- (taux_respiration) * cytosol_C ;
+		float cytosol_respiration <- respiration_rate * cytosol_C ;
 		// Part of the left cytosol C dedicated to cell division
 		float cytosol_division <- (cytosol_C-cytosol_respiration) * division_enzyme_rate;
 		// Left cytosol C is used to produce enzymes
 		float cytosol_enzyme <- cytosol_C - cytosol_respiration - cytosol_division;
 		
-		cytosol_enzyme_facteur <- cytosol_enzyme;
-		
-		
 		do respirate(cytosol_respiration);
 		do growth(cytosol_division, total_C_in_pore, pore_carrying_capacity);
 		do decompose(cytosol_enzyme);
-		
-	
-		ask dam
-		{
-			// TODO: explanations
-			dom[2]<- dom[2] + myself.perception_C * (1 - myself.awake_population);
-			dom[1]<- dom[1] + myself.perception_P * (1 - myself.awake_population);
-			dom[0]<- dom[0] + myself.perception_N * (1 - myself.awake_population);
-		}
 		
 		perception_C <- 0.0;
 		perception_N <- 0.0;
