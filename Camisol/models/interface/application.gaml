@@ -41,10 +41,13 @@ experiment application type:gui {
 			// Button actions
 			event mouse_move action:mouse_move_buttons;
 			event mouse_down action:mouse_down_buttons;
+			event mouse_drag action:mouse_drag_buttons;
 			event mouse_up action:mouse_up_buttons;
 			// Plot actions
 			event mouse_move action:mouse_move_plots;
+			event mouse_drag action:mouse_drag_plots;
 			event mouse_down action:mouse_down_plots;
+			event mouse_up action:mouse_up_plots;
 			// Harvest actions
 			event mouse_down action:mouse_down_harvest;
 			

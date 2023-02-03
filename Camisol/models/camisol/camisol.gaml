@@ -23,7 +23,7 @@ global {
 	int grid_width <- 30;
 	int grid_height <- 30;
 	
-	int nematodes_count <- 100;
+	int nematodes_count <- 50;
 	
 	geometry shape <- square(1#cm);
 	float model_area <- shape.area;

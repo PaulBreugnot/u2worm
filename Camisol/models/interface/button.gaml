@@ -71,19 +71,19 @@ global {
 	 * currently no selected item.
 	 */
 	action mouse_move_buttons {
-		Button button_under_mouse <- select_button_under_mouse();
-		
-		// Mouse leave is triggered if a button was previously in focus and no button is
-		// currently in focus or the button currently in focus is not the same as the previous one.
-		if current_button_focus != nil and (button_under_mouse = nil or button_under_mouse != current_button_focus) {
-			ask current_button_focus {
-				do mouse_leave;
-			}
-			current_button_focus <- nil;
-		}	
-
 		// Mouse enter is not triggered if an item is currently selected
 		if (selected_item = nil) {
+			Button button_under_mouse <- select_button_under_mouse();
+			
+			// Mouse leave is triggered if a button was previously in focus and no button is
+			// currently in focus or the button currently in focus is not the same as the previous one.
+			if current_button_focus != nil and (button_under_mouse = nil or button_under_mouse != current_button_focus) {
+				ask current_button_focus {
+					do mouse_leave;
+				}
+				current_button_focus <- nil;
+			}	
+
 			// The mouse enter action is called only when the mouse enters a new button
 			// (the action is not triggered when the mouse moves within a button)
 			if button_under_mouse != nil and button_under_mouse != current_button_focus {
@@ -99,14 +99,25 @@ global {
 			// until the item is released.
 			selected_item.location <- #user_location;
 		}
-
+	}
+	
+	action mouse_drag_buttons {
+		if(selected_item != nil) {
+			selected_item.location <- #user_location;
+		}
 	}
 	
 	/**
 	 * Action triggered when a button is clicked and no item is currently selected.
 	 */
 	action mouse_down_buttons {
-		current_button_focus <- select_button_under_mouse();
+		Button button_under_mouse <- select_button_under_mouse();
+		if button_under_mouse != nil and current_button_focus = nil {
+			current_button_focus <- button_under_mouse;
+			ask current_button_focus {
+				do mouse_enter;
+			}
+		}
 		if current_button_focus != nil and selected_item = nil {
 			ask current_button_focus {
 				if enabled {
@@ -121,10 +132,11 @@ global {
 	
 		
 	action mouse_up_buttons {
-		if(disable_up) {
-			// Does nothing this time, but handles the next mouse_up
-			disable_up <- false;
+		Button button_under_mouse <- select_button_under_mouse();
+		if(button_under_mouse = last_clicked_button) {
+			// Do nothing
 		} else if (last_clicked_button != nil) {
+			// In any other situation, if the last_clicked_button is not nil.
 			ask last_clicked_button {
 				do post_click;
 			}

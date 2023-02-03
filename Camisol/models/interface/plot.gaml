@@ -239,57 +239,105 @@ global {
 	 * Reference to the plot under the cursor. Used to preview seeds and soils.
 	 */
 	PlotView current_plot_focus;
+	bool move_on_current_plot_focus <- false;
+	bool drag_on_current_plot_focus <- false;
 	
 	SoilView selected_soil;
 	SeedView selected_seed;
 	FertilizerView selected_fertilizer;
 	
-	action mouse_move_plots {
+	action enter_plot(PlotView plot_view) {
+		current_plot_focus <- plot_view;
+		if (selected_seed != nil or selected_soil != nil or selected_fertilizer != nil) {
+			current_plot_focus.selected <- true;
+		}
+	}
+	action leave_plot {
+		if (current_plot_focus != nil) {
+			current_plot_focus.selected <- false;
+			current_plot_focus <- nil;
+			move_on_current_plot_focus <- false;
+			drag_on_current_plot_focus <- false;
+		}
+	}
+	
+	bool mouse_hover_plots {
+		bool new_plot_under_focus <- false;
 		list<PlotView> plots_under_mouse <- PlotView overlapping #user_location;
 		// No plot under focus or same plot
 		if length(plots_under_mouse) = 0 or plots_under_mouse[0] != current_plot_focus {
-			if (current_plot_focus != nil) {
-				current_plot_focus.selected <- false;
-				current_plot_focus <- nil;
-			}
+			do leave_plot;
 		}
 		// New plot under focus case
 		if length(plots_under_mouse) > 0 and plots_under_mouse[0] != current_plot_focus {
-			current_plot_focus <- plots_under_mouse[0];
-			if (selected_seed != nil or selected_soil != nil or selected_fertilizer != nil) {
-				current_plot_focus.selected <- true;
+			do enter_plot(plots_under_mouse[0]);
+			new_plot_under_focus <- true;
+		}
+		return new_plot_under_focus;
+	}
+	action mouse_move_plots {
+		bool new_plot_under_focus <- mouse_hover_plots();
+		if(!move_on_current_plot_focus) {
+			move_on_current_plot_focus <- new_plot_under_focus;
+		}
+	}
+	action mouse_drag_plots {
+		bool new_plot_under_focus <- mouse_hover_plots();
+		if(!drag_on_current_plot_focus) {
+			drag_on_current_plot_focus <- new_plot_under_focus;
+		}
+	}
+	
+	action put_selected_item_on_plot {
+		current_plot_focus.selected <- false;
+		if selected_seed != nil {
+			// Only if the plot is not grown yet
+			if current_plot_focus.plot.growth_state <= 1 {
+				ask current_plot_focus.plot {
+					do plant(selected_seed.seed);
+				}
+				current_plot_focus.plot.seed <- selected_seed.seed;
+				write "Seed " + selected_seed.seed.type + " planted to " + current_plot_focus.plot.number;
 			}
+			ask selected_seed {
+				do die;
+			}
+			selected_seed <- nil;
+		}
+		if selected_fertilizer != nil {
+			// Only if the plot has not grown yet
+			if current_plot_focus.plot.growth_state <= 1 {
+				if length(current_plot_focus.plot.fertilizers) < 6 {
+					ask current_plot_focus {
+						do add_fertilizer(selected_fertilizer.fertilizer);
+					}
+				}
+			}
+			ask selected_fertilizer {
+				do die;
+			}
+			selected_fertilizer <- nil;
+		}
+		if selected_soil != nil {
+			// TODO: copy soil parameters (other than color, already handled by the move/preview action) from the selected soil to the plot's soil
+			current_plot_focus.plot.soil <- selected_soil.soil;
+			write "Soil of plot " + current_plot_focus.plot.number + " set to " + selected_soil.soil.color;
+			ask selected_soil {
+				do die;
+			}
+			selected_soil <- nil;
 		}
 	}
 	
 	action mouse_down_plots {
-		if current_plot_focus != nil {
-			current_plot_focus.selected <- false;
-			if selected_seed != nil {
-				// Only if the plot is not grown yet
-				if current_plot_focus.plot.growth_state <= 1 {
-					ask current_plot_focus.plot {
-						do plant(selected_seed.seed);
-					}
-					current_plot_focus.plot.seed <- selected_seed.seed;
-					write "Seed " + selected_seed.seed.type + " planted to " + current_plot_focus.plot.number;
-				}
-			}
-			if selected_fertilizer != nil {
-				// Only if the plot has not grown yet
-				if current_plot_focus.plot.growth_state <= 1 {
-					if length(current_plot_focus.plot.fertilizers) < 6 {
-						ask current_plot_focus {
-							do add_fertilizer(selected_fertilizer.fertilizer);
-						}
-					}
-				}
-			}
-			if selected_soil != nil {
-				// TODO: copy soil parameters (other than color, already handled by the move/preview action) from the selected soil to the plot's soil
-				current_plot_focus.plot.soil <- selected_soil.soil;
-				write "Soil of plot " + current_plot_focus.plot.number + " set to " + selected_soil.soil.color;
-			}
+		if current_plot_focus != nil and move_on_current_plot_focus {
+			do put_selected_item_on_plot;
+		}
+	}
+	
+	action mouse_up_plots {
+		if current_plot_focus != nil and drag_on_current_plot_focus {
+			do put_selected_item_on_plot;
 		}
 	}
 }
@@ -657,7 +705,9 @@ experiment debug_plots type:gui {
 				}
 			}
 			event mouse_move action:mouse_move_plots;
+			event mouse_drag action:mouse_drag_plots;
 			event mouse_down action:mouse_down_plots;
+			event mouse_up action:mouse_up_plots;
 			
 			// image "plots" position: {0, 0, 0} size: {1, 1} file: plots;
 			species PlotView aspect:default;

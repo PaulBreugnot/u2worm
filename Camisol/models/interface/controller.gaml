@@ -135,10 +135,12 @@ species SoilButton parent: Button {
 	}
 	
 	action post_click {
-		ask selected_soil {
-			do die;
+		if current_plot_focus = nil {
+			ask selected_soil {
+				do die;
+			}
+			selected_soil <- nil;		
 		}
-		selected_soil <- nil;
 	}
 }
 
@@ -164,10 +166,12 @@ species SeedButton parent: Button {
 		return selected_seed;
 	}
 	action post_click {
-		ask selected_seed {
-			do die;
+		if current_plot_focus = nil {
+			ask selected_seed {
+				do die;
+			}
+			selected_seed <- nil;
 		}
-		selected_seed <- nil;
 	}
 }
 
@@ -197,10 +201,12 @@ species FertilizerButton parent: Button {
 		return selected_fertilizer;
 	}
 	action post_click {
-		ask selected_fertilizer {
-			do die;
+		if current_plot_focus = nil {
+			ask selected_fertilizer {
+				do die;
+			}
+			selected_fertilizer <- nil;
 		}
-		selected_fertilizer <- nil;
 	}
 }
 
