@@ -26,6 +26,7 @@ experiment application type:gui {
 		gama.pref_errors_stop <- false;
 		gama.pref_errors_in_editor <- false;
 		gama.pref_display_numkeyscam <- false;
+		minimum_cycle_duration <- interface_minimum_cycle_duration;
 		create simulation;
 	}
 	

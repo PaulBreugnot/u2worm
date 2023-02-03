@@ -17,6 +17,7 @@ import "plot.gaml"
  * - ...
  */
 global {
+	float interface_minimum_cycle_duration <- 0.1#s;
 	string NORMAL <- "NORMAL";
 	string SIMULATION <- "SIMULATION";
 	string HARVEST <- "HARVEST";
@@ -300,7 +301,11 @@ species RunButton parent: Button {
 	PlotEndThreadCallback plot_end_thread_callback;
 	
 	image_file button_image <- image_file(image_path + definition + "/epochs/play.png");
+	image_file running_image <- image_file(image_path + definition + "/epochs/running.png");
 	float icon_size <- button_size;
+	
+	bool running <- false;
+	int init_cycle;
 	
 	init {
 		create PlotEndThreadCallback with:(run_button: self) {
@@ -319,6 +324,8 @@ species RunButton parent: Button {
 	}
 	
 	action launch_simulation {
+		running <- true;
+		init_cycle <- cycle; // Application cycle (not camisol cycle)
 		// Runs the current epoch
 		mode <- SIMULATION;
 		
@@ -331,6 +338,7 @@ species RunButton parent: Button {
 			// Only used to update the growth display
 			do resume;
 		}
+		write length(Plot);
 		ask Plot {
 			do run_thread;
 		}
@@ -372,6 +380,8 @@ species RunButton parent: Button {
 		} else {
 			mode <- HARVEST;
 		}
+		running <- false;
+		write "[Camisol] Simulation duration: " + (init_cycle-cycle)*interface_minimum_cycle_duration/#mn;
 	}
 	
 	action go_to_next_epoch {
@@ -411,7 +421,11 @@ species RunButton parent: Button {
 	}
 	
 	aspect default {
-		draw button_image size: icon_size;
+		if(running) {
+			draw running_image size: cell_size rotate: (-(360 * (init_cycle-cycle)*interface_minimum_cycle_duration/2#s) mod 360);
+		} else {
+			draw button_image size: icon_size;
+		}
 	}
 }
 

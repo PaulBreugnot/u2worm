@@ -13,6 +13,7 @@ global {
 	string COPIOTROPHE_R <- "Copiotrophe R";
 	string COPIOTROPHE_K <- "Copiotrophe K";
 	string OLIGOTROPHE_K <- "Oligotrophe K";
+	list<string> bacteria_types <- [COPIOTROPHE_R, COPIOTROPHE_K, OLIGOTROPHE_K];
 	
 	// TODO: what rates?
 	float copiotrophe_R_rate <- 0.1;

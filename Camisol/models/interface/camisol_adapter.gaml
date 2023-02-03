@@ -131,6 +131,10 @@ global {
 			}
 		}
 	}
+	
+	reflex init_camisol when: local_cycle=1 {
+		write "[Camisol] Time step duration: " + local_step/(1#h) + "h";
+	}
 }
 
 experiment TestCamisolWithFertilizer {
@@ -158,7 +162,7 @@ experiment TestCamisolWithFertilizer {
 		}
 	}
 	
-	reflex fert when: cycle mod 300 = 0 {
+	reflex fert when: local_cycle mod 3000 = 0 {
 		ask simulation {
 			loop i from: 0 to: 2 {
 			// Mada Compost
@@ -170,36 +174,60 @@ experiment TestCamisolWithFertilizer {
 				C_N: 12.25
 				C_P: 35.0
 				sample_dose: 3000.0;
-				
+			do fertilize
+				solubles: 82.2
+				hemicellulose: 9.6
+				cellulose: 7.8
+				lignine: 0.43
+				C_N: 3.55
+				C_P: 0.65
+				sample_dose: 500.0;
+			}
+		}
+	}
+	
+	reflex update_particle_color {
+		float max_population <- 0.0;
+		ask PoreParticle {
+			float population <- sum(populations collect (each.C + each.cytosol_C));
+			if(population > max_population) {
+				max_population <- population;
+			}
+		}
+		ask Particle {
+			if(type = PORE) {
+				color <- rgb(0, 0, 255 * sum(PoreParticle(particle).populations collect (each.C + each.cytosol_C))/max_population);
 			}
 		}
 	}
 	output {
-//		display grid {
-//			grid Particle;
-//		}
+		display grid {
+			grid Particle;
+			species Nematode aspect: red_dot;
+		}
 		
 		display "awake population" type: java2D {
 			chart "awake population" type: series {
-				data "CopioR awake %" value: (sum(Copiotrophe_R collect (each.awake_population)) / length(Copiotrophe_R)) * 100 style:spline color: #red;
-				data "CopioK awake %" value: (sum(Copiotrophe_K collect (each.awake_population)) / length(Copiotrophe_K)) * 100 style:spline color: #green;
-				data "Oligo awake %" value: (sum(Oligotrophe_K collect (each.awake_population)) / length(Oligotrophe_K)) * 100 style:spline color: #blue;
+				data "CopioR awake %" value: (sum(Copiotrophe_R collect (each.awake_population)) / length(Copiotrophe_R)) * 100 style:spline color: #red marker:false thickness: 3.0;
+				data "CopioK awake %" value: (sum(Copiotrophe_K collect (each.awake_population)) / length(Copiotrophe_K)) * 100 style:spline color: #green marker:false thickness: 3.0;
+				data "Oligo awake %" value: (sum(Oligotrophe_K collect (each.awake_population)) / length(Oligotrophe_K)) * 100 style:spline color: #blue marker:false thickness: 3.0;
+				data "Nematode awake %" value: (sum(Nematode collect (each.awake as int)) / length(Nematode)) * 100 style:spline color: #yellow marker:false thickness: 3.0;
 			}
 		}
 		
-		display "Nematode" type: java2D {
-			chart "Awake nematodes" type: series {
-				data "Nematode awake %" value: (sum(Nematode collect (each.awake as int)) / length(Nematode)) * 100 style:spline color: #yellow;
-			}
-		}
+//		display "Nematode" type: java2D {
+//			chart "Awake nematodes" type: series {
+//				data "Nematode awake %" value: (sum(Nematode collect (each.awake as int)) / length(Nematode)) * 100 style:spline color: #yellow;
+//			}
+//		}
 		
 		display "dam" type: java2D {
 			chart "dam" type:series {
-				data "N (dom)" value: (sum(Dam collect each.dom[0])) style:spline;
-				data "P (dom)" value: (sum(Dam collect each.dom[1])) style:spline;
-				data "C (dom)" value: (sum(Dam collect each.dom[2])) style:spline;
-				data "N (dim)" value: (sum(Dam collect each.dim[0])) style:spline;
-				data "P (dim)" value: (sum(Dam collect each.dim[1])) style:spline;
+				data "N (dom)" value: (sum(Dam collect each.dom[0])) style:spline marker:false thickness: 3.0;
+				data "P (dom)" value: (sum(Dam collect each.dom[1])) style:spline marker:false thickness: 3.0;
+				data "C (dom)" value: (sum(Dam collect each.dom[2])) style:spline marker:false thickness: 3.0;
+				data "N (dim)" value: (sum(Dam collect each.dim[0])) style:spline marker:false thickness: 3.0;
+				data "P (dim)" value: (sum(Dam collect each.dim[1])) style:spline marker:false thickness: 3.0;
 			}
 		}
 		
@@ -211,18 +239,18 @@ experiment TestCamisolWithFertilizer {
 		
 		display "organics" type:java2D {
 			chart "Organics composition" type:series {
-				data "C_labile" value: (sum(OrganicParticle collect each.C_labile)) style:spline;
-				data "C_recalcitrant" value: (sum(OrganicParticle collect each.C_recalcitrant)) style:spline;
-				data "N" value: (sum(OrganicParticle collect each.N)) style:spline;
-				data "P" value: (sum(OrganicParticle collect each.P)) style:spline;
+				data "C_labile" value: (sum(OrganicParticle collect each.C_labile)) style:spline marker:false thickness: 3.0;
+				data "C_recalcitrant" value: (sum(OrganicParticle collect each.C_recalcitrant)) style:spline marker:false thickness: 3.0;
+				data "N" value: (sum(OrganicParticle collect each.N)) style:spline marker:false thickness: 3.0;
+				data "P" value: (sum(OrganicParticle collect each.P)) style:spline marker:false thickness: 3.0;
 			}
 		}
 		
 		display "populations" type:java2D {
 			chart "Bacteria populations" type:series {
-				data "Copiotrophe R (C)" value: (sum(Copiotrophe_R collect each.C)) style:spline color: #red;
-				data "Copiotrophe K (C)" value: (sum(Copiotrophe_K collect each.C)) style:spline color: #green;
-				data "Oligotrophe K (C)" value: (sum(Oligotrophe_K collect each.C)) style:spline color: #blue;
+				data "Copiotrophe R (C)" value: (sum(Copiotrophe_R collect each.C)) style:spline color: #red marker:false thickness: 3.0;
+				data "Copiotrophe K (C)" value: (sum(Copiotrophe_K collect each.C)) style:spline color: #green marker:false thickness: 3.0;
+				data "Oligotrophe K (C)" value: (sum(Oligotrophe_K collect each.C)) style:spline color: #blue marker:false thickness: 3.0;
 			}
 		}
 	}
@@ -255,18 +283,18 @@ experiment TestProduction type:gui {
 		}
 	}
 	
-	reflex produce when: time > 6#month {
+	reflex produce when: local_time > 6#month {
 		ask simulation {
-		do pause;
-		write "Production: " + production(
-			N_seed: 16.0,
-			P_seed: 3.5,
-			N_plant: 12.5,
-			P_plant: 1.5,
-			harvest_index: 0.44,
-			N_from_soil: 1.0,
-			plot_surface: 10#m * 10#m
-		) + "kg";
+			do pause;
+			write "Production: " + production(
+				N_seed: 16.0,
+				P_seed: 3.5,
+				N_plant: 12.5,
+				P_plant: 1.5,
+				harvest_index: 0.44,
+				N_from_soil: 1.0,
+				plot_surface: 100#m * 100#m
+			) + "kg";
 		}
 	}
 //	output {

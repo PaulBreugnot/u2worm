@@ -62,7 +62,7 @@ species MicrobePopulation
 	 O : C * (step/368) / (1-0.7)s
 	 */
 	// Quantité de carbone voulue par la colonie
-	float C_assimilation_speed -> {C_actif * (step / dividing_time) / (division_enzyme_rate * (1 - respiration_rate))};
+	float C_assimilation_speed -> {C_actif * (local_step / dividing_time) / (division_enzyme_rate * (1 - respiration_rate))};
 	
 	
 	float CO2_produced <- 0.0;
@@ -85,7 +85,7 @@ species MicrobePopulation
 	{
 		// quantity de carbone cytosol -> structurel.
 		// Unconsumed C/N/P stays in the cytosol
-		float new_individual <- C * (step/dividing_time) * (1 - total_C_in_pore / pore_carrying_capacity);
+		float new_individual <- C * (local_step/dividing_time) * (1 - total_C_in_pore / pore_carrying_capacity);
 		
 		//new_individual <- min([new_individual , cytosol_C]);
 		new_individual <- min([new_individual , cytosol_division]);
@@ -137,8 +137,6 @@ species MicrobePopulation
 		}
 		
 		awake_population <- max([awake_population,wakeup_factor]);
-		
-		float limiting_factor <- min([perception_C, perception_C/C_N, perception_C/C_P]);
 	
 		cytosol_C <- cytosol_C + perception_C;
 		cytosol_N <- cytosol_N + perception_N;

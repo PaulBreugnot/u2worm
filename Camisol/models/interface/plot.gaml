@@ -10,7 +10,8 @@ model plot
 
 import "button.gaml"
 
-import "mock_camisol_adapter.gaml" as Camisol
+//import "mock_camisol_adapter.gaml" as Camisol
+import "camisol_adapter.gaml" as Camisol
 
 /**
  * Defines the Plot features that allow a parcel to be planted and fertilized.
@@ -306,6 +307,8 @@ species Plot skills: [thread] {
 	 * Plot identifier.
 	 */
 	int number <- 1 min:1 max: 4;
+	float surface <- 10000#m2;
+	
 	/**
 	 * Define the soil color and base parameters.
 	 */
@@ -336,21 +339,22 @@ species Plot skills: [thread] {
 	int micro_model_num_steps <- 1000;
 
 	bool camisol_running <- false;
+	int progress <- 0;
 
 	action plant(Seed seed_to_plant) {
 		seed<-seed_to_plant;
 		growth_state<-1;
 	}
 	action thread_action {
+		write "hello thread";
 		camisol_running <- true;
 		Plot current_plot <- self;
 		float harvest;
-		write "Starting camisol simulation on plot " + number;
 		ask Camisol.Simple[number-1] {
 			// Fertilize
 			ask simulation {
 				loop fertilizer over: current_plot.fertilizers {
-					write "Fertilizes plot " + current_plot.number + " with " + fertilizer;
+					write "[Camisol] Fertilizes plot " + current_plot.number + " with " + fertilizer + ".";
 					do fertilize
 						solubles: fertilizer.solubles
 						hemicellulose: fertilizer.hemicellulose
@@ -362,11 +366,14 @@ species Plot skills: [thread] {
 				}
 				
 				// Simulate
-				int max_step <- int(6*#month/step);
-				write "Step: " + max_step;
-				loop i from: 0 to: max_step {
+				write "[Camisol] Step: " + local_step/(1#h);
+				int max_step <- int(6*#month/local_step);
+//				int max_step <- 10;
+				write "[Camisol] Starting camisol simulation on plot " + current_plot.number + " for " + max_step + "steps.";
+				loop i from: 1 to: max_step {
 					do _step_;
 					ask current_plot {
+						progress <- int(100 * i / max_step);
 						if(seed != nil) {
 							growth_state <- 1 + int((2*i)/max_step);
 						}
@@ -375,7 +382,7 @@ species Plot skills: [thread] {
 				// Harvest crops
 				Seed crop <- current_plot.seed;
 				if (crop != nil) {
-					write "Producing " + current_plot.seed.name + " on plot " + current_plot.number;
+					write "[Camisol] Producing " + current_plot.seed.name + " on plot " + current_plot.number;
 					harvest <- production(
 						N_seed: crop.N_seed,
 						P_seed: crop.P_seed,
@@ -383,16 +390,17 @@ species Plot skills: [thread] {
 						P_plant: crop.P_plant,
 						harvest_index: crop.harvest_index,
 						N_from_soil: crop.N_from_soil,
-						plot_surface: 100*(#m^2));
-					write string(harvest) + "kg of " + current_plot.seed.name + " produced on plot " + current_plot.number;
+						plot_surface: current_plot.surface);
+					write "[Camisol] " + harvest + "kg of " + current_plot.seed.name + " produced on plot " + current_plot.number;
 				}
 			}
 		}
-		write "Ending camisol simulation on plot " + number;
+		write "[Camisol] Ending camisol simulation on plot " + number;
 		
 		create Harvest with: (
 			time: current_time,
 			plot: self.number,
+			plot_surface: self.surface,
 			seed: self.seed,
 			fertilizers: self.fertilizers collect each, // List copy
 			quantity: harvest
@@ -401,6 +409,7 @@ species Plot skills: [thread] {
 		}
 		
 		camisol_running <- false;
+		progress <- 0;
 		if(end_thread_callback != nil) {
 			// Only called from one plot, that waits until all other plots have finished
 			ask end_thread_callback {
@@ -572,6 +581,9 @@ species PlotView {
 			}
 		} else {
 			draw soil_images[plot.soil.color][plot.number-1] at: plot_image_location size:plot_image_size;
+		}
+		if plot.camisol_running {
+			draw "" + plot.progress + "%" at: (plot_image_location + point(0.0, 0.0, 0.05)) anchor: #center;
 		}
 	}
 }

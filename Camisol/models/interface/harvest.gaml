@@ -64,7 +64,7 @@ global {
 	];
 	
 	list<float> harvest_thresholds <- [
-		20.0, 100.0, 500.0
+		20.0/(10000#m2), 100.0/(10000#m2), 500.0/(10000#m2)
 	];
 	
 	/**
@@ -129,6 +129,11 @@ species Harvest {
 	 */
 	int plot;
 	/**
+	 * Surface of the plot on which crops were harvested.
+	 * This is used to compute the quantity_index from harvest_thresholds.
+	 */
+	float plot_surface;
+	/**
 	 * Crop type harvested.
 	 */
 	Seed seed;
@@ -144,7 +149,7 @@ species Harvest {
 	int quantity_index <- 0;
 	
 	init {
-		loop while: (quantity_index < length(harvest_thresholds) and quantity > harvest_thresholds[quantity_index]) {
+		loop while: (quantity_index < length(harvest_thresholds) and quantity > harvest_thresholds[quantity_index]*plot_surface) {
 			quantity_index <- quantity_index+1;
 		}
 	}

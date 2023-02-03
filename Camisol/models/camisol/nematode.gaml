@@ -38,7 +38,7 @@ species Nematode
 	float predation_rate <- 0.00001#gram/#day; // 0.5E-9#gram/#mn;
 	
 	//un nematode mange entre 10K et 100k bacteries par jour -> moins de 10k il dort (ref article de colman)
-	float wanted_C <- predation_rate * step;
+	float wanted_C <- predation_rate * local_step;
 	
 	//perception of the nematode
 	float available_C <- 0.0;
@@ -83,7 +83,7 @@ species Nematode
 			}
 		}
 		current_pore <- most_attractive;
-		location <- current_pore.location;
+		location <- any_location_in(current_pore);
 	}
 	
 	action respirate
@@ -176,5 +176,13 @@ species Nematode
 		stomack_C <- stomack_C + ((1-t1) * total_C);
 		stomack_N <- stomack_N + ((1-t1) * total_N);
 		stomack_P <- stomack_P + ((1-t1) * total_P);
+ 	}
+ 	
+ 	aspect red_dot {
+ 		if(awake) {
+ 			draw circle(0.00005) at: location color: #red;
+ 		} else {
+ 			draw circle(0.00005) at: location color: #brown;
+ 		}
  	}
 }

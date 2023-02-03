@@ -23,7 +23,7 @@ global {
 	int grid_width <- 30;
 	int grid_height <- 30;
 	
-	int nematodes_count <- 30;
+	int nematodes_count <- 100;
 	
 	geometry shape <- square(1#cm);
 	float model_area <- shape.area;
@@ -45,8 +45,9 @@ global {
 	
 	map<string,float> soil_characteristics <-   map(["C"::0.02157#gram/(#cm*#cm),"N"::0.00132#gram/(#cm*#cm),"P"::0.00077#gram/(#cm*#cm)]);
 	
+	float rain_diffusion_rate <- 0.9;
+	
 	init {
-		step <- 1#h;
 		// Counts the number of PORES after the initialization of the grid
 		int pores_count <- length(PoreParticle);
 		ask PoreParticle {
@@ -108,8 +109,77 @@ global {
 		create Nematode number: nematodes_count
 		{
 			current_pore <- one_of(PoreParticle); 
-			location <- current_pore.location;
+			location <- any_location_in(current_pore);
 		}
+	}
+	
+		
+	reflex rain when: rnd(1.0) < (1/7#day)*local_step {
+//		write "It's raining today!";
+		map<string, MicrobePopulation> extracted_populations;
+		loop bacteria_type over: bacteria_types {
+			create MicrobePopulation with: (
+				C: 0.0, cytosol_C: 0.0,
+				N: 0.0, cytosol_N: 0.0,
+				P: 0.0, cytosol_P: 0.0,
+				bacteria_name: bacteria_type
+			) {
+				extracted_populations[self.bacteria_name] <- self;
+			}
+		}
+		
+		ask PoreParticle {
+			ask populations {
+				ask extracted_populations[self.bacteria_name] {
+					float extracted_C <- myself.C * rain_diffusion_rate;
+					self.C <- self.C + extracted_C;
+					myself.C <- myself.C - extracted_C;
+					
+					float extracted_P <- myself.P * rain_diffusion_rate;
+					self.P <- self.P + extracted_P;
+					myself.P <- myself.P - extracted_P;
+					
+					float extracted_N <- myself.N * rain_diffusion_rate;
+					self.N <- self.N + extracted_N;
+					myself.N <- myself.N - extracted_N;
+					
+					float extracted_cytosol_C <- myself.cytosol_C * rain_diffusion_rate;
+					self.cytosol_C <- self.cytosol_C + extracted_cytosol_C;
+					myself.cytosol_C <- myself.cytosol_C - extracted_cytosol_C;
+					
+					float extracted_cytosol_P <- myself.cytosol_P * rain_diffusion_rate;
+					self.cytosol_P <- self.cytosol_P + extracted_cytosol_P;
+					myself.cytosol_P <- myself.cytosol_P - extracted_cytosol_P;
+					
+					float extracted_cytosol_N <- myself.cytosol_N * rain_diffusion_rate;
+					self.cytosol_N <- self.cytosol_N + extracted_cytosol_N;
+					myself.cytosol_N <- myself.cytosol_N - extracted_cytosol_N;
+				}
+			}
+		}
+		
+		ask PoreParticle {
+			ask populations {
+				MicrobePopulation extracted_pop <- extracted_populations[self.bacteria_name];
+				self.C <- self.C + extracted_pop.C/length(PoreParticle);
+				self.N <- self.N + extracted_pop.N/length(PoreParticle);
+				self.P <- self.P + extracted_pop.P/length(PoreParticle);
+				self.cytosol_C <- self.cytosol_C + extracted_pop.cytosol_C/length(PoreParticle);
+				self.cytosol_N <- self.cytosol_N + extracted_pop.cytosol_N/length(PoreParticle);
+				self.cytosol_P <- self.cytosol_P + extracted_pop.cytosol_P/length(PoreParticle);
+			}
+		}
+	
+		loop bacteria_type over: bacteria_types {
+			ask extracted_populations[bacteria_type] {
+				do die;
+			}
+		}
+	}
+
+	reflex increase_time {
+		local_cycle <- local_cycle+1;
+		local_time <- local_cycle * local_step;
 	}
 }
 
@@ -127,7 +197,9 @@ grid Particle width: grid_width height: grid_height neighbors: 4 {
 					N: (soil_characteristics["N"])*cell_area,
 					P: (soil_characteristics["P"])*cell_area,
 					grid_x: self.grid_x,
-					grid_y: self.grid_y
+					grid_y: self.grid_y,
+					location: self.location,
+					shape: self.shape
 				) {
 					myself.particle <- self;
 				}
@@ -140,7 +212,9 @@ grid Particle width: grid_width height: grid_height neighbors: 4 {
 					C_labile: (soil_characteristics["C"]/2)*cell_area, // TODO: variable factor
 					C_recalcitrant: (soil_characteristics["C"]/2)*cell_area,
 					grid_x: self.grid_x,
-					grid_y: self.grid_y
+					grid_y: self.grid_y,
+					location: self.location,
+					shape: self.shape
 				) {
 					myself.particle <- self;
 				}
@@ -159,7 +233,9 @@ grid Particle width: grid_width height: grid_height neighbors: 4 {
 					location: self.location,
 					grid_x: self.grid_x,
 					grid_y: self.grid_y,
-					in_pore: true
+					in_pore: true,
+					location: self.location,
+					shape: self.shape
 				) {
 					pore_organic_particle <- self;
 				}
@@ -171,7 +247,9 @@ grid Particle width: grid_width height: grid_height neighbors: 4 {
 					organic_particle: pore_organic_particle,
 					dam: pore_dam,
 					grid_x: self.grid_x,
-					grid_y: self.grid_y
+					grid_y: self.grid_y,
+					location: self.location,
+					shape: self.shape
 				) {
 					myself.particle <- self;
 				}
@@ -190,7 +268,7 @@ experiment display_grid {
 }
 
 experiment camisol_no_output {
-	reflex state when: cycle mod 100 = 0 {
+	reflex state when: local_cycle mod 100 = 0 {
 				ask simulation {
 			write "Time: " + time/#day;
 			write "Dom: N=" + sum(Dam collect each.dom[0]) + ", P=" + sum(Dam collect each.dom[1]) + ", C=" + sum(Dam collect each.dom[2]);
@@ -200,7 +278,7 @@ experiment camisol_no_output {
 		}
 	}
 	
-	reflex when: (time>6#month) {
+	reflex when: (local_time>6#month) {
 		ask simulation {
 			do pause;
 		}
@@ -209,7 +287,7 @@ experiment camisol_no_output {
 
 experiment camisol_output {
 	// Test to reactivate bacterias
-	reflex add_N_P when: cycle mod 300 = 0 {
+	reflex add_N_P when: local_cycle mod 300 = 0 {
 		ask simulation {
 			ask PoreParticle {
 				ask dam {
@@ -231,50 +309,45 @@ experiment camisol_output {
 	}
 	
 	output {
-		display "awake population" type: java2D {
-			chart "awake population" type: series {
-				data "CopioR awake %" value: (sum(Copiotrophe_R collect (each.awake_population)) / length(Copiotrophe_R)) * 100 style:spline color: #red;
-				data "CopioK awake %" value: (sum(Copiotrophe_K collect (each.awake_population)) / length(Copiotrophe_K)) * 100 style:spline color: #green;
-				data "Oligo awake %" value: (sum(Oligotrophe_K collect (each.awake_population)) / length(Oligotrophe_K)) * 100 style:spline color: #blue;
+		display "Awoken population" type: java2D {
+			chart "Awoken population" type: series {
+				data "CopioR awake %" value: (sum(Copiotrophe_R collect (each.awake_population)) / length(Copiotrophe_R)) * 100 style:spline color: #red marker:false thickness:3;
+				data "CopioK awake %" value: (sum(Copiotrophe_K collect (each.awake_population)) / length(Copiotrophe_K)) * 100 style:spline color: #green marker:false thickness:3;
+				data "Oligo awake %" value: (sum(Oligotrophe_K collect (each.awake_population)) / length(Oligotrophe_K)) * 100 style:spline color: #blue marker:false thickness:3;
+				data "Nematode awake %" value: (sum(Nematode collect (each.awake as int)) / length(Nematode)) * 100 style:spline color: #yellow marker:false thickness:3;
 			}
 		}
-		
-		display "Nematode" type: java2D {
-			chart "Awake nematodes" type: series {
-				data "Nematode awake %" value: (sum(Nematode collect (each.awake as int)) / length(Nematode)) * 100 style:spline color: #yellow;
-			}
-		}
-		
+			
 		display "dam" type: java2D {
 			chart "dam" type:series {
-				data "N (dom)" value: (sum(Dam collect each.dom[0])) style:spline;
-				data "P (dom)" value: (sum(Dam collect each.dom[1])) style:spline;
-				data "C (dom)" value: (sum(Dam collect each.dom[2])) style:spline;
-				data "N (dim)" value: (sum(Dam collect each.dim[0])) style:spline;
-				data "P (dim)" value: (sum(Dam collect each.dim[1])) style:spline;
+				data "N (dom)" value: (sum(Dam collect each.dom[0])) style:spline marker:false thickness:3;
+				data "P (dom)" value: (sum(Dam collect each.dom[1])) style:spline marker:false thickness:3;
+				data "C (dom)" value: (sum(Dam collect each.dom[2])) style:spline marker:false thickness:3;
+				data "N (dim)" value: (sum(Dam collect each.dim[0])) style:spline marker:false thickness:3;
+				data "P (dim)" value: (sum(Dam collect each.dim[1])) style:spline marker:false thickness:3;
 			}
 		}
 		
 //		display "CO2" type: java2D {
 //			chart "Emitted CO2" type:series {
-//				data "CO2" value: total_CO2_produced;
+//				data "CO2" value: total_CO2_produced marker:false thickness:3;
 //			}
 //		}
 		
 		display "organics" type:java2D {
 			chart "Organics composition" type:series {
-				data "C_labile" value: (sum(OrganicParticle collect each.C_labile)) style:spline;
-				data "C_recalcitrant" value: (sum(OrganicParticle collect each.C_recalcitrant)) style:spline;
-				data "N" value: (sum(OrganicParticle collect each.N)) style:spline;
-				data "P" value: (sum(OrganicParticle collect each.P)) style:spline;
+				data "C_labile" value: (sum(OrganicParticle collect each.C_labile)) style:spline marker:false thickness:3;
+				data "C_recalcitrant" value: (sum(OrganicParticle collect each.C_recalcitrant)) style:spline marker:false thickness:3;
+				data "N" value: (sum(OrganicParticle collect each.N)) style:spline marker:false thickness:3;
+				data "P" value: (sum(OrganicParticle collect each.P)) style:spline marker:false thickness:3;
 			}
 		}
 		
 		display "populations" type:java2D {
 			chart "Bacteria populations" type:series {
-				data "Copiotrophe R" value: (sum(Copiotrophe_R collect each.C)) style:spline color: #red;
-				data "Copiotrophe K" value: (sum(Copiotrophe_K collect each.C)) style:spline color: #green;
-				data "Oligotrophe K" value: (sum(Oligotrophe_K collect each.C)) style:spline color: #blue;
+				data "Copiotrophe R" value: (sum(Copiotrophe_R collect each.C)) style:spline color: #red marker:false thickness:3;
+				data "Copiotrophe K" value: (sum(Copiotrophe_K collect each.C)) style:spline color: #green marker:false thickness:3;
+				data "Oligotrophe K" value: (sum(Oligotrophe_K collect each.C)) style:spline color: #blue marker:false thickness:3;
 			}
 		}
 	}

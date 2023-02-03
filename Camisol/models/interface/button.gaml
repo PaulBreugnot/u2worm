@@ -37,15 +37,8 @@ global {
 		add button_box to: button_boxes;
 		button_boxes <- button_boxes sort_by (each.layer);
 	}
-	/**
-	 * Find buttons that are under the cursor, and handles the move of currently
-	 * selected item under the mouse cursor.
-	 * 
-	 * The mouse_enter and mouse_leave actions are called on the button under the
-	 * cursor when the mouse enters or leaves the button area, only if there is
-	 * currently no selected item.
-	 */
-	action mouse_move_buttons {
+	
+	Button select_button_under_mouse {
 		Button button_under_mouse <- nil;
 		
 		int i <- length(button_boxes)-1;
@@ -67,8 +60,19 @@ global {
 			}
 			i <- i-1;
 		}
+		return button_under_mouse;
+	}
+	/**
+	 * Find buttons that are under the cursor, and handles the move of currently
+	 * selected item under the mouse cursor.
+	 * 
+	 * The mouse_enter and mouse_leave actions are called on the button under the
+	 * cursor when the mouse enters or leaves the button area, only if there is
+	 * currently no selected item.
+	 */
+	action mouse_move_buttons {
+		Button button_under_mouse <- select_button_under_mouse();
 		
-			
 		// Mouse leave is triggered if a button was previously in focus and no button is
 		// currently in focus or the button currently in focus is not the same as the previous one.
 		if current_button_focus != nil and (button_under_mouse = nil or button_under_mouse != current_button_focus) {
@@ -102,6 +106,7 @@ global {
 	 * Action triggered when a button is clicked and no item is currently selected.
 	 */
 	action mouse_down_buttons {
+		current_button_focus <- select_button_under_mouse();
 		if current_button_focus != nil and selected_item = nil {
 			ask current_button_focus {
 				if enabled {

@@ -11,9 +11,18 @@ model dam
 import "organic_particle.gaml"
 
 global {
-	// TODO: à calibrer?
-	float facteur_enzyme_cr <- 1.0;
-	float facteur_enzyme_cl <- 1.0;
+	/**
+	 * How many recalcitrant C is obtained from organic particles from a unit of C enzyme.
+	 */
+	float enzyme_cr_factor <- 8.0;
+	/**
+	 * How many labile C is obtained from organic particles from a unit of C enzyme.
+	 */
+	float enzyme_cl_factor <- 8.0;
+	/**
+	 * How many labile C/N is obtained from organic particles from a unit of C/N enzyme.
+	 */
+	 float enzyme_n_p_factor <- 12.0;
 }
 
 /**
@@ -78,31 +87,23 @@ species Dam
 		
 	action decompe(list<OrganicParticle> particles_to_decompose)
 	{
-		float rate_oligoK <- 0.0;
-		float rate_copioK <- 0.0;
-		float rate_copioR <- 0.0;
-		
 		float add_C <- 0.0;
 		float add_P <- 0.0;
 		float add_N <- 0.0;
 		int organic_particles_count <- length(particles_to_decompose);
 		
-		float facteur_cl <- facteur_enzyme_cl; // TODO
-		float facteur_cr <- facteur_enzyme_cr;
-		float facteur_p_n <- 1.0;
-		
 		ask shuffle(particles_to_decompose) 
 		{	
 			/* Decompose C_recalcitrant */
 			float qty_enzyme_Cr_basic <- (myself.enzyme_Cr/organic_particles_count);
-			float carbone_expected_cr <- (qty_enzyme_Cr_basic * facteur_cr);
+			float carbone_expected_cr <- (qty_enzyme_Cr_basic * enzyme_cr_factor);
 			
 			float dec_Cr <- min([C_recalcitrant, carbone_expected_cr]);
 			C_recalcitrant  <- C_recalcitrant - dec_Cr;
 			
 			/* Decompose C_labile */
 			float qty_enzyme_Cl_basic <- (myself.enzyme_Cl/organic_particles_count);
-			float carbone_expected_cl <- (qty_enzyme_Cl_basic * facteur_cl);
+			float carbone_expected_cl <- (qty_enzyme_Cl_basic * enzyme_cl_factor);
 			
 			float dec_Cl <- min([C_labile, carbone_expected_cl]);
 			C_labile  <- C_labile - dec_Cl;
@@ -111,13 +112,13 @@ species Dam
 			add_C <- add_C + dec_Cl + dec_Cr + qty_enzyme_Cl_basic + qty_enzyme_Cr_basic;
 			
 			/* Decompose P */
-			float qty_enzyme_P <- ((myself.enzyme_P / organic_particles_count) * facteur_p_n);
+			float qty_enzyme_P <- ((myself.enzyme_P / organic_particles_count) * enzyme_n_p_factor);
 			float dec_P <- min([P,qty_enzyme_P]);
 			P <- P - dec_P;
 			add_P <- add_P + dec_P;
 			
 			/* Decompose N */
-			float qty_enzyme_N <- ((myself.enzyme_N / organic_particles_count) * facteur_p_n);
+			float qty_enzyme_N <- ((myself.enzyme_N / organic_particles_count) * enzyme_n_p_factor);
 			float dec_N <- min([N,qty_enzyme_N]);
 			N <- N - dec_N;
 			add_N <- add_N + dec_N;
