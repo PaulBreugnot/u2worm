@@ -132,9 +132,9 @@ global {
 		}
 	}
 	
-	reflex init_camisol when: local_cycle=1 {
-		write "[Camisol] Time step duration: " + local_step/(1#h) + "h";
-	}
+//	reflex init_camisol when: local_cycle=1 {
+//		write "[Camisol] Time step duration: " + local_step/(1#h) + "h";
+//	}
 }
 
 experiment TestCamisolWithFertilizer {

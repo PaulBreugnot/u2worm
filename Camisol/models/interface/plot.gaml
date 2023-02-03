@@ -18,6 +18,8 @@ import "camisol_adapter.gaml" as Camisol
  */
  
 global {
+	date output_time <- #now;
+	string output_file_suffix <- "" + output_time.year + "" +output_time.month + "" + output_time.day + "" + output_time.hour + "" + output_time.minute;
 	float fertilizer_icon_sep <- 0.8*cell_size;
 	
 	action init_plots {
@@ -297,6 +299,20 @@ species EndThreadCallback {
 }
 
 
+species CsvOutput {
+	int time;
+	int plot_surface;
+	string soil;
+	string seed;
+	string fertilizer_1;
+	string fertilizer_2;
+	string fertilizer_3;
+	string fertilizer_4;
+	string fertilizer_5;
+	string fertilizer_6;
+	float quantity;
+}
+
 /**
  * A parcel that can be planted and fertilized.
  */
@@ -340,13 +356,14 @@ species Plot skills: [thread] {
 
 	bool camisol_running <- false;
 	int progress <- 0;
+	
+	string output_file <- "../../output/plot_" + number + "_" + output_file_suffix + ".csv";
 
 	action plant(Seed seed_to_plant) {
 		seed<-seed_to_plant;
 		growth_state<-1;
 	}
 	action thread_action {
-		write "hello thread";
 		camisol_running <- true;
 		Plot current_plot <- self;
 		float harvest;
@@ -366,10 +383,9 @@ species Plot skills: [thread] {
 				}
 				
 				// Simulate
-				write "[Camisol] Step: " + local_step/(1#h);
 				int max_step <- int(6*#month/local_step);
 //				int max_step <- 10;
-				write "[Camisol] Starting camisol simulation on plot " + current_plot.number + " for " + max_step + "steps.";
+				write "[Camisol] Starting camisol simulation on plot " + current_plot.number + " for " + max_step + " steps.";
 				loop i from: 1 to: max_step {
 					do _step_;
 					ask current_plot {
@@ -406,6 +422,22 @@ species Plot skills: [thread] {
 			quantity: harvest
 		) {
 			add self to: myself.harvests;
+		}
+		
+		create CsvOutput with: (
+			time: current_time,
+			plot_surface: self.surface,
+			soil: self.soil.color,
+			seed: self.seed = nil? "" : self.seed.name,
+			fertilizer_1: length(self.fertilizers) > 0 ? self.fertilizers[0].name : "",
+			fertilizer_2: length(self.fertilizers) > 1 ? self.fertilizers[1].name : "",
+			fertilizer_3: length(self.fertilizers) > 2 ? self.fertilizers[2].name : "",
+			fertilizer_4: length(self.fertilizers) > 3 ? self.fertilizers[3].name : "",
+			fertilizer_5: length(self.fertilizers) > 4 ? self.fertilizers[4].name : "",
+			fertilizer_6: length(self.fertilizers) > 5 ? self.fertilizers[5].name : "",
+			quantity: harvest
+		) {
+			save [time, plot_surface, soil, seed, fertilizer_1, fertilizer_2, fertilizer_3, fertilizer_4, fertilizer_5, fertilizer_6, quantity] to: myself.output_file type:csv header:true rewrite: false;
 		}
 		
 		camisol_running <- false;

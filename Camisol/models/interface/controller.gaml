@@ -338,16 +338,12 @@ species RunButton parent: Button {
 			// Only used to update the growth display
 			do resume;
 		}
-		write length(Plot);
 		ask Plot {
 			do run_thread;
 		}
 	}
 
 	action end_simulation {
-		ask world {
-			do pause;
-		}
 		int global_growth <- 0;
 		ask PlotView {
 			global_growth <- global_growth + plot.growth_state;
@@ -381,7 +377,12 @@ species RunButton parent: Button {
 			mode <- HARVEST;
 		}
 		running <- false;
-		write "[Camisol] Simulation duration: " + (init_cycle-cycle)*interface_minimum_cycle_duration/#mn;
+		ask world {
+			do pause;
+			// Extra step to ensure display update
+			do _step_;
+		}
+		write "[Camisol] Simulation duration: " + int((cycle-init_cycle)*interface_minimum_cycle_duration/#mn) + " minutes.";
 	}
 	
 	action go_to_next_epoch {
