@@ -22,7 +22,7 @@ global {
 	
 	list<string> organic_fertilizers <- [
 		"Corne de zebu", "Cendre d'eucalyptus", "Mada Compost", "Vermicompost moyen",
-		"Fumier traditionnel Itasy", "Fientes de volailles"
+		"Fumier traditionnel Itasy", "Fumier ameliore", "Fientes de volailles"
 	];
 	list<string> chemical_fertilizers <- [
 		"Hyperfos", "Guanomad"
