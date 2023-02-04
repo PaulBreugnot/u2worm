@@ -18,7 +18,7 @@ global
 	string CSV_LIGNINE <- "Lignine";
 	string CSV_C_N <- "C:N";
 	string CSV_C_P <- "C:P";
-	string CSV_DOSE_ESSAI <- "Dose d'essai (kg/ha)";
+	string CSV_DOSE_ESSAI <- "Dose d’essai (kg/ha)";
 	
 	// Crop fields headers
 	string CSV_N <- "N(kg/tonne)";
