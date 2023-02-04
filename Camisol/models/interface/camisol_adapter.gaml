@@ -45,6 +45,7 @@ global {
 		write "N_plant: " + N_plant;
 		write "P_plant: " + P_plant;
 		write "Harvest index: " + harvest_index;
+		write "Plot surface: " + plot_surface;
 		float required_N <- (harvest_index * N_seed + (1-harvest_index) * N_plant) * N_from_soil * #kg * #ton^-1;
 		float required_P <- harvest_index * P_seed + (1-harvest_index) * P_seed * #kg * #ton^-1;
 		write "Required N: " + required_N;
@@ -76,6 +77,13 @@ global {
 		float C_P,
 		float sample_dose
 	) {
+		write "Solubles: " + solubles;
+		write "Hemicellulose: " + hemicellulose;
+		write "Cellulose: " + cellulose;
+		write "Lignine: " + lignine;
+		write "C_N: " + C_N;
+		write "C_P: " + C_P;
+		write "Sample dose: " + sample_dose;
 		// 80% soluble -> C_labile 
 		// 20% soluble -> DOM
 		
@@ -162,37 +170,48 @@ experiment TestCamisolWithFertilizer {
 		}
 	}
 	
-	reflex fert when: local_cycle mod 3000 = 0 {
+	reflex fert when: local_cycle mod 4464 = 0 {
 		ask simulation {
-			// Rice
-			write "Rice production: " + production(
-				N_seed: 16.0,
-				P_seed: 3.5,
-				N_plant: 12.5,
-				P_plant: 1.5,
-				harvest_index: 0.44,
+//			// Rice
+//			write "Rice production: " + production(
+//				N_seed: 16.0,
+//				P_seed: 3.5,
+//				N_plant: 12.5,
+//				P_plant: 1.5,
+//				harvest_index: 0.44,
+//				N_from_soil: 1.0,
+//				plot_surface: 100#m * 100#m
+//			) + "kg";
+			// Tomato
+			write "Tomato production: " + production(
+				N_seed: 1.5,
+				P_seed: 0.35,
+				N_plant: 1.5,
+				P_plant: 0.35,
+				harvest_index: 0.85,
 				N_from_soil: 1.0,
-				plot_surface: 100#m * 100#m
+				plot_surface: 10000#m2
 			) + "kg";
-			loop i from: 0 to: 3 {
+			loop i from: 0 to: 2 {
 				// Mada Compost
+//				do fertilize
+//					solubles: 26.66
+//					hemicellulose: 4.72
+//					cellulose: 55.19
+//					lignine: 13.43
+//					C_N: 12.25
+//					C_P: 35.0
+//					sample_dose: 3000.0;
 				do fertilize
-					solubles: 26.66
-					hemicellulose: 4.72
-					cellulose: 55.19
-					lignine: 13.43
-					C_N: 12.25
-					C_P: 35.0
-					sample_dose: 3000.0;
-	//			do fertilize
-	//				solubles: 82.2
-	//				hemicellulose: 9.6
-	//				cellulose: 7.8
-	//				lignine: 0.43
-	//				C_N: 3.55
-	//				C_P: 0.65
-	//				sample_dose: 500.0;
+					solubles: 82.2
+					hemicellulose: 9.6
+					cellulose: 7.8
+					lignine: 0.43
+					C_N: 3.55
+					C_P: 0.65
+					sample_dose: 500.0;
 			}
+			do pause;
 		}
 	}
 	

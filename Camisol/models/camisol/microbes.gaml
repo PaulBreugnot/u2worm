@@ -32,7 +32,7 @@ species Copiotrophe_R parent:MicrobePopulation {
 		float total_C_init <- copiotrophe_R_rate * total_initial_bacteria_weight / length(PoreParticle);
 		bacteria_name <- COPIOTROPHE_R;
 		dividing_time <- dividing_time_copiotrophe_R;
-		awake_population <- 0.0;
+		awake_population <- wakeup_factor;
 		L_R_rate <- 1.0;
 		C_N <- 5.0;
 		C_P <- 10.0;
@@ -59,7 +59,7 @@ species Copiotrophe_K parent:MicrobePopulation {
 		float total_C_init <- copiotrophe_K_rate * total_initial_bacteria_weight / length(PoreParticle);
 		bacteria_name <- COPIOTROPHE_K;
 		dividing_time <- dividing_time_copiotrophe_K;
-		awake_population <- 0.0;
+		awake_population <- wakeup_factor;
 		L_R_rate <- 0.2;
 		C_N <- 5.0;
 		C_P <- 10.0;
@@ -88,7 +88,7 @@ species Oligotrophe_K parent:MicrobePopulation {
 		float total_C_init <- oligotrophe_K_rate * total_initial_bacteria_weight / length(PoreParticle);
 		bacteria_name <- OLIGOTROPHE_K;
 		dividing_time <- dividing_time_oligotrophe;
-		awake_population <- 1.0;
+		awake_population <- wakeup_factor;
 		L_R_rate <- 0.8;
 		C_N <- 5.0;
 		C_P <- 10.0;

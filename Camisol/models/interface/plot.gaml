@@ -419,7 +419,8 @@ species Plot skills: [thread] {
 			// Fertilize
 			ask simulation {
 				loop fertilizer over: current_plot.fertilizers {
-					write "[Camisol] Fertilizes plot " + current_plot.number + " with " + fertilizer + ".";
+					write "[Camisol] Fertilizes plot " + current_plot.number + " with " + fertilizer.name + ".";
+					write fertilizer.sample_dose;
 					do fertilize
 						solubles: fertilizer.solubles
 						hemicellulose: fertilizer.hemicellulose

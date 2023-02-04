@@ -14,7 +14,7 @@ import "microbes.gaml"
 
 species Nematode
 {
-	float threshold_DOC <- 0.5; // TODO: à vérifier
+	float threshold_DOC <- 100.0; // TODO: à vérifier
 	
 	float C_N <- 6.0; // TODO: source?
 	float C_P <- 47.0; // TODO: source?
@@ -34,8 +34,8 @@ species Nematode
 	PoreParticle current_pore;
 	
 	bool awake <- true;
-//	float predation_rate <- 0.5e-9#gram/#mn;
-	float predation_rate <- 0.00001#gram/#day; // 0.5E-9#gram/#mn;
+	float predation_rate <- 10*0.5e-9#gram/#mn;
+//	float predation_rate <- 0.00001#gram/#day; // 0.5E-9#gram/#mn;
 	
 	//un nematode mange entre 10K et 100k bacteries par jour -> moins de 10k il dort (ref article de colman)
 	float wanted_C <- predation_rate * local_step;
