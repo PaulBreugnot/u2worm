@@ -63,8 +63,10 @@ global {
 		image_file(image_path + definition + "/harvest/barrow.png")
 	];
 	
+	// TODO: Calibrate this
+	// TODO: define as volumes? + volume by mass for each crop?
 	list<float> harvest_thresholds <- [
-		20.0/(10000#m2), 100.0/(10000#m2), 500.0/(10000#m2)
+		20.0, 100.0, 500.0
 	];
 	
 	/**
@@ -146,12 +148,20 @@ species Harvest {
 	 */
 	float quantity;
 	
-	int quantity_index <- 0;
+	int barrows <- 0;
+	int bags <- 0;
+	int baskets <- 0;
 	
 	init {
-		loop while: (quantity_index < length(harvest_thresholds) and quantity > harvest_thresholds[quantity_index]*plot_surface) {
-			quantity_index <- quantity_index+1;
+		barrows <- round(quantity/harvest_thresholds[2]);
+		if (barrows = 0) {
+			bags <- round(quantity/harvest_thresholds[1]);
+			if (bags = 0) {
+				baskets <- round(quantity/harvest_thresholds[1]);
+			}
 		}
+
+		 write "Quantity " + quantity + "kg = " + barrows + " barrows, " + bags + " bags, " + baskets + " baskets.";
 	}
 }
 
@@ -172,10 +182,46 @@ species HarvestView {
 	}
 	
 	aspect default {
-		if harvest.quantity_index > 0 {
-			draw harvest_images[harvest.quantity_index-1]
-				size: harvest_sizes[harvest.quantity_index-1]
-				at: harvest_icon_location;	
+		float total_length <- 0.0;
+		list<image_file> images;
+		list<point> sizes;
+		list<point> locations;
+		point current_location <- harvest_icon_location;
+		if(harvest.barrows > 0) {
+			total_length <- total_length + harvest_sizes[2].x * (0 + 0.9*(harvest.barrows-1));
+			loop i from: 0 to: harvest.barrows-1 {
+				add harvest_images[2] to: images;
+				add harvest_sizes[2] to: sizes;
+				add current_location to: locations;
+				current_location <- current_location + point(0.9*harvest_sizes[2].x, 0.0, 0.0);
+			}
+		}
+		if(harvest.bags > 0) {
+			total_length <- total_length + harvest_sizes[1].x * (0 + 0.9*(harvest.bags-1));
+			loop i from: 0 to: harvest.bags-1 {
+				add harvest_images[1] to: images;
+				add harvest_sizes[1] to: sizes;
+				add current_location to: locations;
+				current_location <- current_location + point(0.9*harvest_sizes[1].x, 0.0, 0.0);
+			}
+		}
+		if(harvest.baskets > 0) {
+			total_length <- total_length + harvest_sizes[0].x * (0 + 0.9*(harvest.baskets-1));
+			loop i from: 0 to: harvest.baskets-1 {
+				add harvest_images[0] to: images;
+				add harvest_sizes[0] to: sizes;
+				add current_location to: locations;
+				current_location <- current_location + point(0.9*harvest_sizes[0].x, 0.0, 0.0);
+			}
+		}
+		loop i from: 0 to: length(locations)-1 {
+			locations[i] <- locations[i] - point(total_length/2, 0.0, 0.0);
+		}
+//		write "Images: " + images;
+//		write "Locations: " + locations;
+//		write "sizes: " + sizes;
+		loop i from: 0 to: length(images)-1 {
+			draw images[i] at: locations[i] size: sizes[i];
 		}
 		loop i from: 0 to: length(harvest.fertilizers)-1 {
 			draw fertilizer_images[harvest.fertilizers[i].type-1]
