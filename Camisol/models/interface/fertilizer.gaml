@@ -67,7 +67,7 @@ species Fertilizer {
 			lignine <- fertilizer_data[CSV_LIGNINE];
 			C_N <- fertilizer_data[CSV_C_N];
 			C_P <- fertilizer_data[CSV_C_P];
-			sample_dose <- fertilizer_data[CSV_DOSE_ESSAI];
+			sample_dose <- fertilizer_data[CSV_DOSE_ESSAI]#kg/(10000#m2);
 		}
 	}
 	

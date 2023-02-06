@@ -66,7 +66,7 @@ global {
 	// TODO: Calibrate this
 	// TODO: define as volumes? + volume by mass for each crop?
 	list<float> harvest_thresholds <- [
-		20.0, 100.0, 500.0
+		20.0#kg, 100.0#kg, 500.0#kg
 	];
 	
 	/**

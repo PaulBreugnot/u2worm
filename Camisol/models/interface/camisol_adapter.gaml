@@ -12,31 +12,6 @@ import "../camisol/camisol.gaml"
 
 global {
 	
-	float estimate_production(float N_seed, float P_seed, float N_plant, float P_plant, float harvest_index, float N_from_soil, float plot_surface) {
-		// N_from_soil = 0 => an infinite quantity of N can be retrieved from air
-		write "N_seed: " + N_seed;
-		write "P_seed: " + P_seed;
-		write "N_plant: " + N_plant;
-		write "P_plant: " + P_plant;
-		write "Harvest index: " + harvest_index;
-		float required_N <- (harvest_index * N_seed + (1-harvest_index) * N_plant) * N_from_soil * #kg * #ton^-1;
-		float required_P <- harvest_index * P_seed + (1-harvest_index) * P_seed * #kg * #ton^-1;
-		write "Required N: " + required_N;
-		write "Required P: " + required_P;
-		float available_N <- sum(Dam collect each.dim[0]);
-		float available_P <- sum(Dam collect each.dim[0]);
-		write "Available N: " + available_N;
-		write "Available P: " + available_P;
-		float total_biomass_production <- min([
-			required_N > 0 ? available_N / required_N : #infinity,
-			required_P > 0 ? available_P / required_P : #infinity
-		]);
-		write "Total biomass production: " + total_biomass_production;
-
-		// Returns the total mass of seed production
-		return harvest_index * total_biomass_production * plot_surface / model_area;
-	}
-	
 	float production(float N_seed, float P_seed, float N_plant, float P_plant, float harvest_index, float N_from_soil, float plot_surface) {
 		// N_from_soil = 0 => an infinite quantity of N can be retrieved from air
 		write "N_seed: " + N_seed;
@@ -45,8 +20,8 @@ global {
 		write "P_plant: " + P_plant;
 		write "Harvest index: " + harvest_index;
 		write "Plot surface: " + plot_surface;
-		float required_N <- (harvest_index * N_seed + (1-harvest_index) * N_plant) * N_from_soil * #kg * #ton^-1;
-		float required_P <- harvest_index * P_seed + (1-harvest_index) * P_seed * #kg * #ton^-1;
+		float required_N <- (harvest_index * N_seed + (1-harvest_index) * N_plant) * N_from_soil;
+		float required_P <- harvest_index * P_seed + (1-harvest_index) * P_plant;
 		write "Required N: " + required_N;
 		write "Required P: " + required_P;
 		float total_biomass_production <- 0.0;
@@ -92,13 +67,10 @@ global {
 		float soluble_labile_rate <- 0.8;
 		
 		//10% de carbone
-		
-		float hectare <- 10000#m2;
-		float model_size <- model_area; // todo selon l'echelle
-		
-		float model_ratio <- model_size / hectare;
-		
-		float quantity_for_model <- sample_dose * model_ratio;
+		write "Sample dose: " + sample_dose;
+		write "Model area: " + model_area;
+		float quantity_for_model <- sample_dose * model_area;
+		write "Quantity for model: " + quantity_for_model;
 		
 		// write("Fertilizer quantity for model: "+ qty_for_model);
 		
@@ -149,14 +121,14 @@ experiment TestCamisolWithFertilizer {
 		create simulation;
 		ask simulation {
 			// Mada Compost
-//			do fertilize
-//				solubles: 26.66
-//				hemicellulose: 4.72
-//				cellulose: 55.19
-//				lignine: 13.43
-//				C_N: 12.25
-//				C_P: 35.0
-//				sample_dose: 3000.0;
+			do fertilize
+				solubles: 26.66
+				hemicellulose: 4.72
+				cellulose: 55.19
+				lignine: 13.43
+				C_N: 12.25
+				C_P: 35.0
+				sample_dose: 3000.0#kg/(10000#m2);
 			// Guanomad
 //			do fertilize
 //				solubles: 82.2
@@ -169,46 +141,46 @@ experiment TestCamisolWithFertilizer {
 		}
 	}
 	
-	reflex fert when: local_cycle mod 4464 = 0 {
+	reflex fert when: local_cycle > 1 and local_cycle mod 4464 = 0 {
 		ask simulation {
 //			// Rice
-//			write "Rice production: " + production(
-//				N_seed: 16.0,
-//				P_seed: 3.5,
-//				N_plant: 12.5,
-//				P_plant: 1.5,
-//				harvest_index: 0.44,
-//				N_from_soil: 1.0,
-//				plot_surface: 100#m * 100#m
-//			) + "kg";
-			// Tomato
-			write "Tomato production: " + production(
-				N_seed: 1.5,
-				P_seed: 0.35,
-				N_plant: 1.5,
-				P_plant: 0.35,
-				harvest_index: 0.85,
+			write "Rice production: " + production(
+				N_seed: 16.0#kg/#ton,
+				P_seed: 3.5#kg/#ton,
+				N_plant: 12.5#kg/#ton,
+				P_plant: 1.5#kg/#ton,
+				harvest_index: 0.44,
 				N_from_soil: 1.0,
-				plot_surface: 10000#m2
+				plot_surface: 100#m * 100#m
 			) + "kg";
-			loop i from: 0 to: 2 {
+			// Tomato
+//			write "Tomato production: " + production(
+//				N_seed: 1.5#kg/#ton,
+//				P_seed: 0.35#kg/#ton,
+//				N_plant: 1.5#kg/#ton,
+//				P_plant: 0.35#kg/#ton,
+//				harvest_index: 0.85#kg/#ton,
+//				N_from_soil: 1.0,
+//				plot_surface: 10000#m2
+//			) + "kg";
+			loop i from: 0 to: 1 {
 				// Mada Compost
-//				do fertilize
-//					solubles: 26.66
-//					hemicellulose: 4.72
-//					cellulose: 55.19
-//					lignine: 13.43
-//					C_N: 12.25
-//					C_P: 35.0
-//					sample_dose: 3000.0;
 				do fertilize
-					solubles: 82.2
-					hemicellulose: 9.6
-					cellulose: 7.8
-					lignine: 0.43
-					C_N: 3.55
-					C_P: 0.65
-					sample_dose: 500.0;
+					solubles: 26.66
+					hemicellulose: 4.72
+					cellulose: 55.19
+					lignine: 13.43
+					C_N: 12.25
+					C_P: 35.0
+					sample_dose: 3000.0#kg/(10000#m2);
+//				do fertilize
+//					solubles: 82.2
+//					hemicellulose: 9.6
+//					cellulose: 7.8
+//					lignine: 0.43
+//					C_N: 3.55
+//					C_P: 0.65
+//					sample_dose: 500.0#kg/(10000#m2);
 			}
 			do pause;
 		}
@@ -297,7 +269,7 @@ experiment TestProduction type:gui {
 				lignine: 13.43
 				C_N: 12.25
 				C_P: 35.0
-				sample_dose: 3000.0;
+				sample_dose: 3000.0#kg/(10000#m2);
 			}
 			// Guanomad
 //			do fertilize
@@ -316,10 +288,10 @@ experiment TestProduction type:gui {
 			do pause;
 			// Rice
 			write "Production: " + production(
-				N_seed: 16.0,
-				P_seed: 3.5,
-				N_plant: 12.5,
-				P_plant: 1.5,
+				N_seed: 16.0#kg,
+				P_seed: 3.5#kg,
+				N_plant: 12.5#kg,
+				P_plant: 1.5#kg,
 				harvest_index: 0.44,
 				N_from_soil: 1.0,
 				plot_surface: 100#m * 100#m

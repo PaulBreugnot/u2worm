@@ -45,7 +45,7 @@ global {
 	float phosphore_concentration_in_dim <- (1.43#gram * 10^-6)/#gram;
 	
 	
-	float rain_diffusion_rate <- 0.9;
+	float rain_diffusion_rate <- 0.4;
 	
 	init {
 		// Counts the number of PORES after the initialization of the grid

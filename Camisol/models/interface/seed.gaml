@@ -63,18 +63,18 @@ species Seed {
 				error "Crop " + name + " not found in the provided CSV data.";
 			} else {
 				// Distinct data for plant and seeds, as with corn or rice
-				N_seed <- seed_crop_data[CSV_N];
-				N_plant <- plant_crop_data[CSV_N];
-				P_seed <- seed_crop_data[CSV_P];
-				P_plant <- plant_crop_data[CSV_P];
+				N_seed <- seed_crop_data[CSV_N]#kg/#ton;
+				N_plant <- plant_crop_data[CSV_N]#kg/#ton;
+				P_seed <- seed_crop_data[CSV_P]#kg/#ton;
+				P_plant <- plant_crop_data[CSV_P]#kg/#ton;
 				harvest_index <- seed_crop_data[CSV_HARVEST_INDEX];
 				N_from_soil <- seed_crop_data[CSV_N_FROM_SOIL];
 			}
 		} else {
-				N_seed <- crop_data[CSV_N];
-				N_plant <- N_seed;
-				P_seed <- crop_data[CSV_P];
-				P_plant <- P_seed;
+				N_seed <- crop_data[CSV_N]#kg/#ton;
+				N_plant <- N_seed#kg/#ton;
+				P_seed <- crop_data[CSV_P]#kg/#ton;
+				P_plant <- P_seed#kg/#ton;
 				harvest_index <- crop_data[CSV_HARVEST_INDEX];
 				N_from_soil <- crop_data[CSV_N_FROM_SOIL];
 		}
