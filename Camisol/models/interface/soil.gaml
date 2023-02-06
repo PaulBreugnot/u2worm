@@ -46,12 +46,29 @@ global {
 		ask Soil where (each.color = "brown") {
 			default_soil <- self;
 		}
+		ask Soil where(each.color = "brown") {
+			C <- 0.01708#gram/(#cm*#cm);
+			N <- 0.00104#gram/(#cm*#cm);
+			P <- 0.00059#gram/(#cm*#cm);
+		}
+		ask Soil where(each.color = "red") {
+			C <- 0.02108#gram/(#cm*#cm);
+			N <- 0.00119#gram/(#cm*#cm);
+			P <- 0.00062#gram/(#cm*#cm);
+		}
+		ask Soil where(each.color = "black") {
+			C <- 0.02157#gram/(#cm*#cm);
+			N <- 0.00132#gram/(#cm*#cm);
+			P <- 0.00077#gram/(#cm*#cm);
+		}
 	}
 	
 }
 
 species Soil {
-	// TODO: What parameters should be associated to the soil?
+	float C;
+	float N;
+	float P;
 	
 	/**
 	 * The color of the soil. Brown by default.

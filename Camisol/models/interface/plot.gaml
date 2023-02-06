@@ -18,6 +18,9 @@ import "camisol_adapter.gaml" as Camisol
  */
  
 global {
+	float epoch_duration <- 6#month;
+//	float epoch_duration <- 100#h; // For interface test purpose only
+
 	date output_time <- #now;
 	string output_file_suffix <- "" + output_time.year + "" +output_time.month + "" + output_time.day + "" + output_time.hour + "" + output_time.minute;
 	float fertilizer_icon_sep <- 0.8*cell_size;
@@ -319,7 +322,6 @@ global {
 			selected_fertilizer <- nil;
 		}
 		if selected_soil != nil {
-			// TODO: copy soil parameters (other than color, already handled by the move/preview action) from the selected soil to the plot's soil
 			current_plot_focus.plot.soil <- selected_soil.soil;
 			write "Soil of plot " + current_plot_focus.plot.number + " set to " + selected_soil.soil.color;
 			ask selected_soil {
@@ -418,6 +420,13 @@ species Plot skills: [thread] {
 		ask Camisol.Simple[number-1] {
 			// Fertilize
 			ask simulation {
+				if current_time = 0 {
+					do init_soil(
+						C: current_plot.soil.C,
+						N: current_plot.soil.N,
+						P: current_plot.soil.P
+					);
+				}
 				loop fertilizer over: current_plot.fertilizers {
 					write "[Camisol] Fertilizes plot " + current_plot.number + " with " + fertilizer.name + ".";
 					write fertilizer.sample_dose;
@@ -432,8 +441,7 @@ species Plot skills: [thread] {
 				}
 				
 				// Simulate
-				int max_step <- int(6*#month/local_step);
-//				int max_step <- 10;
+				int max_step <- int(epoch_duration/local_step);
 				write "[Camisol] Starting camisol simulation on plot " + current_plot.number + " for " + max_step + " steps.";
 				loop i from: 1 to: max_step {
 					do _step_;

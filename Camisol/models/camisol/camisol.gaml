@@ -20,13 +20,14 @@ global {
 	float mineral_rate <- 1/3;
 	float pore_rate <- 1 - organic_rate - mineral_rate;
 
-	int grid_width <- 30;
-	int grid_height <- 30;
+	int grid_size <- 30;
+	float env_size <- 1#cm;
 	
 	int nematodes_count <- 50;
 	
-	geometry shape <- square(1#cm);
+	geometry shape <- square(env_size);
 	float model_area <- shape.area;
+	float cell_area <- (env_size/grid_size)^2;
 
 	/**
 	 * Solid matter weight by volume of soil.
@@ -43,7 +44,6 @@ global {
 	float phosphore_concentration_in_dam <- (400.0#gram * 10^-6)/#gram;
 	float phosphore_concentration_in_dim <- (1.43#gram * 10^-6)/#gram;
 	
-	map<string,float> soil_characteristics <-   map(["C"::0.02157#gram/(#cm*#cm),"N"::0.00132#gram/(#cm*#cm),"P"::0.00077#gram/(#cm*#cm)]);
 	
 	float rain_diffusion_rate <- 0.9;
 	
@@ -111,8 +111,31 @@ global {
 			current_pore <- one_of(PoreParticle); 
 			location <- any_location_in(current_pore);
 		}
+	 	// Default soil initialization. Can be safely overriden with subsequent init_soil() calls.
+		do init_soil(
+			C: 0.02157#gram/(#cm*#cm),
+			N: 0.00132#gram/(#cm*#cm),
+			P: 0.00077#gram/(#cm*#cm)
+		);
 	}
 	
+	action init_soil(float C, float N, float P) {
+		write "Soil C: " + C + "kg/m2";
+		write "Soil N: " + N + "kg/m2";
+		write "Soil P: " + P + "kg/m2";
+		ask MineralParticle {
+			N <- N*cell_area;
+			P <- P*cell_area;
+		}
+		ask OrganicParticle {
+			if(!in_pore) {
+				N <- N*cell_area;
+				P <- P*cell_area;
+				C_labile <- (C/2)*cell_area; // TODO: variable factor
+				C_recalcitrant <- (C/2)*cell_area;
+			}
+		}
+	}
 		
 	reflex rain when: rnd(1.0) < (1/7#day)*local_step {
 //		write "It's raining today!";
@@ -183,19 +206,16 @@ global {
 	}
 }
 
-grid Particle width: grid_width height: grid_height neighbors: 4 {
+grid Particle width: grid_size height: grid_size neighbors: 4 {
 	string type <- rnd_choice([ORGANIC::organic_rate, MINERAL::mineral_rate, PORE::pore_rate]);
 	agent particle;
 	
 	init {
-		float cell_area <- self.shape.area;
 		switch type {
 			match MINERAL 
 			{
 				color <- #yellow;
 				create MineralParticle with: (
-					N: (soil_characteristics["N"])*cell_area,
-					P: (soil_characteristics["P"])*cell_area,
 					grid_x: self.grid_x,
 					grid_y: self.grid_y,
 					location: self.location,
@@ -207,10 +227,6 @@ grid Particle width: grid_width height: grid_height neighbors: 4 {
 			match ORGANIC {
 				color <- #green;
 				create OrganicParticle with: (
-					N: (soil_characteristics["N"])*cell_area,
-					P: (soil_characteristics["P"])*cell_area,
-					C_labile: (soil_characteristics["C"]/2)*cell_area, // TODO: variable factor
-					C_recalcitrant: (soil_characteristics["C"]/2)*cell_area,
 					grid_x: self.grid_x,
 					grid_y: self.grid_y,
 					location: self.location,
@@ -268,6 +284,7 @@ experiment display_grid {
 }
 
 experiment camisol_no_output {
+
 	reflex state when: local_cycle mod 100 = 0 {
 				ask simulation {
 			write "Time: " + time/#day;
