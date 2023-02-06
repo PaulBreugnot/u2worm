@@ -86,6 +86,9 @@ global {
 					ask fertilizer_handful_buttons {
 						do die;
 					}
+					ask plot_crop_button {
+						do die;
+					}
 				}
 				int global_growth <- 0;
 				ask Plot {
@@ -239,10 +242,13 @@ species EpochButton parent: Button {
 					// Clears all current harvest view, if any
 					do die;
 				}
-				ask FertilizerHandfulButton + SeedButton + FertilizerButton {
+				ask FertilizerHandfulButton + PlotCropButton + SeedButton + FertilizerButton {
 					do enable;
 				}
 				ask FertilizerHandfulButton {
+					do show;
+				}
+				ask PlotCropButton {
 					do show;
 				}
 				if(current_time = 0) {
@@ -261,11 +267,15 @@ species EpochButton parent: Button {
 	}
 	
 	action display_harvest {
-		ask FertilizerHandfulButton + SeedButton + FertilizerButton + SoilButton + RunButton {
+		ask FertilizerHandfulButton + PlotCropButton + SeedButton + FertilizerButton + SoilButton + RunButton {
 			do disable;
 		}
 		ask FertilizerHandfulButton {
 			// Hides the current fertilizers
+			do hide;
+		}
+		ask PlotCropButton {
+			// Hides the current crop
 			do hide;
 		}
 		ask HarvestView {

@@ -590,6 +590,7 @@ species PlotView {
 	ButtonBox fertilizers_button_box;
 	ButtonBox crop_button_box;
 	list<FertilizerHandfulButton> fertilizer_handful_buttons;
+	PlotCropButton plot_crop_button;
 	bool selected <- false;
 
 	/**
@@ -639,7 +640,9 @@ species PlotView {
 			location: seed_icon_location,
 			button_size: icon_size,
 			plot_view: self
-		);
+		) {
+			myself.plot_crop_button <- self;
+		}
 		ask plot {
 			do plant(crop);
 		}
@@ -647,6 +650,7 @@ species PlotView {
 	
 	action remove_crop(PlotCropButton crop_button) {
 		write "Crop " + plot.seed.type + " removed from plot " + plot.number;
+		plot_crop_button <- nil;
 		ask plot {
 			do remove_plant;
 		}
@@ -716,10 +720,6 @@ species PlotView {
 	}
 	aspect default {
 		if (selected_epoch.epoch.time = current_time) {
-			if plot.seed != nil {
-				draw seed_images[plot.seed.type-1] at: seed_icon_location size:icon_size;
-			}
-			
 			if selected {
 				if selected_soil != nil {
 					// Preview soil instead of the selection image
