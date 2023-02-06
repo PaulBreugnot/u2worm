@@ -33,7 +33,6 @@ global {
 		]);
 		write "Total biomass production: " + total_biomass_production;
 
-		write plot_surface / model_area;
 		// Returns the total mass of seed production
 		return harvest_index * total_biomass_production * plot_surface / model_area;
 	}

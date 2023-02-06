@@ -57,6 +57,7 @@ experiment application type:gui {
 //			grid HelpGrid border:#black;
 			
 			species PlotView aspect:default;
+			species PlotCropButton aspect: default;
 			species FertilizerHandfulButton aspect:default;
 			// image "plants" position: {0, 0, 0} size: {1, 1} file: plants refresh: false;
 			species ButtonBox aspect: default;

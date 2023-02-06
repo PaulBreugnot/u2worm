@@ -18,8 +18,8 @@ import "camisol_adapter.gaml" as Camisol
  */
  
 global {
-	float epoch_duration <- 6#month;
-//	float epoch_duration <- 100#h; // For interface test purpose only
+//	float epoch_duration <- 6#month;
+	float epoch_duration <- 100#h; // For interface test purpose only
 
 	date output_time <- #now;
 	string output_file_suffix <- "" + output_time.year + "" +output_time.month + "" + output_time.day + "" + output_time.hour + "" + output_time.minute;
@@ -296,8 +296,8 @@ global {
 		if selected_seed != nil {
 			// Only if the plot is not grown yet
 			if current_plot_focus.plot.growth_state <= 1 {
-				ask current_plot_focus.plot {
-					do plant(selected_seed.seed);
+				ask current_plot_focus {
+					do add_crop(selected_seed.seed);
 				}
 				current_plot_focus.plot.seed <- selected_seed.seed;
 				write "Seed " + selected_seed.seed.type + " planted to " + current_plot_focus.plot.number;
@@ -413,6 +413,11 @@ species Plot skills: [thread] {
 		seed<-seed_to_plant;
 		growth_state<-1;
 	}
+	action remove_plant {
+		seed <- nil;
+		growth_state<-0;
+	}
+	
 	action thread_action {
 		camisol_running <- true;
 		Plot current_plot <- self;
@@ -429,7 +434,6 @@ species Plot skills: [thread] {
 				}
 				loop fertilizer over: current_plot.fertilizers {
 					write "[Camisol] Fertilizes plot " + current_plot.number + " with " + fertilizer.name + ".";
-					write fertilizer.sample_dose;
 					do fertilize
 						solubles: fertilizer.solubles
 						hemicellulose: fertilizer.hemicellulose
@@ -542,6 +546,38 @@ species FertilizerHandfulButton parent: Button {
 	}
 }
 
+species PlotCropButton parent: Button {
+	PlotView plot_view;
+	bool hidden <- false;
+	
+	action mouse_enter {
+		
+	}
+	action mouse_leave {
+		
+	}
+	agent click {
+		ask plot_view {
+			do remove_crop(myself);
+		}
+		return nil;
+	}
+	action post_click {
+	}
+	
+	action hide {
+		hidden <- true;
+	}
+	action show {
+		hidden <- false;
+	}
+	aspect default {
+		if(!hidden) {
+			draw seed_images[plot_view.plot.seed.type-1] size:button_size;
+		}
+	}
+}
+	
 /**
  * Adaptor used to visualise a Plot.
  */
@@ -552,6 +588,7 @@ species PlotView {
 	Plot plot;
 	float button_box_width <- 0.0;
 	ButtonBox fertilizers_button_box;
+	ButtonBox crop_button_box;
 	list<FertilizerHandfulButton> fertilizer_handful_buttons;
 	bool selected <- false;
 
@@ -586,6 +623,35 @@ species PlotView {
 		create ButtonBox with: (
 			button_types: [FertilizerHandfulButton], visible: false, envelope: nil, hidden_envelope: nil, layer: -1) {
 			myself.fertilizers_button_box <- self;
+		}
+		create ButtonBox with: (
+			button_types: [PlotCropButton], visible: false, envelope: nil, hidden_envelope: nil, layer: -1) {
+			myself.crop_button_box <- self;
+		}
+	}
+	
+	action add_crop(Seed crop) {
+		crop_button_box.hidden_envelope <- rectangle(
+			seed_icon_location + {-icon_size/2, icon_size/2},
+			seed_icon_location + {icon_size/2, -icon_size/2}
+		);
+		create PlotCropButton with: (
+			location: seed_icon_location,
+			button_size: icon_size,
+			plot_view: self
+		);
+		ask plot {
+			do plant(crop);
+		}
+	}
+	
+	action remove_crop(PlotCropButton crop_button) {
+		write "Crop " + plot.seed.type + " removed from plot " + plot.number;
+		ask plot {
+			do remove_plant;
+		}
+		ask crop_button {
+			do die;
 		}
 	}
 	
