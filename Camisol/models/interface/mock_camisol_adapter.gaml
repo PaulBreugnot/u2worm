@@ -11,6 +11,9 @@ model mockcamisoladapter
 global {
 	float local_step <- 10#m;
 	
+	action init_soil(float N, float P, float C) {
+	}
+	
 	float production(float N_seed, float P_seed, float N_plant, float P_plant, float harvest_index, float N_from_soil, float plot_surface) {
 		list<float> intervals <- [0.0, 20.0, 100.0, 500.0];
 		float mock_quantity;
