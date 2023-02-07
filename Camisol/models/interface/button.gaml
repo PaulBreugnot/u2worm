@@ -143,6 +143,11 @@ global {
 			last_clicked_button <- nil;
 			selected_item <- nil;
 		}
+		if(current_button_focus!=nil) {
+			ask current_button_focus {
+				do mouse_leave;
+			}
+		}
 		current_button_focus <- nil;
 	}
 }
