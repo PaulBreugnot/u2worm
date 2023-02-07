@@ -349,11 +349,7 @@ species RunButton parent: Button {
 			// Disables all buttons while the Camisol simulations are running
 			do disable;
 		}
-		
-		ask world {
-			// Only used to update the growth display
-			do resume;
-		}
+
 		ask Plot {
 			do run_thread;
 		}
@@ -393,11 +389,6 @@ species RunButton parent: Button {
 			mode <- HARVEST;
 		}
 		running <- false;
-		ask world {
-			do pause;
-			// Extra step to ensure display update
-			do _step_;
-		}
 		write "[Camisol] Simulation duration: " + int((cycle-init_cycle)*interface_minimum_cycle_duration/#mn) + " minutes.";
 	}
 	
