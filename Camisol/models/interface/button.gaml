@@ -143,6 +143,7 @@ global {
 			last_clicked_button <- nil;
 			selected_item <- nil;
 		}
+		current_button_focus <- nil;
 	}
 }
 
