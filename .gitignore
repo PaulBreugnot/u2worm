@@ -26,4 +26,5 @@
 hs_err_pid*
 
 # Model output
-Camisol/output
+Camisol/output/*
+!Camisol/output/.output
