@@ -405,7 +405,15 @@ species RunButton parent: Button {
 		if current_time = 0 {
 			// Soil can only be set at the first epoch
 			ask SoilButton {
-				do disable;
+				do die;
+			}
+			ask SoilView {
+				do die;
+			}
+			ask SoilButtonMenu {
+				ask button_box {
+					visible <- false;
+				}
 			}
 		}
 		current_time <- current_time+1;
@@ -706,20 +714,22 @@ species FertilizerButtonMenu parent: ButtonMenu {
 }
 
 species SoilButtonMenu {
+	ButtonBox button_box;
 	init {
 		create ButtonBox with:(button_types:[SoilButton]) {
 			do compute_background([
 				{6, 1.5}, {9, 1.5}, {9, 2.5}, {6, 2.5}
 			]);
+			myself.button_box <- self;
 		}
 		// Creates a soil view/button for each available Soil
 		int i <- 0;
 		ask Soil {
-			create SoilView number:1 with: (
+			create SoilView with: (
 				soil: self,
 				location:{(i+6.5)*cell_size, 2*cell_size}
 			) returns: new_soil_views;
-			create SoilButton number: 1 with: (
+			create SoilButton with: (
 				soil_view: new_soil_views[0],
 				location: new_soil_views[0].location,
 				button_size: 0.8*cell_size

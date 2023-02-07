@@ -17,7 +17,7 @@ global {
 	/**
 	 * Available soil colors.
 	 */
-	list<string> soil_colors <- ["red", "brown", "black"];
+	list<string> soil_colors <- ["brown", "red", "black"];
 	/**
 	 * Icons corresponding to each color.
 	 */
