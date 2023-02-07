@@ -66,7 +66,7 @@ global {
 	// TODO: Calibrate this
 	// TODO: define as volumes? + volume by mass for each crop?
 	list<float> harvest_thresholds <- [
-		20.0#kg, 100.0#kg, 500.0#kg
+		20.0#kg, 50.0#kg, 200.0#kg
 	];
 	
 	/**
@@ -157,7 +157,7 @@ species Harvest {
 		if (barrows = 0) {
 			bags <- round(quantity/harvest_thresholds[1]);
 			if (bags = 0) {
-				baskets <- round(quantity/harvest_thresholds[1]);
+				baskets <- max([1, round(quantity/harvest_thresholds[0])]);
 			}
 		}
 

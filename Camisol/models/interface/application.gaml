@@ -33,7 +33,7 @@ experiment application type:gui {
 	output {
 		// layout #none consoles: false tabs:false toolbars:false controls:false editors: false navigator: false tray: false background: #black;
 		
-		display camisol type:opengl axes: false fullscreen: true show_fps:true background: #black {
+		display camisol type:opengl axes: false fullscreen: true show_fps:true background: #black antialias: true {
 			camera #from_above dynamic:false locked:true distance:min([env_width/2/tan(45/2), env_height/2/tan(45/2)]);
 //			graphics "World "{
 //				ask world {draw shape color:rgb(10, 0, 0, 0.5) border: #black;}

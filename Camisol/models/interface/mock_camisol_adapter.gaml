@@ -23,6 +23,9 @@ global {
 	}
 
 	action fertilize(
+		float C_rate,
+		float N_dim,
+		float P_dim,
 		float solubles,
 		float hemicellulose,
 		float cellulose,

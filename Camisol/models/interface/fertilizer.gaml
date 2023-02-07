@@ -22,10 +22,10 @@ global {
 	
 	list<string> organic_fertilizers <- [
 		"Corne de zebu", "Cendre d'eucalyptus", "Mada Compost", "Vermicompost moyen",
-		"Fumier traditionnel Itasy", "Fumier ameliore", "Fientes de volailles"
+		"Fumier traditionnel Itasy", "Fumier ameliore", "Fientes de volailles", "Lisier de porc"
 	];
 	list<string> chemical_fertilizers <- [
-		"Hyperfos", "Guanomad"
+		"Hyperfos", "Guanomad", "NPK 11-22-16"
 	];
 	
 	// Note: the regular init function is not used, since the controller model
@@ -62,6 +62,8 @@ species Fertilizer {
 			error "Fertilizer " + name + " not found in the provided CSV data.";
 		} else {
 			C_rate <- fertilizer_data[CSV_C_RATE];
+			N_dim <- fertilizer_data[CSV_N_DIM];
+			P_dim <- fertilizer_data[CSV_P_DIM];
 			solubles <- fertilizer_data[CSV_QUANTITE_SOLUBLE];
 			hemicellulose <- fertilizer_data[CSV_HEMICELLULOSE];
 			cellulose <- fertilizer_data[CSV_CELLULOSE];
@@ -73,6 +75,8 @@ species Fertilizer {
 	}
 	
 	float C_rate <- 0.0;
+	float N_dim <- 0.0;
+	float P_dim <- 0.0;
 	float solubles <- 0.0;
 	float hemicellulose <- 0.0;
 	float cellulose <- 0.0;

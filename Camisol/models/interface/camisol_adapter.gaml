@@ -11,6 +11,7 @@ model camisoladapter
 import "../camisol/camisol.gaml"
 
 global {
+	float N_P_dim_available_to_plant <- 0.08;
 	
 	float production(float N_seed, float P_seed, float N_plant, float P_plant, float harvest_index, float N_from_soil, float plot_surface) {
 		// N_from_soil = 0 => an infinite quantity of N can be retrieved from air
@@ -26,6 +27,11 @@ global {
 		write "Required P: " + required_P;
 		float total_biomass_production <- 0.0;
 		ask Dam {
+			// The rest of the dim is "lost" in the nature over the season (for example flushed by water)
+			// TODO: remove this hack once the model is complete
+			dim[0] <- dim[0] * N_P_dim_available_to_plant;
+			dim[1] <- dim[1] * N_P_dim_available_to_plant;
+			
 			float available_N <- dim[0];
 			float available_P <- dim[1];
 			float local_biomass_production <- min([
@@ -44,6 +50,8 @@ global {
 
 	action fertilize(
 		float C_rate,
+		float N_dim,
+		float P_dim,
 		float solubles,
 		float hemicellulose,
 		float cellulose,
@@ -53,6 +61,8 @@ global {
 		float sample_dose
 	) {
 		write "C%: " + C_rate;
+		write "N_dim: " + N_dim;
+		write "P_dim: " + P_dim;
 		write "Solubles: " + solubles;
 		write "Hemicellulose: " + hemicellulose;
 		write "Cellulose: " + cellulose;
@@ -76,40 +86,48 @@ global {
 		
 		// write("Fertilizer quantity for model: "+ qty_for_model);
 		
-		float soluble_Cl <- ((quantity_for_model * solubles / 100)) * soluble_labile_rate;
-		float N_pore <- soluble_Cl / C_N;
-		float P_pore <- soluble_Cl / C_P;
-		
-		float soluble_dom <- ((quantity_for_model * solubles / 100)) * (1 - soluble_labile_rate);
-		float N_dom <- soluble_dom / C_N;
-		float P_dom <- soluble_dom / C_P;
-		
-		float labile_organic <- ((quantity_for_model * hemicellulose/ 100)) + ((quantity_for_model * cellulose/ 100));
-		float recalcitrant_organic <- ((quantity_for_model * lignine/ 100));
-		float N_organic <- (labile_organic+recalcitrant_organic) / C_N;
-		float P_organic <- (labile_organic+recalcitrant_organic) / C_P;
-		
-		ask PoreParticle {
-			ask organic_particle {
-				self.C_labile <- self.C_labile + soluble_Cl/length(PoreParticle);
-				self.N <- self.N + N_pore/length(PoreParticle);
-				self.P <- self.P + P_pore/length(PoreParticle);
-			}
+		if(C_N > 0 and C_P > 0) {
+			float soluble_Cl <- ((quantity_for_model * solubles / 100)) * soluble_labile_rate;
+			float N_pore <- soluble_Cl / C_N;
+			float P_pore <- soluble_Cl / C_P;
 			
-			self.dam.dom <- [
-				self.dam.dom[0] + (N_dom/length(PoreParticle)),
-				self.dam.dom[1] + (P_dom/length(PoreParticle)),
-				self.dam.dom[2] + (soluble_dom/length(PoreParticle))
-			];
-		}
-		int num_organics <- length(OrganicParticle)-length(PoreParticle);
-		ask OrganicParticle{
-			if(!in_pore) {
-				self.C_labile <- self.C_labile + labile_organic/num_organics;
-				self.C_recalcitrant <- self.C_recalcitrant + recalcitrant_organic/num_organics;
-				self.N <- self.N + N_organic/num_organics;
-				self.P <- self.P + P_organic/num_organics;
+			float soluble_dom <- ((quantity_for_model * solubles / 100)) * (1 - soluble_labile_rate);
+			float N_dom <- soluble_dom / C_N;
+			float P_dom <- soluble_dom / C_P;
+			
+			float labile_organic <- ((quantity_for_model * hemicellulose/ 100)) + ((quantity_for_model * cellulose/ 100));
+			float recalcitrant_organic <- ((quantity_for_model * lignine/ 100));
+			float N_organic <- (labile_organic+recalcitrant_organic) / C_N;
+			float P_organic <- (labile_organic+recalcitrant_organic) / C_P;
+			
+			ask PoreParticle {
+				ask organic_particle {
+					self.C_labile <- self.C_labile + soluble_Cl/length(PoreParticle);
+					self.N <- self.N + N_pore/length(PoreParticle);
+					self.P <- self.P + P_pore/length(PoreParticle);
+				}
+				
+				self.dam.dom <- [
+					self.dam.dom[0] + (N_dom/length(PoreParticle)),
+					self.dam.dom[1] + (P_dom/length(PoreParticle)),
+					self.dam.dom[2] + (soluble_dom/length(PoreParticle))
+				];
 			}
+			int num_organics <- length(OrganicParticle)-length(PoreParticle);
+			ask OrganicParticle{
+				if(!in_pore) {
+					self.C_labile <- self.C_labile + labile_organic/num_organics;
+					self.C_recalcitrant <- self.C_recalcitrant + recalcitrant_organic/num_organics;
+					self.N <- self.N + N_organic/num_organics;
+					self.P <- self.P + P_organic/num_organics;
+				}
+			}
+		}
+		ask Dam {
+			self.dim <- [
+				dim[0] + sample_dose * model_area * N_dim/100 / length(PoreParticle),
+				dim[1] + sample_dose * model_area * P_dim/100 / length(PoreParticle)
+			];
 		}
 	}
 	
@@ -123,15 +141,29 @@ experiment TestCamisolWithFertilizer {
 		create simulation;
 		ask simulation {
 			// Mada Compost
+//			do fertilize
+//				C_rate: 16.6
+//				N_dim: 0.0
+//				P_dim: 0.0
+//				solubles: 26.66
+//				hemicellulose: 4.72
+//				cellulose: 55.19
+//				lignine: 13.43
+//				C_N: 12.25
+//				C_P: 35.0
+//				sample_dose: 3000.0#kg/(10000#m2);
+			// NPK
 			do fertilize
-				C_rate: 16.6
-				solubles: 26.66
-				hemicellulose: 4.72
-				cellulose: 55.19
-				lignine: 13.43
-				C_N: 12.25
-				C_P: 35.0
-				sample_dose: 3000.0#kg/(10000#m2);
+				C_rate: 0.0
+				N_dim: 11.0
+				P_dim: 22.0
+				solubles: 0.0
+				hemicellulose: 0.0
+				cellulose: 0.0
+				lignine: 0.0
+				C_N: 0.0
+				C_P: 0.0
+				sample_dose: 100.0#kg/(10000#m2);
 			// Guanomad
 //			do fertilize
 //				solubles: 82.2
@@ -170,6 +202,8 @@ experiment TestCamisolWithFertilizer {
 				// Mada Compost
 				do fertilize
 					C_rate: 16.6
+					N_dim: 0.0
+					P_dim: 0.0
 					solubles: 26.66
 					hemicellulose: 4.72
 					cellulose: 55.19
@@ -268,6 +302,8 @@ experiment TestProduction type:gui {
 			// Mada Compost
 			do fertilize
 				C_rate: 16.6
+				N_dim: 0.0
+				P_dim: 0.0
 				solubles: 26.66
 				hemicellulose: 4.72
 				cellulose: 55.19

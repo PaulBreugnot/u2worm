@@ -373,7 +373,7 @@ species Plot skills: [thread] {
 	 * Plot identifier.
 	 */
 	int number <- 1 min:1 max: 4;
-	float surface <- 10000#m2;
+	float surface <- 100#m2;
 	
 	/**
 	 * Define the soil color and base parameters.
@@ -436,6 +436,8 @@ species Plot skills: [thread] {
 					write "[Camisol] Fertilizes plot " + current_plot.number + " with " + fertilizer.name + ".";
 					do fertilize
 						C_rate: fertilizer.C_rate
+						N_dim: fertilizer.N_dim
+						P_dim: fertilizer.P_dim
 						solubles: fertilizer.solubles
 						hemicellulose: fertilizer.hemicellulose
 						cellulose: fertilizer.cellulose
