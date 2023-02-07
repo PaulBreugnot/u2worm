@@ -61,6 +61,7 @@ species Fertilizer {
 		if(length(fertilizer_data) = 0) {
 			error "Fertilizer " + name + " not found in the provided CSV data.";
 		} else {
+			C_rate <- fertilizer_data[CSV_C_RATE];
 			solubles <- fertilizer_data[CSV_QUANTITE_SOLUBLE];
 			hemicellulose <- fertilizer_data[CSV_HEMICELLULOSE];
 			cellulose <- fertilizer_data[CSV_CELLULOSE];
@@ -71,6 +72,7 @@ species Fertilizer {
 		}
 	}
 	
+	float C_rate <- 0.0;
 	float solubles <- 0.0;
 	float hemicellulose <- 0.0;
 	float cellulose <- 0.0;

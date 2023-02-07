@@ -12,6 +12,7 @@ model csv_loader
 global
 {
 	// Fertilizer fields headers
+	string CSV_C_RATE <- "C%";
 	string CSV_QUANTITE_SOLUBLE <- "Solubles";
 	string CSV_HEMICELLULOSE <- "Hemicellulose";
 	string CSV_CELLULOSE <- "Cellulose";

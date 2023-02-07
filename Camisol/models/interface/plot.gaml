@@ -18,8 +18,8 @@ import "camisol_adapter.gaml" as Camisol
  */
  
 global {
-//	float epoch_duration <- 6#month;
-	float epoch_duration <- 100#h; // For interface test purpose only
+	float epoch_duration <- 6#month;
+//	float epoch_duration <- 100#h; // For interface test purpose only
 
 	date output_time <- #now;
 	string output_file_suffix <- "" + output_time.year + "" +output_time.month + "" + output_time.day + "" + output_time.hour + "" + output_time.minute;
@@ -435,6 +435,7 @@ species Plot skills: [thread] {
 				loop fertilizer over: current_plot.fertilizers {
 					write "[Camisol] Fertilizes plot " + current_plot.number + " with " + fertilizer.name + ".";
 					do fertilize
+						C_rate: fertilizer.C_rate
 						solubles: fertilizer.solubles
 						hemicellulose: fertilizer.hemicellulose
 						cellulose: fertilizer.cellulose

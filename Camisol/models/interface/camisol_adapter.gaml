@@ -43,6 +43,7 @@ global {
 	}
 
 	action fertilize(
+		float C_rate,
 		float solubles,
 		float hemicellulose,
 		float cellulose,
@@ -51,6 +52,7 @@ global {
 		float C_P,
 		float sample_dose
 	) {
+		write "C%: " + C_rate;
 		write "Solubles: " + solubles;
 		write "Hemicellulose: " + hemicellulose;
 		write "Cellulose: " + cellulose;
@@ -69,8 +71,8 @@ global {
 		//10% de carbone
 		write "Sample dose: " + sample_dose;
 		write "Model area: " + model_area;
-		float quantity_for_model <- sample_dose * model_area;
-		write "Quantity for model: " + quantity_for_model;
+		float quantity_for_model <- sample_dose * model_area * C_rate;
+		write "Quantity of C for model: " + quantity_for_model;
 		
 		// write("Fertilizer quantity for model: "+ qty_for_model);
 		
@@ -122,6 +124,7 @@ experiment TestCamisolWithFertilizer {
 		ask simulation {
 			// Mada Compost
 			do fertilize
+				C_rate: 16.6
 				solubles: 26.66
 				hemicellulose: 4.72
 				cellulose: 55.19
@@ -163,9 +166,10 @@ experiment TestCamisolWithFertilizer {
 //				N_from_soil: 1.0,
 //				plot_surface: 10000#m2
 //			) + "kg";
-			loop i from: 0 to: 1 {
+			loop i from: 0 to: 0 {
 				// Mada Compost
 				do fertilize
+					C_rate: 16.6
 					solubles: 26.66
 					hemicellulose: 4.72
 					cellulose: 55.19
@@ -211,7 +215,7 @@ experiment TestCamisolWithFertilizer {
 				data "CopioR awake %" value: (sum(Copiotrophe_R collect (each.awake_population)) / length(Copiotrophe_R)) * 100 style:spline color: #red marker:false thickness: 3.0;
 				data "CopioK awake %" value: (sum(Copiotrophe_K collect (each.awake_population)) / length(Copiotrophe_K)) * 100 style:spline color: #green marker:false thickness: 3.0;
 				data "Oligo awake %" value: (sum(Oligotrophe_K collect (each.awake_population)) / length(Oligotrophe_K)) * 100 style:spline color: #blue marker:false thickness: 3.0;
-				data "Nematode awake %" value: (sum(Nematode collect (each.awake as int)) / length(Nematode)) * 100 style:spline color: #yellow marker:false thickness: 3.0;
+				data "Nematode awake %" value: (sum(Nematode collect (each.awake as int)) / length(Nematode)) * 100 style:line color: #yellow marker:false thickness: 3.0;
 			}
 		}
 		
@@ -263,6 +267,7 @@ experiment TestProduction type:gui {
 			loop i from: 0 to: 3 {
 			// Mada Compost
 			do fertilize
+				C_rate: 16.6
 				solubles: 26.66
 				hemicellulose: 4.72
 				cellulose: 55.19
