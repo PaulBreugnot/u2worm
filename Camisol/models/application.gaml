@@ -7,7 +7,7 @@
 
 model application
 
-import "controller.gaml"
+import "interface/controller.gaml"
 
 /**
  * Main application. All the features of the interface models are imported in

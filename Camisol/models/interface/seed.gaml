@@ -8,7 +8,7 @@
 model seed
 
 import "landscape.gaml"
-import "../csv_loader.gaml"
+import "../utils/csv_loader.gaml"
 
 /**
  * Defines features used to handle seeds.
