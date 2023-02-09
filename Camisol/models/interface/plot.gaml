@@ -407,7 +407,7 @@ species Plot skills: [thread] {
 	bool camisol_running <- false;
 	int progress <- 0;
 	
-	string output_file <- "../../output/plot_" + number + "_" + output_file_suffix + ".csv";
+	string output_file <- "../output/plot_" + number + "_" + output_file_suffix + ".csv";
 
 	action plant(Seed seed_to_plant) {
 		seed<-seed_to_plant;
