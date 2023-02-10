@@ -153,15 +153,16 @@ species Harvest {
 	int baskets <- 0;
 	
 	init {
-		barrows <- round(quantity/harvest_thresholds[2]);
-		if (barrows = 0) {
-			bags <- round(quantity/harvest_thresholds[1]);
-			if (bags = 0) {
-				baskets <- max([1, round(quantity/harvest_thresholds[0])]);
+		if(quantity > 0.0) {
+			barrows <- round(quantity/harvest_thresholds[2]);
+			if (barrows = 0) {
+				bags <- round(quantity/harvest_thresholds[1]);
+				if (bags = 0) {
+					baskets <- max([1, round(quantity/harvest_thresholds[0])]);
+				}
 			}
+		 	write "Quantity " + quantity + "kg = " + barrows + " barrows, " + bags + " bags, " + baskets + " baskets.";
 		}
-
-		 write "Quantity " + quantity + "kg = " + barrows + " barrows, " + bags + " bags, " + baskets + " baskets.";
 	}
 }
 
