@@ -35,10 +35,10 @@ global {
 experiment debug_landscape type:gui {	
 	output {
 		display camisol type:opengl axes: false fullscreen: true {
-			image "sun" position: {0, 0, -0.001} size: {1, 0.33} file: sun;
-			image "landscape" position: {0, 0, 0} size: {1, 1} file: landscape;
-			image "plots" position: {0, 0, 0} size: {1, 1} file: plots;
-			image "plants" position: {0, 0, 0.001} size: {1, 1} file: plants;
+			image sun position: {0, 0, -0.001} size: {1, 0.33};
+			image landscape position: {0, 0, 0} size: {1, 1};
+			image plots position: {0, 0, 0} size: {1, 1};
+			image plants position: {0, 0, 0.001} size: {1, 1};
 //			grid HelpGrid border:#black;
 		}
 	}

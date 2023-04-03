@@ -96,7 +96,7 @@ species Epoch {
  */
 species EpochView {
 	
-	image_file image;
+	image epoch_image;
 	/**
 	 * Epoch to visualize.
 	 */
@@ -107,13 +107,13 @@ species EpochView {
 	float icon_size <- cell_size;
 	
 	init {
-		image <- image_file(image_path + definition + "/epochs/epoch_" + (epoch.time+1) + ".png");
+		epoch_image <- image(image_path + definition + "/epochs/epoch_" + (epoch.time+1) + ".png");
 	}
 	aspect default {
 		if(selected_epoch = self) {
 			draw square(icon_size) color: rgb(125, 162, 87);
 		}
-		draw image size: icon_size;
+		draw epoch_image size: icon_size;
 	}
 }
 
@@ -248,7 +248,7 @@ experiment debug_harvest type: gui {
 	}
 	output {
 		display camisol type:opengl axes: false {
-			event mouse_down {
+			event #mouse_down {
 				ask Harvest {
 					do die;
 				}
@@ -262,8 +262,8 @@ experiment debug_harvest type: gui {
 				}
 				current_time <- current_time+1;
 			}
-			image "landscape" position: {0, 0, -0.01} size: {1, 1} file: landscape;
-			image "plots" position: {0, 0, -0.01} size: {1, 1} file: plots;
+			image landscape position: {0, 0, -0.01} size: {1, 1};
+			image plots position: {0, 0, -0.01} size: {1, 1};
 			species HarvestView aspect: default;
 			species EpochView aspect: default;
 			// grid HelpGrid border:#black;

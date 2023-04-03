@@ -545,7 +545,7 @@ species SeedButtonMenu parent: ButtonMenu {
 	/**
 	 * Image used to represent the menu button.
 	 */
-	image_file image <- image_file(image_path + definition + "/crops/crop.png");
+	image seed_image <- image(image_path + definition + "/crops/crop.png");
 
 	
 	init {
@@ -612,7 +612,7 @@ species SeedButtonMenu parent: ButtonMenu {
 	}
 	
 	aspect default {
-		draw image size:icon_size;
+		draw seed_image size:icon_size;
 	}
 	aspect debug {
 		draw circle(0.5*icon_size) color:#red;
@@ -624,7 +624,7 @@ species SeedButtonMenu parent: ButtonMenu {
  */
 species FertilizerButtonMenu parent: ButtonMenu {
 
-	image_file image <- image_file(image_path + definition + "/fertilizers/fertilizer.png");
+	image fertilizer_image <- image(image_path + definition + "/fertilizers/fertilizer.png");
 	
 	init {
 		create ButtonBox with: (button_types: [FertilizerButton, FertilizerButtonMenu]) {
@@ -697,7 +697,7 @@ species FertilizerButtonMenu parent: ButtonMenu {
 	}
 	
 	aspect default {
-		draw image size:icon_size;
+		draw fertilizer_image size:icon_size;
 	}
 	aspect debug {
 		draw circle(0.5*icon_size) color:#blue;
@@ -760,9 +760,9 @@ species EpochsMenu {
 experiment debug_controller type:gui {	
 	output {
 		display camisol type:opengl axes: false background: #black {
-			event mouse_move action:mouse_move_buttons;
-			event mouse_down action:mouse_down_buttons;
-			event mouse_up action:mouse_up_buttons;
+			event #mouse_move action:mouse_move_buttons;
+			event #mouse_down action:mouse_down_buttons;
+			event #mouse_up action:mouse_up_buttons;
 			
 			species ButtonBox aspect: default;
 			species SoilView aspect:default;

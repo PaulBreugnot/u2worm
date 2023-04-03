@@ -501,7 +501,7 @@ species Plot skills: [thread] {
 			fertilizer_6: length(self.fertilizers) > 5 ? self.fertilizers[5].name : "",
 			quantity: harvest
 		) {
-			save [time, plot_surface, soil, seed, fertilizer_1, fertilizer_2, fertilizer_3, fertilizer_4, fertilizer_5, fertilizer_6, quantity] to: myself.output_file type:csv header:true rewrite: false;
+			save [time, plot_surface, soil, seed, fertilizer_1, fertilizer_2, fertilizer_3, fertilizer_4, fertilizer_5, fertilizer_6, quantity] to: myself.output_file format:csv header:true rewrite: false;
 		}
 		
 		camisol_running <- false;
@@ -769,7 +769,7 @@ experiment debug_plots type:gui {
 	output {
 		display camisol type:opengl axes: true {
 			// For debug purpose: click outside of the plots to select a random seed
-			event mouse_up {
+			event #mouse_up {
 				write #user_location;
 				if(selected_seed = nil) {
 					create Seed number:1 with: (type: rnd(19)+1)returns: new_seed;
@@ -782,10 +782,10 @@ experiment debug_plots type:gui {
 					selected_seed <- nil;
 				}
 			}
-			event mouse_move action:mouse_move_plots;
-			event mouse_drag action:mouse_drag_plots;
-			event mouse_down action:mouse_down_plots;
-			event mouse_up action:mouse_up_plots;
+			event #mouse_move action:mouse_move_plots;
+			event #mouse_drag action:mouse_drag_plots;
+			event #mouse_down action:mouse_down_plots;
+			event #mouse_up action:mouse_up_plots;
 			
 			// image "plots" position: {0, 0, 0} size: {1, 1} file: plots;
 			species PlotView aspect:default;
