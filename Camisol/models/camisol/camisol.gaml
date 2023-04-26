@@ -46,6 +46,7 @@ global {
 	
 	
 	float rain_diffusion_rate <- 0.1;
+	float rain_period <- 7#days;
 	
 	init {
 		// Counts the number of PORES after the initialization of the grid
@@ -137,7 +138,7 @@ global {
 		}
 	}
 		
-	reflex rain when: rnd(1.0) < (1/7#day)*local_step {
+	reflex rain when: rnd(1.0) < (1/rain_period)*local_step {
 //		write "It's raining today!";
 		map<string, MicrobePopulation> extracted_populations;
 		loop bacteria_type over: bacteria_types {
@@ -286,7 +287,7 @@ experiment display_grid {
 experiment camisol_no_output {
 
 	reflex state when: local_cycle mod 100 = 0 {
-				ask simulation {
+		ask simulation {
 			write "Time: " + time/#day;
 			write "Dom: N=" + sum(Dam collect each.dom[0]) + ", P=" + sum(Dam collect each.dom[1]) + ", C=" + sum(Dam collect each.dom[2]);
 			write "Dim: N=" + sum(Dam collect each.dim[0]) + ", P=" + sum(Dam collect each.dim[1]);
@@ -302,21 +303,24 @@ experiment camisol_no_output {
 	}
 }
 
-experiment camisol_output {
+experiment camisol {
 	// Test to reactivate bacterias
 	reflex add_N_P when: local_cycle mod 300 = 0 {
 		ask simulation {
+			// Redistributes the initial quantity of C/N/P in all pores.
+			// Notice that this has no scientific meaning, and is used only for test purpose.
+			// This might however represent a kind of fertilizer added to the soil.
+			int pores_count <- length(PoreParticle);
+			float carbon_in_all_pore <- total_model_weight * carbone_concentration_in_dam; 
+			float azote_in_all_pore <- total_model_weight * azote_concentration_in_dam;
+			float phosphore_in_all_pore <- total_model_weight * phosphore_concentration_in_dam;
+			
 			ask PoreParticle {
 				ask dam {
-					int pores_count <- length(PoreParticle);
-					float carbon_in_all_pore <- total_model_weight * carbone_concentration_in_dam; 
 					float carbon_in_pore <- carbon_in_all_pore / pores_count;
-					
-					float azote_in_all_pore <- total_model_weight * azote_concentration_in_dam;
 					float azote_in_pore <- azote_in_all_pore / pores_count;
-					
-					float phosphore_in_all_pore <- total_model_weight * phosphore_concentration_in_dam;
 					float phosphore_in_pore <- phosphore_in_all_pore / pores_count;
+					
 					dom[0] <- dom[0] + azote_in_pore;
 					dom[1] <- dom[1] + phosphore_in_pore;
 					dom[2] <- dom[2] + carbon_in_pore;
@@ -325,7 +329,27 @@ experiment camisol_output {
 		}
 	}
 	
+	reflex update_particle_color {
+		float max_population <- 0.0;
+		ask PoreParticle {
+			float population <- sum(populations collect (each.C + each.cytosol_C));
+			if(population > max_population) {
+				max_population <- population;
+			}
+		}
+		ask Particle {
+			if(type = PORE) {
+				color <- rgb(0, 0, 255 * sum(PoreParticle(particle).populations collect (each.C + each.cytosol_C))/max_population);
+			}
+		}
+	}
+	
 	output {
+		display grid {
+			grid Particle;
+			species Nematode aspect: red_dot;
+		}
+		
 		display "Awoken population" type: java2D {
 			chart "Awoken population" type: series {
 				data "CopioR awake %" value: (sum(Copiotrophe_R collect (each.awake_population)) / length(Copiotrophe_R)) * 100 style:spline color: #red marker:false thickness:3;
@@ -344,12 +368,6 @@ experiment camisol_output {
 				data "P (dim)" value: (sum(Dam collect each.dim[1])) style:spline marker:false thickness:3;
 			}
 		}
-		
-//		display "CO2" type: java2D {
-//			chart "Emitted CO2" type:series {
-//				data "CO2" value: total_CO2_produced marker:false thickness:3;
-//			}
-//		}
 		
 		display "organics" type:java2D {
 			chart "Organics composition" type:series {
