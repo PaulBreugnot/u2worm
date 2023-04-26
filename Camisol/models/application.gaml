@@ -41,17 +41,17 @@ experiment application type:gui {
 //				ask world {draw shape color:rgb(10, 0, 0, 0.5) border: #black;}
 //			}
 			// Button actions
-			event #mouse_move action:mouse_move_buttons;
-			event #mouse_down action:mouse_down_buttons;
-			event #mouse_drag action:mouse_drag_buttons;
-			event #mouse_up action:mouse_up_buttons;
+			event #mouse_move {ask simulation {do mouse_move_buttons;}}
+			event #mouse_down {ask simulation {do mouse_down_buttons;}}
+			event #mouse_drag {ask simulation {do mouse_drag_buttons;}}
+			event #mouse_up {ask simulation {do mouse_up_buttons;}}
 			// Plot actions
-			event #mouse_move action:mouse_move_plots;
-			event #mouse_drag action:mouse_drag_plots;
-			event #mouse_down action:mouse_down_plots;
-			event #mouse_up action:mouse_up_plots;
+			event #mouse_move {ask simulation {do mouse_move_plots;}}
+			event #mouse_drag {ask simulation {do mouse_drag_plots;}}
+			event #mouse_down {ask simulation {do mouse_down_plots;}}
+			event #mouse_up {ask simulation {do mouse_up_plots;}}
 			// Harvest actions
-			event #mouse_down action:mouse_down_harvest;
+			event #mouse_down {ask simulation {do mouse_down_harvest;}}
 			
 			image sun position: {0, 0, -0.001} size: {1, 0.33} refresh: false;
 			image landscape position: {0, 0, -0.001} size: {1, 1} refresh: false;

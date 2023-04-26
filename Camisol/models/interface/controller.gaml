@@ -760,9 +760,9 @@ species EpochsMenu {
 experiment debug_controller type:gui {	
 	output {
 		display camisol type:opengl axes: false background: #black {
-			event #mouse_move action:mouse_move_buttons;
-			event #mouse_down action:mouse_down_buttons;
-			event #mouse_up action:mouse_up_buttons;
+			event #mouse_move {ask simulation {do mouse_move_buttons;}}
+			event #mouse_down {ask simulation {do mouse_down_buttons;}}
+			event #mouse_up {ask simulation {do mouse_up_buttons;}}
 			
 			species ButtonBox aspect: default;
 			species SoilView aspect:default;

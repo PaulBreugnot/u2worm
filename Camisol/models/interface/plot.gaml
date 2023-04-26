@@ -782,10 +782,10 @@ experiment debug_plots type:gui {
 					selected_seed <- nil;
 				}
 			}
-			event #mouse_move action:mouse_move_plots;
-			event #mouse_drag action:mouse_drag_plots;
-			event #mouse_down action:mouse_down_plots;
-			event #mouse_up action:mouse_up_plots;
+			event #mouse_move { ask simulation {do mouse_move_plots;}}
+			event #mouse_drag { ask simulation {do mouse_drag_plots;}}
+			event #mouse_down { ask simulation {do mouse_down_plots;}}
+			event #mouse_up { ask simulation {do mouse_up_plots;}}
 			
 			// image "plots" position: {0, 0, 0} size: {1, 1} file: plots;
 			species PlotView aspect:default;
