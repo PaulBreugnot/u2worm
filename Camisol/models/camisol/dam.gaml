@@ -20,7 +20,7 @@ global {
 	 */
 	float enzyme_cl_factor <- 8.0;
 	/**
-	 * How many labile C/N is obtained from organic particles from a unit of C/N enzyme.
+	 * How many N/P is obtained from organic particles from a unit of N/P enzyme.
 	 */
 	 float enzyme_n_p_factor <- 12.0;
 }

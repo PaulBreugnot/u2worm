@@ -27,7 +27,8 @@ global {
 	
 	geometry shape <- square(env_size);
 	float model_area <- shape.area;
-	float cell_area <- (env_size/grid_size)^2;
+	float cell_size <- env_size/grid_size;
+	float cell_area <- cell_size^2;
 
 	/**
 	 * Solid matter weight by volume of soil.
@@ -278,8 +279,16 @@ grid Particle width: grid_size height: grid_size neighbors: 4 {
 
 experiment display_grid {
 	output {
-		display grid {
+		display grid type:opengl axes:false {
 			grid Particle;
+			graphics legend {
+				draw square(cell_size) at: {env_size + cell_size, 1.5*cell_size, 0} color: #yellow;
+				draw square(cell_size) at: {env_size + cell_size, 2.8*cell_size, 0} color: #green;
+				draw square(cell_size) at: {env_size + cell_size, 4.1*cell_size, 0} color: #black;
+				draw "Mineral particle" font:font("Helvetica", 20 , #bold) at: {env_size + 2.1*cell_size, 1.7*cell_size, 0} color: #black;
+				draw "Organic particle" font:font("Helvetica", 20 , #bold) at: {env_size + 2.1*cell_size, 3*cell_size, 0} color: #black;
+				draw "Pore particle" font:font("Helvetica", 20 , #bold) at: {env_size + 2.1*cell_size, 4.3*cell_size, 0} color: #black;
+			}
 		}
 	}
 }
