@@ -33,7 +33,7 @@ species Copiotrophe_R parent:MicrobePopulation {
 		bacteria_name <- COPIOTROPHE_R;
 		dividing_time <- dividing_time_copiotrophe_R;
 		awake_population <- wakeup_factor;
-		L_R_rate <- 1.0;
+		L_R_enzyme_rate <- 1.0;
 		C_N <- 5.0;
 		C_P <- 10.0;
 		C <- init_structural_cytosol_rate * total_C_init; // TODO: /3 => car trois différentes espèces de bactéries, hypothèse toutes les bactéries ont le même poids
@@ -60,7 +60,7 @@ species Copiotrophe_K parent:MicrobePopulation {
 		bacteria_name <- COPIOTROPHE_K;
 		dividing_time <- dividing_time_copiotrophe_K;
 		awake_population <- wakeup_factor;
-		L_R_rate <- 0.2;
+		L_R_enzyme_rate <- 0.2;
 		C_N <- 5.0;
 		C_P <- 10.0;
 		
@@ -89,7 +89,7 @@ species Oligotrophe_K parent:MicrobePopulation {
 		bacteria_name <- OLIGOTROPHE_K;
 		dividing_time <- dividing_time_oligotrophe;
 		awake_population <- wakeup_factor;
-		L_R_rate <- 0.8;
+		L_R_enzyme_rate <- 0.8;
 		C_N <- 5.0;
 		C_P <- 10.0;
 		C <- init_structural_cytosol_rate * total_C_init;   //*0.7;//0.000001#gram;

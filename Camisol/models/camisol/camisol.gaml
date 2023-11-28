@@ -278,6 +278,9 @@ grid Particle width: grid_size height: grid_size neighbors: 4 {
 }
 
 experiment display_grid {
+	bool show_nematodes;
+	parameter "Show nematodes" var: show_nematodes <- false;
+	
 	output {
 		display grid type:opengl axes:false {
 			grid Particle;
@@ -288,7 +291,12 @@ experiment display_grid {
 				draw "Mineral particle" font:font("Helvetica", 20 , #bold) at: {env_size + 2.1*cell_size, 1.7*cell_size, 0} color: #black;
 				draw "Organic particle" font:font("Helvetica", 20 , #bold) at: {env_size + 2.1*cell_size, 3*cell_size, 0} color: #black;
 				draw "Pore particle" font:font("Helvetica", 20 , #bold) at: {env_size + 2.1*cell_size, 4.3*cell_size, 0} color: #black;
+				if show_nematodes {
+					draw circle(cell_size/4) at: {env_size + cell_size, 5.4*cell_size, 0} color: #red;
+					draw "Nematode" font:font("Helvetica", 20 , #bold) at: {env_size + 2.1*cell_size, 5.5*cell_size, 0} color: #black;
+				}
 			}
+			species Nematode aspect: red_dot visible: show_nematodes;
 		}
 	}
 }

@@ -23,6 +23,8 @@ global {
 	float total_CO2_produced <- 0.0;
 }
 
+
+
 species MicrobePopulation
 {
 	string bacteria_name;
@@ -31,7 +33,7 @@ species MicrobePopulation
 	
 	float dividing_time <- 0.0;
 	//taux labile récalcitrant
-	float L_R_rate; // labile_recalcitrante_rate
+	float L_R_enzyme_rate; // labile_recalcitrante_rate
 	float C_N;
 	float C_P;
 	
@@ -55,7 +57,11 @@ species MicrobePopulation
 	float perception_C <- 0#gram; 
 	float perception_N <- 0#gram;
 	float perception_P <- 0#gram;
-
+	
+	// float P_C <- 8;
+	// float P_N <- 12;
+	// float P_P <- 12;
+	
 	/* 
 	 R : C * (step/1)  /  (1-0.2)
 	 K : C * (step/24)  / (1-0.4)
@@ -112,18 +118,52 @@ species MicrobePopulation
 		N <- N + transfert_N;
 		P <- P + transfert_P;
 	}
+
 	
-	action decompose(float cytosol_enzyme) // perte c
+	action decompose(float cytosol_enzyme, list<OrganicParticle> particles_to_decompose)
 	{
-		cytosol_C <- cytosol_C - cytosol_enzyme;
 		
 		float wanted_P <- cytosol_enzyme / C_P;
 		float wanted_N <- cytosol_enzyme / C_N;
 		
+		float total_C_labile <- 0.0;
+		float total_N_labile <- 0.0;
+		float total_P_labile <- 0.0;
+		
+		float total_C_recal <- 0.0;
+		float total_N_recal <- 0.0;
+		float total_P_recal <- 0.0;
+		
+		float C_DOM_gl <- 0.0;
+		float C_DOM <- 0.0;
+		float P_DOM <- 0.0;
+		float N_DOM <- 0.0;
+
+		ask particles_to_decompose {
+			total_C_labile <- self.C_labile;
+			// total_N_labile <- self.N_labile;
+			// total_P_labile <- self.P_labile;
+			
+			// total_C_recal <- self.C_recalcitrant;
+			// total_N_recal <- self.N_recalcitrant;
+			// total_P_recal <- self.P_recalcitrant;
+		}
+		
 		ask dam
 		{
-			do inject_enzim(myself.L_R_rate*cytosol_enzyme, (1-myself.L_R_rate)*cytosol_enzyme, wanted_P, wanted_N);
+			C_DOM_gl <- dom[3];
+			C_DOM <- dom[2];
+			P_DOM <- dom[1];
+			N_DOM <- dom[0];
+			
+			// float P_C <- myself.T_C * cytosol_enzyme * myself.P_C * dom[2];
+			// float P_N <- P_C * dom[2]/dom[0] + myself.T_N * cytosol_enzyme * myself.P_N * dom[0];
+			// float P_P <- P_C * dom[2]/dom[1] + myself.T_P * cytosol_enzyme * myself.P_P * dom[1];
+			
+			do inject_enzim(myself.L_R_enzyme_rate*cytosol_enzyme, (1-myself.L_R_enzyme_rate)*cytosol_enzyme, wanted_P, wanted_N);
 		}
+		
+		cytosol_C <- cytosol_C - cytosol_enzyme;
 	}
 	
 	action life(float total_C_in_pore, float pore_carrying_capacity)
@@ -151,10 +191,11 @@ species MicrobePopulation
 		
 		do respirate(cytosol_respiration);
 		do growth(cytosol_division, total_C_in_pore, pore_carrying_capacity);
-		do decompose(cytosol_enzyme);
+		// do decompose(cytosol_enzyme);
 		
 		perception_C <- 0.0;
 		perception_N <- 0.0;
 		perception_P <- 0.0;
 	}
 }
+

@@ -93,7 +93,7 @@ species Dam
 		int organic_particles_count <- length(particles_to_decompose);
 		
 		ask shuffle(particles_to_decompose) 
-		{	
+		{
 			/* Decompose C_recalcitrant */
 			float qty_enzyme_Cr_basic <- (myself.enzyme_Cr/organic_particles_count);
 			float carbone_expected_cr <- (qty_enzyme_Cr_basic * enzyme_cr_factor);
