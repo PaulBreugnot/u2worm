@@ -43,15 +43,24 @@ species Enzymes {
 	float T_cellulolytic <- 0.0#gram/#h;
 	float T_amino <- 0.0#gram/#h;
 	float T_P <- 0.0#gram/#h;
+	float T_recal <- 0.0#gram/#h;
 }
 
 species EnzymeProducer {
 	// Enzymatic activity budget
 	float T_max <- 1.0#gram/#h;
+//	
+//	float x_cellulolytic <- 0.2/3;
+//	float x_amino <- 0.2/3;
+//	float x_P <- 0.2/3;
+//	float x_recal <- 0.8;
 	
 	float x_cellulolytic <- 1.0/3;
 	float x_amino <- 1.0/3;
 	float x_P <- 1.0/3;
+	float x_recal <- 0.0;
+	
+	float T_min <- 0.0;
 	
 	float beta_cellulolytic_amino <- 0.5;
 	float beta_cellulolytic_P <- 0.5;
@@ -74,6 +83,10 @@ species EnzymeProducer {
 	float K_recal <- 0.0;
 	
 	float L_R_enzyme_rate;
+	
+	init {
+		T_min <- x_cellulolytic * min_enzymes.T_cellulolytic + x_amino * min_enzymes.T_amino + x_P * min_enzymes.T_P + x_recal * min_enzymes.T_recal;	
+	}
 }
 
 species SimulatedAnnealingState {
@@ -85,6 +98,7 @@ species SimulatedAnnealingState {
 	float X_P_labile_to_dom <- 0.0;
 	float X_P_labile_to_dim <- 0.0;
 	
+	float X_C_recal <- 0.0;
 	float X_P_recal_to_dim <- 0.0;
 
 	action _init(
@@ -144,8 +158,8 @@ species SimulatedAnnealingState {
 		float X_C_om_recal <- 0.0;
 		
 		// Recalcitrant C decomposition
-		float X_C_recal <- total_C_recal > 0.0 ? min(
-			((1-enzyme_producer.L_R_enzyme_rate) * C_microbes * dt * enzyme_producer.T_max) * total_C_recal / (enzyme_producer.K_recal + total_C_recal),
+		X_C_recal <- total_C_recal > 0.0 ? min(
+			C_microbes * dt * enzymes.T_recal * total_C_recal / (enzyme_producer.K_recal + total_C_recal),
 			total_C_recal
 		) : 0.0;
 		X_P_recal_to_dim <- (total_C_recal > 0 and total_P_recal > 0) ?
@@ -307,31 +321,32 @@ species SimulatedAnnealing {
 		float T_range;
 		list<float> _T;
 		ask enzyme_producer {
-			float T_min <- x_cellulolytic * min_enzymes.T_cellulolytic + x_amino * min_enzymes.T_amino + x_P * min_enzymes.T_P;
-			T_range <- myself.enzyme_producer.L_R_enzyme_rate * T_max - T_min;
+			T_range <- T_max - T_min;
 			_T <- [
 				x_cellulolytic * (myself.s.enzymes.T_cellulolytic - min_enzymes.T_cellulolytic)/T_range,
 				x_amino * (myself.s.enzymes.T_amino - min_enzymes.T_amino)/T_range,
-				x_P * (myself.s.enzymes.T_P - min_enzymes.T_P)/T_range
+				x_P * (myself.s.enzymes.T_P - min_enzymes.T_P)/T_range,
+				x_recal * (myself.s.enzymes.T_recal - min_enzymes.T_recal)/T_range
 			];
 		}
 
-		list<int> is <- shuffle([0, 1, 2]);
+		list<int> is <- shuffle(enzyme_producer.x_recal > 0 ? [0, 1, 2, 3] : [0, 1, 2]);
 		//float delta <- 0.1+0.99 * (T/T_init);
 		float delta <- 0.5;
 		float range <- 1.0;
-		loop i from: 0 to: 1 {
+		loop i from: 0 to: length(is)-2 {
 			_T[is[i]] <- max(0, min(range, gauss(_T[is[i]], 1.0)));
 //			_T[i] <- rnd(max(0, _T[i] - delta), min(range, _T[i] + delta));
 			range <- range - _T[is[i]];
 		}
-		_T[is[2]] <- range;
+		_T[is[length(is)-1]] <- range;
 		Enzymes enzymes;
 		ask enzyme_producer {
 			create Enzymes with: [
 				T_cellulolytic: min_enzymes.T_cellulolytic + _T[0]*T_range / x_cellulolytic,
 				T_amino: min_enzymes.T_amino + _T[1]*T_range / x_amino,
-				T_P: min_enzymes.T_P + _T[2]*T_range / x_P
+				T_P: min_enzymes.T_P + _T[2]*T_range / x_P,
+				T_recal: myself.enzyme_producer.x_recal > 0 ? min_enzymes.T_recal + _T[3]*T_range / x_recal : 0.0
 				] {
 					enzymes <- self;
 			}
@@ -344,57 +359,12 @@ species SimulatedAnnealing {
 			);
 			result <- self;
 		}
-
-//		float delta <- 0.1;
-//		list<float> t <- [s.t[0], s.t[1], s.t[2]];
-//		loop i from: 0 to: 2 {
-//			t[i] <- rnd(max(0, t[i] - delta), min(1.0, t[i] + delta));
-//		}
-//
-//		t <- t sort_by (each);
-		
-//		ask enzyme_producer {
-//			create Enzymes with: [
-//				T_C_c: min_enzymes.T_C_c + t[0]*T_range / x_C_c,
-//				T_C_om: min_enzymes.T_C_om + (t[1] - t[0])*T_range / x_C_om,
-//				T_P: min_enzymes.T_P + (t[2] - t[1])*T_range / x_P,
-//				T_N: min_enzymes.T_N + (1 - t[2])*T_range / x_N,
-//				t: t
-//				] {
-//					result <- self;
-//			}
-//		}
 		return result;
 	}
 	
 	float E(
 		SimulatedAnnealingState state
 	) {
-//		float N_avail <- state.N_avail(N_DOM, N_DIM);
-//		float P_avail <- state.P_avail(P_DOM, P_DIM);
-		
-//		float result;
-//		if (N_avail > 0 and P_avail > 0) {
-//			float C_avail <- state.C_avail(C_DOM);
-//			float max_C_decomposition <- enzyme_producer.L_R_enzyme_rate * enzyme_producer.T_max /
-//				min(enzyme_producer.x_cellulolytic, enzyme_producer.x_amino, enzyme_producer.x_P) * dt * C_microbes;
-//			
-//			ask state {
-//				result <-
-//				(1.0 - myself.C_N / max(C_avail / N_avail, myself.C_N)) ^ 2 +
-//				(1.0 - myself.C_P / max(C_avail / P_avail, myself.C_P)) ^ 2
-////				(1.0 - myself.C_N / (C_avail / N_avail)) ^ 2 +
-////				(1.0 - myself.C_P / (C_avail / P_avail)) ^ 2
-////				+
-////				(1.0 - (X_C_cellulolytic + X_C_amino + X_C_P)
-////					/ max_C_decomposition
-////				) ^ 2
-//				;
-//			}
-//		} else {
-//			result <- #infinity;
-//		}
-//		return result;
 		return sum(objectives collect each.value(self, state));
 	}
 }
@@ -493,7 +463,7 @@ experiment TestEnzymes type: gui {
 experiment TestSimulatedAnnealing type: gui {
 	
 	Enzymes test_enzymes;
-	SimulatedAnnealing test_simulated_annealing;
+	SimulatedAnnealing simulated_annealing;
 	
 	init {
 		float C_N_microbes <- 5.0;
@@ -501,60 +471,71 @@ experiment TestSimulatedAnnealing type: gui {
 		float C_P_microbes <- 20.0;
 		float C_P_labile <- 20.0;
 		
-		create SimulatedAnnealing with:[
-			C_N::C_N_microbes,
-			C_P::C_P_microbes,
-			C_microbes::10#gram,
-			dt::1#h,
-			total_C_labile::200#gram,
-			total_N_labile::(200#gram/C_N_labile),
-			total_P_labile::(200#gram/C_P_labile),
-			total_C_recal::0.0,
-			total_N_recal::0.0,
-			total_P_recal::0.0,
-			C_DOM::0.0,
-			P_DOM::0.0,
-			N_DOM::0.0,
-			P_DIM::0.0,
-			N_DIM::0.0,
-			objectives::[exact_CN, exact_CP, max_C]
+		TestSimulatedAnnealing current_experiment <- self;
+		create Enzymes with: [
+			T_cellulolytic::0 #gram / #h,
+			T_amino::0 #gram / #h,
+			T_P::0 #gram / #h,
+			T_recal::0 #gram / #h
 		] {
 			create EnzymeProducer with: [
-				L_R_enzyme_rate::1.0
+				L_R_enzyme_rate::1.0,
+				min_enzymes::self
 			] {
-				create Enzymes with: [
-					T_cellulolytic::0 #gram / #h,
-					T_amino::0 #gram / #h,
-					T_P::0 #gram / #h
+				create SimulatedAnnealing with:[
+					C_N::C_N_microbes,
+					C_P::C_P_microbes,
+					C_microbes::10#gram,
+					dt::1#h,
+					total_C_labile::200#gram,
+					total_N_labile::(200#gram/C_N_labile),
+					total_P_labile::(200#gram/C_P_labile),
+					total_C_recal::0.0,
+					total_N_recal::0.0,
+					total_P_recal::0.0,
+					C_DOM::0.0,
+					P_DOM::0.0,
+					N_DOM::0.0,
+					P_DIM::0.0,
+					N_DIM::0.0,
+					objectives::[exact_CN, exact_CP, max_C],
+					enzyme_producer::self
 				] {
-					myself.min_enzymes <- self;
+					current_experiment.simulated_annealing <- self;
 				}
-				myself.enzyme_producer <- self;
 			}
-			myself.test_simulated_annealing <- self;
 		}
 		
+		EnzymeProducer enzyme_producer <- simulated_annealing.enzyme_producer;
+		int n <- enzyme_producer.x_recal > 0 ? 4 : 3;
+		float T_range <- enzyme_producer.T_max - enzyme_producer.T_min;
 		create Enzymes with: [
-			T_cellulolytic: 1.0#gram/#hour,
-			T_amino: 1.0#gram/#hour,
-			T_P: 1.0#gram/#hour
+//			T_cellulolytic: 1.0#gram/#hour,
+//			T_amino: 1.0#gram/#hour,
+//			T_P: 1.0#gram/#hour
+			T_cellulolytic: enzyme_producer.min_enzymes.T_cellulolytic + 1/n * T_range/enzyme_producer.x_cellulolytic,
+			T_amino: enzyme_producer.min_enzymes.T_amino + 1/n * T_range / enzyme_producer.x_amino,
+			T_P: enzyme_producer.min_enzymes.T_P + 1/n * T_range / enzyme_producer.x_P,
+			T_recal: enzyme_producer.x_recal > 0 ?
+				enzyme_producer.min_enzymes.T_recal + 1/n * T_range / enzyme_producer.x_recal : 0.0
 			] {
 			myself.test_enzymes <- self;
 		}
-		ask test_simulated_annealing {
+		ask simulated_annealing {
 			do init(myself.test_enzymes);
 			do step;
 		}
 	}
 	
 	reflex {
-		ask test_simulated_annealing {
+		ask simulated_annealing {
 			do step;
 			write "";
 			write "s: " + s;
 			write "T_cellulolytic: " + s.enzymes.T_cellulolytic / (#gram / #h);
 			write "T_amino: " + s.enzymes.T_amino / (#gram / #h);
 			write "T_P: " + s.enzymes.T_P / (#gram / #h);
+			write "T_recal: " + s.enzymes.T_recal / (#gram/#h);
 			write "C/N: " + s.C_avail(C_DOM) / s.N_avail(N_DOM, N_DIM);
 			write "C/P: " + s.C_avail(C_DOM) / s.P_avail(P_DOM, P_DIM);
 			write "e: " + E(s);
@@ -571,7 +552,7 @@ experiment TestSimulatedAnnealing type: gui {
 	}
 }
 
-experiment SimulatedAnnealingVarC_N type: gui {
+experiment EnzymaticActivity type: gui {
 	string C_N_objective;
 	string C_P_objective;
 	string C_objective;
@@ -651,69 +632,78 @@ experiment SimulatedAnnealingVarC_N type: gui {
 			}
 			do die;
 		}
-		create SimulatedAnnealing with:[
-			C_N::C_N_microbes,
-			C_P::C_P_microbes,
-			C_microbes::C_microbes,
-			dt::1#h,
-			total_C_labile::total_C_labile,
-			total_N_labile::(total_C_labile/(C_N_labile_init + cycle * (C_N_labile_final - C_N_labile_init)/steps)),
-			total_P_labile::(total_C_labile/(C_P_labile_init + cycle * (C_P_labile_final - C_P_labile_init)/steps)),
-			total_C_recal::0.0,
-			total_N_recal::0.0,
-			total_P_recal::0.0,
-			C_DOM::C_dom,
-			N_DOM::(C_dom/(C_N_dom_init + cycle * (C_N_dom_final - C_N_dom_init)/steps)),
-			P_DOM::(C_dom/(C_P_dom_init + cycle * (C_P_dom_final - C_P_dom_init)/steps)),
-			P_DIM::0.0,
-			N_DIM::0.0,
-			objectives::objectives
+		
+		EnzymaticActivity exp <- self;
+		create Enzymes with: [
+			T_cellulolytic::0 #gram / #h,
+			T_amino::0 #gram / #h,
+			T_P::0 #gram / #h,
+			T_recal::0 #gram / #h
 		] {
 			create EnzymeProducer with: [
-				L_R_enzyme_rate::1.0
+				L_R_enzyme_rate::1.0,
+				min_enzymes::self
 			] {
-				create Enzymes with: [
-					T_cellulolytic::0 #gram / #h,
-					T_amino::0 #gram / #h,
-					T_P::0 #gram / #h
+				create SimulatedAnnealing with:[
+					C_N::exp.C_N_microbes,
+					C_P::exp.C_P_microbes,
+					C_microbes::exp.C_microbes,
+					dt::1#h,
+					total_C_labile::exp.total_C_labile,
+					total_N_labile::(exp.total_C_labile/(exp.C_N_labile_init + cycle * (exp.C_N_labile_final - exp.C_N_labile_init)/exp.steps)),
+					total_P_labile::(exp.total_C_labile/(exp.C_P_labile_init + cycle * (exp.C_P_labile_final - exp.C_P_labile_init)/exp.steps)),
+					total_C_recal::0.0,
+					total_N_recal::0.0,
+					total_P_recal::0.0,
+					C_DOM::exp.C_dom,
+					N_DOM::(exp.C_dom/(exp.C_N_dom_init + cycle * (exp.C_N_dom_final - exp.C_N_dom_init)/exp.steps)),
+					P_DOM::(exp.C_dom/(exp.C_P_dom_init + cycle * (exp.C_P_dom_final - exp.C_P_dom_init)/exp.steps)),
+					P_DIM::0.0,
+					N_DIM::0.0,
+					objectives::exp.objectives,
+					enzyme_producer::self
 				] {
-					myself.min_enzymes <- self;
+					Enzymes enzymes;
+					int n <- enzyme_producer.x_recal > 0 ? 4 : 3;
+					float T_range <- enzyme_producer.T_max - enzyme_producer.T_min;
+					create Enzymes with: [
+						T_cellulolytic: enzyme_producer.min_enzymes.T_cellulolytic + 1/n * T_range/enzyme_producer.x_cellulolytic,
+						T_amino: enzyme_producer.min_enzymes.T_amino + 1/n * T_range / enzyme_producer.x_amino,
+						T_P: enzyme_producer.min_enzymes.T_P + 1/n * T_range / enzyme_producer.x_P,
+						T_recal: enzyme_producer.x_recal > 0 ?
+							enzyme_producer.min_enzymes.T_recal + 1/n * T_range / enzyme_producer.x_recal : 0.0
+					] {
+						enzymes <- self;
+					}
+					do init(enzymes);
+		
+					loop i from: 0 to: 1000 {
+						do step;
+					}
+					write "";
+					write "s: " + s;
+					write "T_cellylolytic: " + s.enzymes.T_cellulolytic / (#gram / #h);
+					write "T_amino: " + s.enzymes.T_amino / (#gram / #h);
+					write "T_P: " + s.enzymes.T_P / (#gram / #h);
+					write "C/N: " + s.C_avail(C_DOM) / s.N_avail(N_DOM, N_DIM);
+					write "C/P: " + s.C_avail(C_DOM) / s.P_avail(P_DOM, P_DIM);
+					write "e: " + E(s);
+								
+					ask s {
+						write "X_C_cellulolytic: " + X_C_cellulolytic;
+						write "X_C_amino: " + X_C_amino;
+						write "X_N_amino: " + X_N_amino;
+						write "X_C_P: " + X_C_P;
+						write "X_P_labile_to_dom:" + X_P_labile_to_dom;
+						write "X_P_labile_to_dim: " + X_P_labile_to_dim;
+						write "X_C_recal: " + X_C_recal;
+						write "X_P_recal_to_dim:" + X_P_recal_to_dim;
+					}
+					exp.simulated_annealing <- self;
 				}
-				myself.enzyme_producer <- self;
 			}
-			Enzymes enzymes;
-			create Enzymes with: [
-			T_cellulolytic: 1.0#gram/#hour,
-			T_amino: 1.0#gram/#hour,
-			T_P: 1.0#gram/#hour
-			] {
-				enzymes <- self;
-			}
-			do init(enzymes);
-
-			loop i from: 0 to: 1000 {
-				do step;
-			}
-			write "";
-			write "s: " + s;
-			write "T_cellylolytic: " + s.enzymes.T_cellulolytic / (#gram / #h);
-			write "T_amino: " + s.enzymes.T_amino / (#gram / #h);
-			write "T_P: " + s.enzymes.T_P / (#gram / #h);
-			write "C/N: " + s.C_avail(C_DOM) / s.N_avail(N_DOM, N_DIM);
-			write "C/P: " + s.C_avail(C_DOM) / s.P_avail(P_DOM, P_DIM);
-			write "e: " + E(s);
-						
-			ask s {
-				write "X_C_cellulolytic: " + X_C_cellulolytic;
-				write "X_C_amino: " + X_C_amino;
-				write "X_N_amino: " + X_N_amino;
-				write "X_C_P: " + X_C_P;
-				write "X_P_labile_to_dom:" + X_P_labile_to_dom;
-				write "X_P_labile_to_dim: " + X_P_labile_to_dim;
-				write "X_P_recal_to_dim:" + X_P_recal_to_dim;
-			}
-			myself.simulated_annealing <- self;
 		}
+		
 	}
 	
 	reflex when: cycle=steps {
@@ -742,6 +732,7 @@ experiment SimulatedAnnealingVarC_N type: gui {
 				data "T_cellulolytic" value: sum(SimulatedAnnealing collect each.s.enzymes.T_cellulolytic) style:line;
 				data "T_amino" value: sum(SimulatedAnnealing collect each.s.enzymes.T_amino) style:line;
 				data "T_P" value: sum(SimulatedAnnealing collect each.s.enzymes.T_P) style:line;
+				data "T_recal" value: sum(SimulatedAnnealing collect each.s.enzymes.T_recal) style:line;
 			}
 		}
 		display "C/N" type:2d {
