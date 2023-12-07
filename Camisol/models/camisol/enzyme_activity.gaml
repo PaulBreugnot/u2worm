@@ -12,7 +12,32 @@ import "microbes.gaml"
 global {
 	/** Insert the global definitions, variables and actions here */
 	float amino_CN <- 2.0;
+	
+	ExactCN exact_CN;
+	MaxCN max_CN;
+	ExactCP exact_CP;
+	MaxCP max_CP;
+	MaxC max_C;
+	
+	init {
+		create ExactCN {
+			exact_CN <- self;
+		}
+		create MaxCN {
+			max_CN <- self;
+		}
+		create ExactCP {
+			exact_CP <- self;
+		}
+		create MaxCP {
+			max_CP <- self;
+		}
+		create MaxC {
+			max_C <- self;
+		}
+	}
 }
+
 species Enzymes {
 	// Enzymatic action rates
 	float T_cellulolytic <- 0.0#gram/#h;
@@ -33,7 +58,8 @@ species EnzymeProducer {
 	float beta_amino_P <- 0.5;
 	
 	float alpha_P <- 1e-3;
-	float alpha_CP <- 0.1;
+	float alpha_CP <- 0.0;
+	float alpha_P_dim <- 0.9;
 	
 	Enzymes min_enzymes;
 	
@@ -79,13 +105,13 @@ species SimulatedAnnealingState {
 			total_C_labile
 		);
 		
-		float expected_C_amino <- (
+		float expected_C_amino <- total_C_labile > 0 ? (
 			C_microbes * dt * enzymes.T_amino
-		) * total_C_labile / (enzyme_producer.K_amino + total_C_labile);
+		) * total_C_labile / (enzyme_producer.K_amino + total_C_labile) : 0.0;
 		float expected_N_amino <- expected_C_amino / amino_CN;
-		float limiting_amino <- min(
+		float limiting_amino <- expected_C_amino > 0 ? min(
 			1.0, total_C_labile / expected_C_amino, total_N_labile / expected_N_amino 
-		);
+		) : 0.0;
 		// total_C_labile <- total_C_labile - expected_C_amino * limiting_amino;
 		// total_N_labile <- total_N_labile - expected_N_amino * limiting_amino;
 		float E_C_amino <- expected_C_amino * limiting_amino;
@@ -103,9 +129,14 @@ species SimulatedAnnealingState {
 			- (1-enzyme_producer.beta_amino_P) * E_C_amino * E_C_P / total_C_labile;
 		
 		X_N_amino <- X_C_amino / amino_CN;
-		float total_X_P <- X_C_P / (total_C_labile / total_N_labile);
-		X_P_labile_to_dim <- (1-enzyme_producer.alpha_CP) * total_X_P;
-		X_P_labile_to_dom <- enzyme_producer.alpha_CP * total_X_P;
+		float total_X_P <- X_C_P / (total_C_labile / total_P_labile);
+
+		
+		X_P_labile_to_dim <- enzyme_producer.alpha_P_dim * total_X_P;
+				
+		// Only a fraction goes to the dom, the rest is left in the labile section
+		X_C_P <- enzyme_producer.alpha_CP * X_C_P;
+		X_P_labile_to_dom <- enzyme_producer.alpha_CP * (total_X_P-X_P_labile_to_dim);
 		
 		float E_P_om_recal <- 0.0;
 		float E_N_om_recal <- 0.0;
@@ -117,7 +148,8 @@ species SimulatedAnnealingState {
 			((1-enzyme_producer.L_R_enzyme_rate) * C_microbes * dt * enzyme_producer.T_max) * total_C_recal / (enzyme_producer.K_recal + total_C_recal),
 			total_C_recal
 		) : 0.0;
-		X_P_recal_to_dim <- enzyme_producer.alpha_P * X_C_recal / (total_C_recal / total_P_recal);
+		X_P_recal_to_dim <- (total_C_recal > 0 and total_P_recal > 0) ?
+			enzyme_producer.alpha_P * X_C_recal / (total_C_recal / total_P_recal) : 0.0;
 	}
 	
 	float C_avail(float C_DOM) {
@@ -130,6 +162,67 @@ species SimulatedAnnealingState {
 	
 	float P_avail(float P_DOM, float P_DIM) {
 		return P_DOM + P_DIM + X_P_labile_to_dom + X_P_labile_to_dim;
+	}
+}
+
+species Objective {
+	action value(SimulatedAnnealing simulated_annealing, SimulatedAnnealingState state) virtual: true type: float;
+}
+
+species ExactCN parent: Objective {
+	action value(SimulatedAnnealing simulated_annealing, SimulatedAnnealingState state) type: float {
+		float N_avail <- state.N_avail(simulated_annealing.N_DOM, simulated_annealing.N_DIM);
+		float C_avail <- state.C_avail(simulated_annealing.C_DOM);
+		if(N_avail > 0 and C_avail > 0) {
+			return (1.0 - simulated_annealing.C_N / (C_avail / N_avail)) ^ 2;
+		}
+		return #infinity;
+	}
+}
+
+species MaxCN parent: Objective {
+	action value(SimulatedAnnealing simulated_annealing, SimulatedAnnealingState state) type: float {
+		float N_avail <- state.N_avail(simulated_annealing.N_DOM, simulated_annealing.N_DIM);
+		float C_avail <- state.C_avail(simulated_annealing.C_DOM);
+		if(N_avail > 0 and C_avail > 0) {
+			return (1.0 - simulated_annealing.C_N / max(C_avail / N_avail, simulated_annealing.C_N)) ^ 2;
+		}
+		return #infinity;
+	}
+}
+
+species ExactCP parent: Objective {
+	action value(SimulatedAnnealing simulated_annealing, SimulatedAnnealingState state) type: float {
+		float P_avail <- state.P_avail(simulated_annealing.P_DOM, simulated_annealing.P_DIM);
+		float C_avail <- state.C_avail(simulated_annealing.C_DOM);
+		if(P_avail > 0 and C_avail > 0) {
+			return (1.0 - simulated_annealing.C_P / (C_avail / P_avail)) ^ 2;
+		}
+		return #infinity;
+	}
+}
+
+species MaxCP parent: Objective {
+	action value(SimulatedAnnealing simulated_annealing, SimulatedAnnealingState state) type: float {
+		float P_avail <- state.P_avail(simulated_annealing.P_DOM, simulated_annealing.P_DIM);
+		float C_avail <- state.C_avail(simulated_annealing.C_DOM);
+		if(P_avail > 0 and C_avail > 0) {
+			return (1.0 - simulated_annealing.C_P / max((C_avail / P_avail), simulated_annealing.C_P)) ^ 2;	
+		}
+		return #infinity;
+	}
+}
+
+species MaxC parent: Objective {
+	action value(SimulatedAnnealing simulated_annealing, SimulatedAnnealingState state) type: float {
+		float max_C_decomposition;
+		ask simulated_annealing {
+			max_C_decomposition <- enzyme_producer.L_R_enzyme_rate * enzyme_producer.T_max /
+			min(enzyme_producer.x_cellulolytic, enzyme_producer.x_amino, enzyme_producer.x_P) * dt * C_microbes;
+		}
+		return (1.0 - (state.X_C_cellulolytic + state.X_C_amino + state.X_C_P)
+				/ max_C_decomposition
+			) ^ 2;
 	}
 }
 
@@ -158,6 +251,7 @@ species SimulatedAnnealing {
 	float T;
 	float e;
 	SimulatedAnnealingState s;
+	list<Objective> objectives;
 	
 	action init(Enzymes enzymes) {
 //		T <- C_N ^ 2 + C_P ^ 2 + total_C_labile ^ 2
@@ -276,28 +370,32 @@ species SimulatedAnnealing {
 	float E(
 		SimulatedAnnealingState state
 	) {
-		float N_avail <- state.N_avail(N_DOM, N_DIM);
-		float P_avail <- state.P_avail(P_DOM, P_DIM);
+//		float N_avail <- state.N_avail(N_DOM, N_DIM);
+//		float P_avail <- state.P_avail(P_DOM, P_DIM);
 		
-		float result;
-		if (N_avail > 0 and P_avail > 0) {
-			float C_avail <- state.C_avail(C_DOM);
-			float max_C_decomposition <- enzyme_producer.L_R_enzyme_rate * enzyme_producer.T_max / min(enzyme_producer.x_cellulolytic, enzyme_producer.x_amino, enzyme_producer.x_P) * dt * C_microbes;
-			
-			ask state {
-				result <-
-				(1.0 - myself.C_N / max(C_avail / N_avail, myself.C_N)) ^ 2 +
-				(1.0 - myself.C_P / max(C_avail / P_avail, myself.C_P)) ^ 2
-				+
-				(1.0 - (X_C_cellulolytic + X_C_amino + X_C_P)
-					/ max_C_decomposition
-				) ^ 2
-				;
-			}
-		} else {
-			result <- #infinity;
-		}
-		return result;
+//		float result;
+//		if (N_avail > 0 and P_avail > 0) {
+//			float C_avail <- state.C_avail(C_DOM);
+//			float max_C_decomposition <- enzyme_producer.L_R_enzyme_rate * enzyme_producer.T_max /
+//				min(enzyme_producer.x_cellulolytic, enzyme_producer.x_amino, enzyme_producer.x_P) * dt * C_microbes;
+//			
+//			ask state {
+//				result <-
+//				(1.0 - myself.C_N / max(C_avail / N_avail, myself.C_N)) ^ 2 +
+//				(1.0 - myself.C_P / max(C_avail / P_avail, myself.C_P)) ^ 2
+////				(1.0 - myself.C_N / (C_avail / N_avail)) ^ 2 +
+////				(1.0 - myself.C_P / (C_avail / P_avail)) ^ 2
+////				+
+////				(1.0 - (X_C_cellulolytic + X_C_amino + X_C_P)
+////					/ max_C_decomposition
+////				) ^ 2
+//				;
+//			}
+//		} else {
+//			result <- #infinity;
+//		}
+//		return result;
+		return sum(objectives collect each.value(self, state));
 	}
 }
 
@@ -418,7 +516,8 @@ experiment TestSimulatedAnnealing type: gui {
 			P_DOM::0.0,
 			N_DOM::0.0,
 			P_DIM::0.0,
-			N_DIM::0.0
+			N_DIM::0.0,
+			objectives::[exact_CN, exact_CP, max_C]
 		] {
 			create EnzymeProducer with: [
 				L_R_enzyme_rate::1.0
@@ -473,25 +572,67 @@ experiment TestSimulatedAnnealing type: gui {
 }
 
 experiment SimulatedAnnealingVarC_N type: gui {
-	float C_N_labile_init;
-	float C_N_labile_final;
+	string C_N_objective;
+	string C_P_objective;
+	string C_objective;
+	list<Objective> objectives;
+
+	float C_microbes;
+	float total_C_labile;
+	float C_dom;
 	float C_N_microbes;
 	float C_P_microbes;
+	
+	float C_N_labile_init;
+	float C_N_labile_final;
 	float C_P_labile_init;
 	float C_P_labile_final;
 	
-	parameter "Initial C/N (labile)" var: C_N_labile_init init: 0.5 ;
-	parameter "Final C/N (labile)" var:C_N_labile_final init:20.0;
-	parameter "Microbe population's C/N" var:C_N_microbes init:5.0;
-	parameter "Microbe population's C/P" var:C_P_microbes init:20.0;
-	parameter "Initial C/P (labile)" var:C_P_labile_init init:20.0;
-	parameter "Final C/P (labile)" var:C_P_labile_final init:20.0;
+	float C_N_dom_init;
+	float C_N_dom_final;
+	float C_P_dom_init;
+	float C_P_dom_final;
+	
+	parameter "C/N" category: "Objectives" var: C_N_objective init: "Exact C/N" among: ["none", "Exact C/N", "Max C/N"];
+	parameter "C/P" category: "Objectives" var: C_P_objective init: "Exact C/P" among: ["none", "Exact C/P", "Max C/P"];
+	parameter "C" category: "Objectives" var: C_objective init: "none" among: ["none", "Max C"];
+	
+	parameter "Amino CN" category: "Constants" var: amino_CN init: 2.0;
+	parameter "C microbes" category: "Constants" var: C_microbes init: 200#gram;
+	parameter "total C labile" category: "Constants" var: total_C_labile init: 10#gram;
+	parameter "C dom" category: "Constants" var: C_dom init: 1#gram;
+	parameter "Microbe population's C/N" category: "Constants" var:C_N_microbes init:5.0;
+	parameter "Microbe population's C/P" category: "Constants" var:C_P_microbes init:20.0;
+	
+	parameter "Initial C/N (labile)" category: "Labile OM" var: C_N_labile_init init: 20.0 ;
+	parameter "Final C/N (labile)" category: "Labile OM" var:C_N_labile_final init:20.0;
+	parameter "Initial C/P (labile)" category: "Labile OM" var:C_P_labile_init init:20.0;
+	parameter "Final C/P (labile)" category: "Labile OM" var:C_P_labile_final init:20.0;
+	
+	parameter "Initial C/N (DOM)" category: "DOM" var: C_N_dom_init init: 0.5 ;
+	parameter "Final C/N (DOM)" category: "DOM" var:C_N_dom_final init:20.0;
+	parameter "Initial C/P (DOM)" category: "DOM" var:C_P_dom_init init:20.0;
+	parameter "Final C/P (DOM)" category: "DOM" var:C_P_dom_final init:20.0;
 	
 	SimulatedAnnealing simulated_annealing;
 	int steps <- 1000 parameter: "Count of steps";
 	
 	init {
-	
+		if(C_N_objective = "Exact C/N") {
+			add exact_CN to: objectives;
+		} else if (C_N_objective = "Max C/N") {
+			add max_CN to: objectives;
+		}
+		
+		if(C_P_objective = "Exact C/P") {
+			add exact_CP to: objectives;
+		} else if (C_P_objective = "Max C/P") {
+			add max_CP to: objectives;
+		}
+		
+		if(C_objective = "Max C") {
+			add max_C to: objectives;
+		}
 	}
 	
 	reflex {
@@ -513,19 +654,20 @@ experiment SimulatedAnnealingVarC_N type: gui {
 		create SimulatedAnnealing with:[
 			C_N::C_N_microbes,
 			C_P::C_P_microbes,
-			C_microbes::200#gram,
+			C_microbes::C_microbes,
 			dt::1#h,
-			total_C_labile::200#gram,
-			total_N_labile::(200#gram/(C_N_labile_init + cycle * (C_N_labile_final - C_N_labile_init)/steps)),
-			total_P_labile::(200#gram/(C_P_labile_init + cycle * (C_P_labile_final - C_P_labile_init)/steps)),
+			total_C_labile::total_C_labile,
+			total_N_labile::(total_C_labile/(C_N_labile_init + cycle * (C_N_labile_final - C_N_labile_init)/steps)),
+			total_P_labile::(total_C_labile/(C_P_labile_init + cycle * (C_P_labile_final - C_P_labile_init)/steps)),
 			total_C_recal::0.0,
 			total_N_recal::0.0,
 			total_P_recal::0.0,
-			C_DOM::0.0,
-			P_DOM::0.0,
-			N_DOM::0.0,
+			C_DOM::C_dom,
+			N_DOM::(C_dom/(C_N_dom_init + cycle * (C_N_dom_final - C_N_dom_init)/steps)),
+			P_DOM::(C_dom/(C_P_dom_init + cycle * (C_P_dom_final - C_P_dom_init)/steps)),
 			P_DIM::0.0,
-			N_DIM::0.0
+			N_DIM::0.0,
+			objectives::objectives
 		] {
 			create EnzymeProducer with: [
 				L_R_enzyme_rate::1.0
@@ -605,13 +747,15 @@ experiment SimulatedAnnealingVarC_N type: gui {
 		display "C/N" type:2d {
 			chart "C/N" type:series {
 				data "organic C/N" value: sum(SimulatedAnnealing collect (each.total_C_labile/each.total_N_labile));
+				data "dom C/N" value: sum(SimulatedAnnealing collect (each.N_DOM > 0 ? each.C_DOM/each.N_DOM : 0.0));
 				data "available C/N" value: sum(SimulatedAnnealing collect (each.s.C_avail(each.C_DOM)/each.s.N_avail(each.N_DOM, each.N_DIM)));
 				data "C/N" value: sum(SimulatedAnnealing collect each.C_N);
 			}
 		}
 		display "C/P" type:2d {
 			chart "C/P" type:series {
-				data "organic C/N" value: sum(SimulatedAnnealing collect (each.total_C_labile/each.total_P_labile));
+				data "organic C/P" value: sum(SimulatedAnnealing collect (each.total_C_labile/each.total_P_labile));
+				data "dom C/P" value: sum(SimulatedAnnealing collect (each.P_DOM > 0 ? each.C_DOM/each.P_DOM : 0.0));
 				data "available C/P" value: sum(SimulatedAnnealing collect (each.s.C_avail(each.C_DOM)/each.s.P_avail(each.P_DOM, each.P_DIM)));
 				data "C/P" value: sum(SimulatedAnnealing collect each.C_P);
 			}
