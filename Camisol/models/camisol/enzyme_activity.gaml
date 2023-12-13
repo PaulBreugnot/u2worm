@@ -7,8 +7,6 @@
 
 model enzyme_activity
 
-import "microbes.gaml"
-
 global {
 	/** Insert the global definitions, variables and actions here */
 	float amino_CN <- 2.0;
@@ -67,9 +65,9 @@ species EnzymeProducer {
 	float beta_cellulolytic_P <- 0.5;
 	float beta_amino_P <- 0.5;
 	
-	float alpha_P <- 1e-3;
 	float alpha_CP <- 0.0;
-	float alpha_P_dim <- 0.9;
+	float alpha_P_recal_to_dim <- 1e-3;
+	float alpha_P_labile_to_dim <- 0.9;
 	
 	Enzymes min_enzymes;
 	Enzymes max_enzymes;
@@ -83,8 +81,6 @@ species EnzymeProducer {
 	float K_P <- 0.0;
 	
 	float K_recal <- 0.0;
-	
-	float L_R_enzyme_rate;
 	
 	init {	
 	}
@@ -165,12 +161,11 @@ species SimulatedAnnealingState {
 				- (1-enzyme_producer.beta_cellulolytic_P) * E_C_P * E_C_cellulolytic / total_C_labile
 				- (1-enzyme_producer.beta_amino_P) * E_C_amino * E_C_P / total_C_labile;
 				
+			X_N_amino <- X_C_amino / amino_CN;
 			if(total_P_labile > 0) {
-				X_N_amino <- X_C_amino / amino_CN;
 				float total_X_P <- X_C_P / (total_C_labile / total_P_labile);
-		
 				
-				X_P_labile_to_dim <- enzyme_producer.alpha_P_dim * total_X_P;
+				X_P_labile_to_dim <- enzyme_producer.alpha_P_labile_to_dim * total_X_P;
 						
 				// Only a fraction goes to the dom, the rest is left in the labile section
 				X_C_P <- enzyme_producer.alpha_CP * X_C_P;
@@ -191,7 +186,7 @@ species SimulatedAnnealingState {
 			);
 			if(total_P_recal > 0) {
 				X_P_recal_to_dim <-
-					enzyme_producer.alpha_P * X_C_recal / (total_C_recal / total_P_recal);
+					enzyme_producer.alpha_P_recal_to_dim * X_C_recal / (total_C_recal / total_P_recal);
 			}
 		}
 	}
@@ -235,6 +230,9 @@ species SimulatedAnnealing {
 	float N_DIM;
 	
 	EnzymeProducer enzyme_producer;
+	
+	int max_N <- 1000;
+	float epsilon <- 0.0;
 	
 	float T_init;
 	float T;
@@ -286,7 +284,9 @@ species SimulatedAnnealing {
 	}
 	
 	action optimize {
-		loop i from: 0 to: 100 {
+		int i <- 0;
+		loop while: i < max_N and e > epsilon {
+			i <- i+1;
 			do step;
 		}
 	}
@@ -409,7 +409,7 @@ species MaxP parent: Objective {
 				),
 				min(
 					total_C_recal > 0 and total_P_recal > 0 ?
-					enzyme_producer.alpha_P * dt * C_microbes * enzyme_producer.max_enzymes.T_recal / (total_C_recal / total_P_recal) : 0.0,
+					enzyme_producer.alpha_P_recal_to_dim * dt * C_microbes * enzyme_producer.max_enzymes.T_recal / (total_C_recal / total_P_recal) : 0.0,
 					total_P_recal
 				)
 			);
@@ -445,7 +445,7 @@ species MaxRecalC parent: Objective {
 		return max_recal_C_decomposition > 0 ? 
 			(1.0 - state.X_C_recal / max_recal_C_decomposition) ^ 2
 			: (simulated_annealing.enzyme_producer.max_enzymes.T_recal - state.enzymes.T_recal > 0 ?
-			exp(10000 * state.enzymes.T_recal / (simulated_annealing.enzyme_producer.max_enzymes.T_recal - state.enzymes.T_recal)) - 1.0
+			exp(state.enzymes.T_recal / (simulated_annealing.enzyme_producer.max_enzymes.T_recal - state.enzymes.T_recal))
 			: #infinity);
 	}
 }
@@ -484,7 +484,7 @@ species MaxTotalC parent: Objective {
 						+ enzyme_producer.alpha_CP * enzyme_producer.max_enzymes.T_P;
 					result <- (T_max_labile - T_labile) > 0 ?
 							(1.0 - (state.X_C_cellulolytic + state.X_C_amino + state.X_C_P) / (max_C_decomposition)) ^ 2
-								* exp(10000 * T_labile / (T_max_labile - T_labile))
+								* exp(T_labile / (T_max_labile - T_labile))
 						: #infinity;
 				} else {
 					result <- 0.0;
@@ -503,95 +503,7 @@ species MaxTotalC parent: Objective {
 		return result;
 	}
 }
-experiment TestEnzymes type: gui {
-	init {
-		float carbone_concentration_in_dam <- (729.0#gram * 10^-6)/#gram;
-		float azote_concentration_in_dam <- (60.0#gram * 10^-6)/#gram;
-		float azote_concentration_in_dim <- (4.74#gram * 10^-6)/#gram;
-		float phosphore_concentration_in_dam <- (400.0#gram * 10^-6)/#gram;
-		float phosphore_concentration_in_dim <- (1.43#gram * 10^-6)/#gram;
-		float model_surface <- 1#cm*1#cm;
-		float model_weight <- 1.17#gram * model_surface;
-		float C <- 0.02157#gram/(#cm*#cm);
-		float N <- 0.00132#gram/(#cm*#cm);
-		float P <- 0.00077#gram/(#cm*#cm);
-		
-		create Dam with: [
-				dom: [
-					azote_concentration_in_dam * model_weight,
-					phosphore_concentration_in_dam * model_weight,
-					carbone_concentration_in_dam * model_weight
-				],
-				dim: [
-					azote_concentration_in_dim * model_weight,
-					phosphore_concentration_in_dim * model_weight
-				]
-			] {
-			}
-		create PoreParticle with: [carrying_capacity::10*total_initial_bacteria_weight] {
-			ask Dam {
-				myself.dam <- self;
-			}
-		}
-		
-		create Copiotrophe_R {
-			ask Dam {
-				myself.dam <- self;
-			}
-			ask PoreParticle {
-				add myself to: self.populations;
-			}
-		}
-		create OrganicParticle with: [
-			N: N*model_surface,
-			P: P*model_surface,
-			C_recalcitrant: (C/2)*model_surface,
-			C_labile: (C/2)*model_surface
-		] {
-			ask PoreParticle {
-				organic_particle <- myself;
-				add myself to: accessible_organics;
-			}
-		}
-	}
-	
-	reflex {
-		ask Dam {
-			write dom;
-			write dim;
-		}
-	}
-	
-	/** Insert here the definition of the input and output of the model */
-	output {
-		display "dam" type: java2D {
-			chart "dam" type:series {
-				data "N (dom)" value: (sum(Dam collect each.dom[0])) style:spline marker:false thickness:3;
-				data "P (dom)" value: (sum(Dam collect each.dom[1])) style:spline marker:false thickness:3;
-				data "C (dom)" value: (sum(Dam collect each.dom[2])) style:spline marker:false thickness:3;
-				data "N (dim)" value: (sum(Dam collect each.dim[0])) style:spline marker:false thickness:3;
-				data "P (dim)" value: (sum(Dam collect each.dim[1])) style:spline marker:false thickness:3;
-			}
-		}
-		
-		display "organics" type:java2D {
-			chart "Organics composition" type:series {
-				data "C_labile" value: (sum(OrganicParticle collect each.C_labile)) style:spline marker:false thickness:3;
-				data "C_recalcitrant" value: (sum(OrganicParticle collect each.C_recalcitrant)) style:spline marker:false thickness:3;
-				data "N" value: (sum(OrganicParticle collect each.N)) style:spline marker:false thickness:3;
-				data "P" value: (sum(OrganicParticle collect each.P)) style:spline marker:false thickness:3;
-			}
-		}
-		
-		display "populations" type:java2D {
-			chart "Bacteria populations" type:series {
-				data "Copiotrophe R" value: (sum(Copiotrophe_R collect each.C)) style:spline color: #red marker:false thickness:3;
-				data "Copiotrophe K" value: (sum(Copiotrophe_K collect each.C)) style:spline color: #green marker:false thickness:3;
-				data "Oligotrophe K" value: (sum(Oligotrophe_K collect each.C)) style:spline color: #blue marker:false thickness:3;
-			}
-		}
-	}
-}
+
 
 experiment TestSimulatedAnnealing type: gui {
 	SimulatedAnnealing simulated_annealing;
@@ -625,7 +537,6 @@ experiment TestSimulatedAnnealing type: gui {
 		}
 		
 		create EnzymeProducer with: [
-			L_R_enzyme_rate::1.0,
 			min_enzymes::min_enzymes,
 			max_enzymes::max_enzymes
 		] {
@@ -869,7 +780,6 @@ experiment EnzymaticActivity type: gui {
 		EnzymaticActivity exp <- self;
 		
 		create EnzymeProducer with: [
-			L_R_enzyme_rate::1.0,
 			min_enzymes::min_enzymes,
 			max_enzymes::max_enzymes
 		] {
@@ -896,11 +806,12 @@ experiment EnzymaticActivity type: gui {
 				P_DIM::0.0,
 				N_DIM::0.0,
 				objectives::exp.objectives,
-				enzyme_producer::self
+				enzyme_producer::self,
+				max_N::1000,
+				epsilon::1e-3
 			] {
-				loop i from: 0 to: 1000 {
-					do step;
-				}
+				do optimize;
+				
 				float C_avail <- s.C_avail(C_DOM);
 				float N_avail <- s.N_avail(N_DOM, N_DIM);
 				float P_avail <- s.P_avail(P_DOM, P_DIM);
