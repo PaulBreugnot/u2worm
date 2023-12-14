@@ -9,47 +9,7 @@ model enzyme_activity
 
 global {
 	/** Insert the global definitions, variables and actions here */
-	float amino_CN <- 2.0;
-	
-	ExactCN exact_CN;
-	MaxCN max_CN;
-	ExactCP exact_CP;
-	MaxCP max_CP;
-	MaxC max_C;
-	MaxN max_N;
-	MaxP max_P;
-	MaxRecalC max_recal_C;
-	MaxTotalC max_total_C;
-	
-	init {
-		create ExactCN {
-			exact_CN <- self;
-		}
-		create MaxCN {
-			max_CN <- self;
-		}
-		create ExactCP {
-			exact_CP <- self;
-		}
-		create MaxCP {
-			max_CP <- self;
-		}
-		create MaxC {
-			max_C <- self;
-		}
-		create MaxN {
-			max_N <- self;
-		}
-		create MaxP {
-			max_P <- self;
-		}
-		create MaxRecalC {
-			max_recal_C <- self;
-		}
-		create MaxTotalC {
-			max_total_C <- self;
-		}
-	}
+	float amino_CN <- 6.0;
 }
 
 species Enzymes {
@@ -458,6 +418,17 @@ species MaxRecalC parent: Objective {
 }
 	
 species MaxTotalC parent: Objective {
+	MaxC max_C;
+	MaxRecalC max_recal_C;
+	
+	init {
+		create MaxC {
+			myself.max_C <- self;
+		}
+		create MaxRecalC {
+			myself.max_recal_C <- self;
+		}
+	}
 	action value(SimulatedAnnealingState state) type: float {
 		float result;
 		ask state.problem {
@@ -507,10 +478,10 @@ species MaxTotalC parent: Objective {
 				}
 			} else if (max_labile_C_enzyme > 0) {
 				// It is not possible to produce recalcitrant enzyme, so act like if they do not exist
-				result <- max_C.value(state);
+				result <- myself.max_C.value(state);
 			} else if(max_enzymes.T_recal > 0) {
 				// It is not possible to produce labile enzyme, so act like if they do not exist
-				result <- max_recal_C.value(state);
+				result <- myself.max_recal_C.value(state);
 			} else {
 				// No C enzyme can be produced.
 				result <- 0.0;
@@ -552,6 +523,11 @@ experiment TestSimulatedAnnealing type: gui {
 			max_enzymes <- self;
 		}
 		
+		Objective objective;
+		create MaxTotalC {
+			objective <- self;
+		}
+		
 		create EnzymaticActivityProblem with: [
 			C_N::C_N_microbes,
 			C_P::C_P_microbes,
@@ -573,7 +549,7 @@ experiment TestSimulatedAnnealing type: gui {
 		] {
 			create SimulatedAnnealing with:[
 				problem::self,
-				objectives::[max_total_C]
+				objectives::[objective]
 			] {
 				current_experiment.simulated_annealing <- self;
 			}
@@ -699,9 +675,13 @@ experiment ExpEnzymaticActivity type: gui {
 //		write "Recalcitrant C threshold: " + C_microbes * T_recal #gram/#h * 1#h / #gram;
 		Objective _C_N_objective;
 		if(C_N_objective = "Exact C/N") {
-			_C_N_objective <- exact_CN;
+			create ExactCN {
+				_C_N_objective <- self;
+			}
 		} else if (C_N_objective = "Max C/N") {
-			_C_N_objective <- max_CN;
+			create MaxCN {
+				_C_N_objective <- self;
+			}
 		}
 		if _C_N_objective != nil {
 			ask _C_N_objective {
@@ -712,9 +692,13 @@ experiment ExpEnzymaticActivity type: gui {
 		
 		Objective _C_P_objective;
 		if(C_P_objective = "Exact C/P") {
-			_C_P_objective <- exact_CP;
+			create ExactCP {
+				_C_P_objective <- self;
+			}
 		} else if (C_P_objective = "Max C/P") {
-			_C_P_objective <- max_CP;
+			create MaxCP {
+				_C_P_objective <- self;		
+			}
 		}
 		if _C_P_objective != nil {
 			ask _C_P_objective {
@@ -725,9 +709,13 @@ experiment ExpEnzymaticActivity type: gui {
 		
 		Objective _C_objective;
 		if(C_objective = "Max C") {
-			_C_objective <- max_C;
+			create MaxC {
+				_C_objective <- self;
+			}
 		} else if (C_objective = "Max total C") {
-			_C_objective <- max_total_C;
+			create MaxTotalC {
+				_C_objective <- self;	
+			}
 		}
 		if(_C_objective != nil) {
 			ask _C_objective {
@@ -737,23 +725,20 @@ experiment ExpEnzymaticActivity type: gui {
 		}
 				
 		if(N_objective = "Max N") {
-			add max_N to: objectives;
-			ask max_N {
-				weight <- myself.N_objective_weight;
+			create MaxN with: (weight: N_objective_weight) {
+				add self to: myself.objectives;
 			}
 		}
 				
 		if(P_objective = "Max P") {
-			add max_P to: objectives;
-			ask max_P {
-				weight <- myself.P_objective_weight;
+			create MaxP with: (weight: P_objective_weight) {
+				add self to: myself.objectives;
 			}
 		}
 		
 		if(C_recal_objective = "Max recalcitrant C") {
-			add max_recal_C to: objectives;
-			ask max_recal_C {
-				weight <- myself.C_recal_objective_weight;
+			create MaxRecalC with: (weight: C_recal_objective_weight) {
+				add self to: myself.objectives;
 			}
 		}
 	}

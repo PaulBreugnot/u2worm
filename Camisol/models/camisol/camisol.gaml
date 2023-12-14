@@ -80,13 +80,13 @@ global {
 				dim <- [azote_in_dim_in_pore, phosphore_in_dim_in_pore];
 			}
 			
-			create Copiotrophe_R with: (dam: self.dam) {
+			create Copiotrophe_R {
 				add self to:myself.populations;
 			}
-			create Copiotrophe_K with: (dam: self.dam) {
+			create Copiotrophe_K {
 				add self to:myself.populations;
 			}
-			create Oligotrophe_K with: (dam: self.dam) {
+			create Oligotrophe_K {
 				add self to:myself.populations;
 			}
 			
@@ -244,10 +244,12 @@ grid Particle width: grid_size height: grid_size neighbors: 4 {
 				Dam pore_dam;
 
 				create OrganicParticle with: (
-					N: 0,
-					P: 0,
 					C_labile: 0,
+					N_labile: 0,
+					P_labile: 0,
 					C_recalcitrant: 0,
+					N_recalcitrant: 0,
+					P_recalcitrant: 0,
 					location: self.location,
 					grid_x: self.grid_x,
 					grid_y: self.grid_y,
@@ -389,9 +391,11 @@ experiment camisol {
 		display "organics" type:java2D {
 			chart "Organics composition" type:series {
 				data "C_labile" value: (sum(OrganicParticle collect each.C_labile)) style:spline marker:false thickness:3;
+				data "N_labile" value: (sum(OrganicParticle collect each.N_labile)) style:spline marker:false thickness:3;
+				data "P_labile" value: (sum(OrganicParticle collect each.P_labile)) style:spline marker:false thickness:3;
 				data "C_recalcitrant" value: (sum(OrganicParticle collect each.C_recalcitrant)) style:spline marker:false thickness:3;
-				data "N" value: (sum(OrganicParticle collect each.N)) style:spline marker:false thickness:3;
-				data "P" value: (sum(OrganicParticle collect each.P)) style:spline marker:false thickness:3;
+				data "N_recalcitrant" value: (sum(OrganicParticle collect each.N_recalcitrant)) style:spline marker:false thickness:3;
+				data "P_recalcitrant" value: (sum(OrganicParticle collect each.P_recalcitrant)) style:spline marker:false thickness:3;
 			}
 		}
 		

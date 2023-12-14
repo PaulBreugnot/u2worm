@@ -29,7 +29,7 @@ species PoreParticle {
 	list<PoreParticle> pore_neighbors;
 	list<OrganicParticle> accessible_organics;
 
-	reflex microbe_eat {
+	reflex microbe_life {
 		float total_C_wanted <- sum(populations collect(each.C_wanted));
 		float total_N_wanted <- sum(populations collect(each.N_wanted));
 		float total_P_wanted <- sum(populations collect(each.P_wanted));
@@ -61,13 +61,8 @@ species PoreParticle {
 			myself.dam.dom[1] <- max([0.0, myself.dam.dom[1] - P_consumed]);
 			myself.dam.dom[2] <- max([0.0, myself.dam.dom[2] - C_consumed]);
 			
-			do life(total_bacteria_C, myself.carrying_capacity);
+			do life(myself.dam, myself.accessible_organics, total_bacteria_C, myself.carrying_capacity);
 		}	
 	}
-	
-	reflex decompe_dam {
-		ask dam {
-			do decompe(myself.accessible_organics);
-		}
-	}
 }
+

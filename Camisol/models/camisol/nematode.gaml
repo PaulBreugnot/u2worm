@@ -121,8 +121,8 @@ species Nematode
 	{
 		ask current_pore.organic_particle {
 			C_labile <- C_labile + carbone;
-			N <- N + azote;
-			P <- P + phosphore;
+			N_labile <- N_labile + azote;
+			P_labile <- P_labile + phosphore;
 		}
 	}
 	

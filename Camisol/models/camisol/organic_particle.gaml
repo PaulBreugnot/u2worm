@@ -20,9 +20,12 @@ species OrganicParticle {
 	int grid_x;
 	int grid_y;
 	float C_labile;
+	float N_labile;
+	float P_labile;
 	float C_recalcitrant;
-	float N;
-	float P;
+	float N_recalcitrant;
+	float P_recalcitrant;
+	
 	bool in_pore <- false;
 	
 	list<OrganicParticle> organic_neighbors;
