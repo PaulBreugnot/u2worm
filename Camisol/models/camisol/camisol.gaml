@@ -44,7 +44,20 @@ global {
 	float azote_concentration_in_dim <- (4.74#gram * 10^-6)/#gram;
 	float phosphore_concentration_in_dam <- (400.0#gram * 10^-6)/#gram;
 	float phosphore_concentration_in_dim <- (1.43#gram * 10^-6)/#gram;
-	
+		
+	// 5E8 -> 5E9 bacterie / gramme de sol
+	/*
+	 * A modifier................................................ 
+	 */
+	 // TODO: poids total de bactérie par gramme de sol * surface du modèle
+	/**
+	 * Total bacteria weight in the model.
+	 */
+	float total_initial_bacteria_weight <-  0.05*1.5#gram/(#cm*#cm)*world.shape.area;
+	// TODO: what rates?
+	float copiotrophe_R_rate <- 0.1;
+	float copiotrophe_K_rate <- 0.2;
+	float oligotrophe_K_rate <- 0.7;
 	
 	float rain_diffusion_rate <- 0.1;
 	float rain_period <- 7#days;
@@ -80,13 +93,13 @@ global {
 				dim <- [azote_in_dim_in_pore, phosphore_in_dim_in_pore];
 			}
 			
-			create Copiotrophe_R {
+			create Copiotrophe_R with: [C::copiotrophe_R_rate * total_initial_bacteria_weight / length(PoreParticle)] {
 				add self to:myself.populations;
 			}
-			create Copiotrophe_K {
+			create Copiotrophe_K with: [C::copiotrophe_K_rate * total_initial_bacteria_weight / length(PoreParticle)]{
 				add self to:myself.populations;
 			}
-			create Oligotrophe_K {
+			create Oligotrophe_K with: [C::oligotrophe_K_rate * total_initial_bacteria_weight / length(PoreParticle)]{
 				add self to:myself.populations;
 			}
 			
@@ -284,7 +297,7 @@ experiment display_grid {
 	parameter "Show nematodes" var: show_nematodes <- false;
 	
 	output {
-		display grid type:opengl axes:false {
+		display grid type:2d axes:false {
 			grid Particle;
 			graphics legend {
 				draw square(cell_size) at: {env_size + cell_size, 1.5*cell_size, 0} color: #yellow;

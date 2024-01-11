@@ -10,31 +10,26 @@ model microbe_population
 import "dam.gaml"
 
 global {
-	// 5E8 -> 5E9 bacterie / gramme de sol
-	/*
-	 * A modifier................................................ 
-	 */
-	 // TODO: poids total de bactérie par gramme de sol * surface du modèle
-	/**
-	 * Total bacteria weight in the model.
-	 */
-	float total_initial_bacteria_weight <-  0.05*1.5#gram/(#cm*#cm)*world.shape.area;
 	
 	float total_CO2_produced <- 0.0;
 	
 	// Enzyme objectives
-	MaxTotalC max_total_C;
+	MaxLabileC max_labile_C;
+	MaxRecalC max_recal_C;
 	MaxCN max_CN;
 	MaxCP max_CP;
 
 	init {
-		create MaxTotalC {
-			max_total_C <- self;
+		create MaxLabileC with: (weight: 10.0) {
+			max_labile_C <- self;
 		}
-		create MaxCN with: (weight: 100.0) {
+		create MaxRecalC with: (weight: 1.0) {
+			max_recal_C <- self;
+		}
+		create MaxCN with: (weight: 10.0) {
 			max_CN <- self;
 		}
-		create MaxCP with: (weight: 100.0) {
+		create MaxCP with: (weight: 10.0) {
 			max_CP <- self;
 		}
 	}
@@ -73,7 +68,7 @@ species MicrobePopulation
 	float perception_N <- 0#gram;
 	float perception_P <- 0#gram;
 	
-	
+	Enzymes enzymes;
 	Enzymes min_enzymes;
 	Enzymes max_enzymes;
 	
@@ -97,24 +92,11 @@ species MicrobePopulation
 	float P_wanted -> { (C+cytosol_C+C_wanted) / C_P - (cytosol_P + P)};
 	
 	init {
-		// TODO: do this in microbes
-		create Enzymes with: [
-			T_cellulolytic::0 #gram / #h,
-			T_amino::0 #gram / #h,
-			T_P::0 #gram / #h,
-			T_recal::0 #gram / #h
-		] {
-			myself.min_enzymes <- self;
-		}
-		create Enzymes with: [
-			T_cellulolytic::1 #gram/#h,
-			T_amino::1 #gram/#h,
-			T_P::1 #gram/#h,
-			T_recal::1 #gram/#h
-		] {
-			myself.max_enzymes <- self;
+		create Enzymes {
+			myself.enzymes <- self;
 		}
 	}
+	
 	action respirate(float cytosol_respiration)
 	{
 		cytosol_C <- cytosol_C  - cytosol_respiration; 
@@ -156,7 +138,7 @@ species MicrobePopulation
 	}
 
 	action decompose(Dam dam, list<OrganicParticle> particles_to_decompose) {
-		EnzymaticActivity enzymes <- produce_enzymes(dam, particles_to_decompose);
+		EnzymaticActivity enzymatic_activity <- produce_enzymes(dam, particles_to_decompose);
 		
 		float total_C_labile <- sum(particles_to_decompose collect each.C_labile);
 		float total_P_labile <- sum(particles_to_decompose collect each.P_labile);
@@ -165,26 +147,26 @@ species MicrobePopulation
 		float total_C_recal <- sum(particles_to_decompose collect each.C_recalcitrant);
 		float total_P_recal <- sum(particles_to_decompose collect each.P_recalcitrant);
 		
-		write "E: " + ((enzymes.X_C_cellulolytic + enzymes.X_C_amino + enzymes.X_C_P)/#gram)
+		write "E: " + ((enzymatic_activity.X_C_cellulolytic + enzymatic_activity.X_C_amino + enzymatic_activity.X_C_P)/#gram)
 			+ " / " + (total_C_labile / #gram);
 					
 		ask particles_to_decompose {
 			// Amino activity
-			float X_C_amino <- enzymes.X_C_amino * C_labile / total_C_labile; // Necessarily < to C_labile
-			float X_N_amino <- enzymes.X_N_amino * N_labile / total_N_labile;
+			float X_C_amino <- enzymatic_activity.X_C_amino * C_labile / total_C_labile; // Necessarily < to C_labile
+			float X_N_amino <- enzymatic_activity.X_N_amino * N_labile / total_N_labile;
 			
 			// CP activity
-			float X_C_P <- enzymes.X_C_P * C_labile / total_C_labile;
-			float X_P_labile_to_dom <- enzymes.X_P_labile_to_dom * P_labile / total_P_labile;
-			float X_P_labile_to_dim <- enzymes.X_P_labile_to_dim * P_labile / total_P_labile;
+			float X_C_P <- enzymatic_activity.X_C_P * C_labile / total_C_labile;
+			float X_P_labile_to_dom <- enzymatic_activity.X_P_labile_to_dom * P_labile / total_P_labile;
+			float X_P_labile_to_dim <- enzymatic_activity.X_P_labile_to_dim * P_labile / total_P_labile;
 			
 			// C activity
-			float X_C <- enzymes.X_C_cellulolytic * C_labile / total_C_labile;
+			float X_C <- enzymatic_activity.X_C_cellulolytic * C_labile / total_C_labile;
 			
 			// Recal activity
-			float X_P_recal_to_dim <- enzymes.X_P_recal_to_dim * P_recalcitrant / total_P_recal;
+			float X_P_recal_to_dim <- enzymatic_activity.X_P_recal_to_dim * P_recalcitrant / total_P_recal;
 			
-			float X_C_recal <- enzymes.X_C_recal * C_recalcitrant / total_C_recal;
+			float X_C_recal <- enzymatic_activity.X_C_recal * C_recalcitrant / total_C_recal;
 			float X_N_recal <- X_C_recal / (C_recalcitrant / N_recalcitrant);
 			float X_P_recal <- X_C_recal / (C_recalcitrant / P_recalcitrant);
 			
@@ -208,7 +190,8 @@ species MicrobePopulation
 	}
 	
 	EnzymaticActivity produce_enzymes(Dam dam, list<OrganicParticle> particles_to_decompose) {
-		EnzymaticActivity enzymes;
+		EnzymaticActivity enzymatic_activity;
+		MicrobePopulation population <- self;
 		create EnzymaticActivityProblem with: [
 			C_N::C_N,
 			C_P::C_P,
@@ -230,23 +213,24 @@ species MicrobePopulation
 		] {
 			create SimulatedAnnealing with:[
 				problem::self,
-				objectives::[max_total_C, max_CN, max_CP],
-				max_N::1000,
-				epsilon::1e-3
+				objectives::(max_enzymes.T_recal > 0 ? [max_labile_C, max_recal_C, max_CN, max_CP] : [max_labile_C, max_CN, max_CP]),
+				N::1000,
+				epsilon::1e-2
 			] {
 				do optimize;
-				enzymes <- s.enzymatic_activity;
+				enzymatic_activity <- s.enzymatic_activity;
+				ask population.enzymes {
+					do die;
+				}
+				population.enzymes <- s.enzymes;
 				ask s {
-					ask enzymes {
-						do die;
-					}
 					do die;
 				}
 				do die;
 			}
 			do die;
 		}
-		return enzymes;
+		return enzymatic_activity;
 	}
 	
 	action life(Dam dam, list<OrganicParticle> accessible_organics, float total_C_in_pore, float pore_carrying_capacity)
