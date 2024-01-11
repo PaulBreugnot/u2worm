@@ -10,10 +10,10 @@ model microbes
 import "pore_particle.gaml"
 
 global {
-	string COPIOTROPHE_R <- "Copiotrophe R";
-	string COPIOTROPHE_K <- "Copiotrophe K";
-	string OLIGOTROPHE_K <- "Oligotrophe K";
-	list<string> bacteria_types <- [COPIOTROPHE_R, COPIOTROPHE_K, OLIGOTROPHE_K];
+	string Y_STRATEGIST <- "Y Strategist";
+	string A_STRATEGIST <- "A Strategist";
+	string S_STRATEGIST <- "S Strategist";
+	list<string> bacteria_types <- [Y_STRATEGIST, A_STRATEGIST, S_STRATEGIST];
 
 	float dividing_time_copiotrophe_R <- 1#h;
 	float dividing_time_copiotrophe_K <- 24#h;
@@ -22,10 +22,10 @@ global {
 	float init_structural_cytosol_rate <- 1.0;
 }
 
-species Copiotrophe_R parent:MicrobePopulation {
+species Y_Strategist parent:MicrobePopulation {
 	init {
 		float total_C_init <- C;
-		bacteria_name <- COPIOTROPHE_R;
+		bacteria_name <- Y_STRATEGIST;
 		dividing_time <- dividing_time_copiotrophe_R;
 		awake_population <- wakeup_factor;
 		L_R_enzyme_rate <- 1.0;
@@ -68,10 +68,10 @@ species Copiotrophe_R parent:MicrobePopulation {
 		}
 	}
 }
-species Copiotrophe_K parent:MicrobePopulation {
+species A_Strategist parent:MicrobePopulation {
 	init {
 		float total_C_init <- C;
-		bacteria_name <- COPIOTROPHE_K;
+		bacteria_name <- A_STRATEGIST;
 		dividing_time <- dividing_time_copiotrophe_K;
 		awake_population <- wakeup_factor;
 		L_R_enzyme_rate <- 0.2;
@@ -115,10 +115,10 @@ species Copiotrophe_K parent:MicrobePopulation {
 	}
 }
 
-species Oligotrophe_K parent:MicrobePopulation {
+species S_Strategist parent:MicrobePopulation {
 	init {
 		float total_C_init <- C;
-		bacteria_name <- OLIGOTROPHE_K;
+		bacteria_name <- S_STRATEGIST;
 		dividing_time <- dividing_time_oligotrophe;
 		awake_population <- wakeup_factor;
 		L_R_enzyme_rate <- 0.8;

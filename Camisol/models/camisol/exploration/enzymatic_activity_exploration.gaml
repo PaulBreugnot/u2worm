@@ -38,21 +38,21 @@ global {
 				world.pore_particle <- self;
 			}
 		}
-		create Copiotrophe_R with: [
+		create Y_Strategist with: [
 			C: 1#gram,
 			C_N: 10.0,
 			C_P: 17.0
 		] {
 		}
 		
-		create Copiotrophe_K with: [
+		create A_Strategist with: [
 			C: 1#gram,
 			C_N: 10.0,
 			C_P: 50.0
 		] {
 		}
 		
-		create Oligotrophe_K with: [
+		create S_Strategist with: [
 			C: 1#gram,
 			C_N: 10.0,
 			C_P: 17.0
@@ -61,7 +61,7 @@ global {
 	}
 	
 	reflex {
-		ask Copiotrophe_R + Copiotrophe_K + Oligotrophe_K {
+		ask Y_Strategist + A_Strategist + S_Strategist {
 			do produce_enzymes(world.pore_particle.dam, [world.organic_particle]);
 		}
 	}
@@ -69,7 +69,7 @@ global {
 
 
 experiment ExploreCP type:batch until: cycle>0 repeat: 10 {
-	list<string> strategies <- [COPIOTROPHE_R, COPIOTROPHE_K, OLIGOTROPHE_K];
+	list<string> strategies <- [Y_STRATEGIST, A_STRATEGIST, S_STRATEGIST];
 
 	parameter "CP" var: CP_labile min: 1.0 max: 70.0 step: 1.0;
 	method exploration;
@@ -77,28 +77,28 @@ experiment ExploreCP type:batch until: cycle>0 repeat: 10 {
 	permanent {
 		display "Enzymatic activity (Y)" {
 			chart "Enzymatic activity (Y)" type:xy x_label: "C/P" y_label: "Enzymatic activity (gC/gM/d)" {
-				data "T_P" value:{CP_labile, simulations mean_of(sum(Copiotrophe_R collect (each.enzymes.T_P/(#gram/#gram/#d))))};
-				data "T_cellulolytic" value:{CP_labile, simulations mean_of(sum(Copiotrophe_R collect (each.enzymes.T_cellulolytic/(#gram/#gram/#d))))};
-				data "T_amino" value:{CP_labile, simulations mean_of(sum(Copiotrophe_R collect (each.enzymes.T_amino/(#gram/#gram/#d))))};
-				data "T_recal" value:{CP_labile, simulations mean_of(sum(Copiotrophe_R collect (each.enzymes.T_recal/(#gram/#gram/#d))))};
+				data "T_P" value:{CP_labile, simulations mean_of(sum(Y_Strategist collect (each.enzymes.T_P/(#gram/#gram/#d))))};
+				data "T_cellulolytic" value:{CP_labile, simulations mean_of(sum(Y_Strategist collect (each.enzymes.T_cellulolytic/(#gram/#gram/#d))))};
+				data "T_amino" value:{CP_labile, simulations mean_of(sum(Y_Strategist collect (each.enzymes.T_amino/(#gram/#gram/#d))))};
+				data "T_recal" value:{CP_labile, simulations mean_of(sum(Y_Strategist collect (each.enzymes.T_recal/(#gram/#gram/#d))))};
 			}
 		}
 			
 		display "Enzymatic activity (A)" {
 			chart "Enzymatic activity (A)" type:xy x_label: "C/P" y_label: "Enzymatic activity (gC/gM/d)" {
-				data "T_P" value:{CP_labile, simulations mean_of(sum(Copiotrophe_K collect (each.enzymes.T_P/(#gram/#gram/#d))))};
-				data "T_cellulolytic" value:{CP_labile, simulations mean_of(sum(Copiotrophe_K collect (each.enzymes.T_cellulolytic/(#gram/#gram/#d))))};
-				data "T_amino" value:{CP_labile, simulations mean_of(sum(Copiotrophe_K collect (each.enzymes.T_amino/(#gram/#gram/#d))))};
-				data "T_recal" value:{CP_labile, simulations mean_of(sum(Copiotrophe_K collect (each.enzymes.T_recal/(#gram/#gram/#d))))};
+				data "T_P" value:{CP_labile, simulations mean_of(sum(A_Strategist collect (each.enzymes.T_P/(#gram/#gram/#d))))};
+				data "T_cellulolytic" value:{CP_labile, simulations mean_of(sum(A_Strategist collect (each.enzymes.T_cellulolytic/(#gram/#gram/#d))))};
+				data "T_amino" value:{CP_labile, simulations mean_of(sum(A_Strategist collect (each.enzymes.T_amino/(#gram/#gram/#d))))};
+				data "T_recal" value:{CP_labile, simulations mean_of(sum(A_Strategist collect (each.enzymes.T_recal/(#gram/#gram/#d))))};
 			}
 		}
 			
 		display "Enzymatic activity (S)" {
 			chart "Enzymatic activity (S)" type:xy x_label: "C/P" y_label: "Enzymatic activity (gC/gM/d)" {
-				data "T_P" value:{CP_labile, simulations mean_of(sum(Oligotrophe_K collect (each.enzymes.T_P/(#gram/#gram/#d))))};
-				data "T_cellulolytic" value:{CP_labile, simulations mean_of(sum(Oligotrophe_K collect (each.enzymes.T_cellulolytic/(#gram/#gram/#d))))};
-				data "T_amino" value:{CP_labile, simulations mean_of(sum(Oligotrophe_K collect (each.enzymes.T_amino/(#gram/#gram/#d))))};
-				data "T_recal" value:{CP_labile, simulations mean_of(sum(Oligotrophe_K collect (each.enzymes.T_recal/(#gram/#gram/#d))))};
+				data "T_P" value:{CP_labile, simulations mean_of(sum(S_Strategist collect (each.enzymes.T_P/(#gram/#gram/#d))))};
+				data "T_cellulolytic" value:{CP_labile, simulations mean_of(sum(S_Strategist collect (each.enzymes.T_cellulolytic/(#gram/#gram/#d))))};
+				data "T_amino" value:{CP_labile, simulations mean_of(sum(S_Strategist collect (each.enzymes.T_amino/(#gram/#gram/#d))))};
+				data "T_recal" value:{CP_labile, simulations mean_of(sum(S_Strategist collect (each.enzymes.T_recal/(#gram/#gram/#d))))};
 			}
 		}
 	}
@@ -117,7 +117,7 @@ experiment ExploreCP_LowC type:batch parent:ExploreCP until: cycle>0 repeat: 10 
 }
 
 experiment ExploreCN type:batch until: cycle>0 repeat: 10 {
-	list<string> strategies <- [COPIOTROPHE_R, COPIOTROPHE_K, OLIGOTROPHE_K];
+	list<string> strategies <- [Y_STRATEGIST, A_STRATEGIST, S_STRATEGIST];
 	
 	parameter "CN" var: CN_labile min: 1.0 max: 70.0 step: 1.0;
 	method exploration;
@@ -125,28 +125,28 @@ experiment ExploreCN type:batch until: cycle>0 repeat: 10 {
 	permanent {
 		display "Enzymatic activity (Y)" {
 			chart "Enzymatic activity (Y)" type:xy x_label: "C/N" y_label: "Enzymatic activity (gC/gM/d)" {
-				data "T_P" value:{CN_labile, simulations mean_of(sum(Copiotrophe_R collect (each.enzymes.T_P/(#gram/#gram/#d))))};
-				data "T_cellulolytic" value:{CN_labile, simulations mean_of(sum(Copiotrophe_R collect (each.enzymes.T_cellulolytic/(#gram/#gram/#d))))};
-				data "T_amino" value:{CN_labile, simulations mean_of(sum(Copiotrophe_R collect (each.enzymes.T_amino/(#gram/#gram/#d))))};
-				data "T_recal" value:{CN_labile, simulations mean_of(sum(Copiotrophe_R collect (each.enzymes.T_recal/(#gram/#gram/#d))))};
+				data "T_P" value:{CN_labile, simulations mean_of(sum(Y_Strategist collect (each.enzymes.T_P/(#gram/#gram/#d))))};
+				data "T_cellulolytic" value:{CN_labile, simulations mean_of(sum(Y_Strategist collect (each.enzymes.T_cellulolytic/(#gram/#gram/#d))))};
+				data "T_amino" value:{CN_labile, simulations mean_of(sum(Y_Strategist collect (each.enzymes.T_amino/(#gram/#gram/#d))))};
+				data "T_recal" value:{CN_labile, simulations mean_of(sum(Y_Strategist collect (each.enzymes.T_recal/(#gram/#gram/#d))))};
 			}
 		}
 			
 		display "Enzymatic activity (A)" {
 			chart "Enzymatic activity (A)" type:xy x_label: "C/N" y_label: "Enzymatic activity (gC/gM/d)" {
-				data "T_P" value:{CN_labile, simulations mean_of(sum(Copiotrophe_K collect (each.enzymes.T_P/(#gram/#gram/#d))))};
-				data "T_cellulolytic" value:{CN_labile, simulations mean_of(sum(Copiotrophe_K collect (each.enzymes.T_cellulolytic/(#gram/#gram/#d))))};
-				data "T_amino" value:{CN_labile, simulations mean_of(sum(Copiotrophe_K collect (each.enzymes.T_amino/(#gram/#gram/#d))))};
-				data "T_recal" value:{CN_labile, simulations mean_of(sum(Copiotrophe_K collect (each.enzymes.T_recal/(#gram/#gram/#d))))};
+				data "T_P" value:{CN_labile, simulations mean_of(sum(A_Strategist collect (each.enzymes.T_P/(#gram/#gram/#d))))};
+				data "T_cellulolytic" value:{CN_labile, simulations mean_of(sum(A_Strategist collect (each.enzymes.T_cellulolytic/(#gram/#gram/#d))))};
+				data "T_amino" value:{CN_labile, simulations mean_of(sum(A_Strategist collect (each.enzymes.T_amino/(#gram/#gram/#d))))};
+				data "T_recal" value:{CN_labile, simulations mean_of(sum(A_Strategist collect (each.enzymes.T_recal/(#gram/#gram/#d))))};
 			}
 		}
 			
 		display "Enzymatic activity (S)" {
 			chart "Enzymatic activity (S)" type:xy x_label: "C/N" y_label: "Enzymatic activity (gC/gM/d)" {
-				data "T_P" value:{CN_labile, simulations mean_of(sum(Oligotrophe_K collect (each.enzymes.T_P/(#gram/#gram/#d))))};
-				data "T_cellulolytic" value:{CN_labile, simulations mean_of(sum(Oligotrophe_K collect (each.enzymes.T_cellulolytic/(#gram/#gram/#d))))};
-				data "T_amino" value:{CN_labile, simulations mean_of(sum(Oligotrophe_K collect (each.enzymes.T_amino/(#gram/#gram/#d))))};
-				data "T_recal" value:{CN_labile, simulations mean_of(sum(Oligotrophe_K collect (each.enzymes.T_recal/(#gram/#gram/#d))))};
+				data "T_P" value:{CN_labile, simulations mean_of(sum(S_Strategist collect (each.enzymes.T_P/(#gram/#gram/#d))))};
+				data "T_cellulolytic" value:{CN_labile, simulations mean_of(sum(S_Strategist collect (each.enzymes.T_cellulolytic/(#gram/#gram/#d))))};
+				data "T_amino" value:{CN_labile, simulations mean_of(sum(S_Strategist collect (each.enzymes.T_amino/(#gram/#gram/#d))))};
+				data "T_recal" value:{CN_labile, simulations mean_of(sum(S_Strategist collect (each.enzymes.T_recal/(#gram/#gram/#d))))};
 			}
 		}
 	}

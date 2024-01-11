@@ -93,13 +93,13 @@ global {
 				dim <- [azote_in_dim_in_pore, phosphore_in_dim_in_pore];
 			}
 			
-			create Copiotrophe_R with: [C::copiotrophe_R_rate * total_initial_bacteria_weight / length(PoreParticle)] {
+			create Y_Strategist with: [C::copiotrophe_R_rate * total_initial_bacteria_weight / length(PoreParticle)] {
 				add self to:myself.populations;
 			}
-			create Copiotrophe_K with: [C::copiotrophe_K_rate * total_initial_bacteria_weight / length(PoreParticle)]{
+			create A_Strategist with: [C::copiotrophe_K_rate * total_initial_bacteria_weight / length(PoreParticle)]{
 				add self to:myself.populations;
 			}
-			create Oligotrophe_K with: [C::oligotrophe_K_rate * total_initial_bacteria_weight / length(PoreParticle)]{
+			create S_Strategist with: [C::oligotrophe_K_rate * total_initial_bacteria_weight / length(PoreParticle)]{
 				add self to:myself.populations;
 			}
 			
@@ -384,9 +384,9 @@ experiment camisol {
 		
 		display "Awoken population" type: java2D {
 			chart "Awoken population" type: series {
-				data "CopioR awake %" value: (sum(Copiotrophe_R collect (each.awake_population)) / length(Copiotrophe_R)) * 100 style:spline color: #red marker:false thickness:3;
-				data "CopioK awake %" value: (sum(Copiotrophe_K collect (each.awake_population)) / length(Copiotrophe_K)) * 100 style:spline color: #green marker:false thickness:3;
-				data "Oligo awake %" value: (sum(Oligotrophe_K collect (each.awake_population)) / length(Oligotrophe_K)) * 100 style:spline color: #blue marker:false thickness:3;
+				data "CopioR awake %" value: (sum(Y_Strategist collect (each.awake_population)) / length(Y_Strategist)) * 100 style:spline color: #red marker:false thickness:3;
+				data "CopioK awake %" value: (sum(A_Strategist collect (each.awake_population)) / length(A_Strategist)) * 100 style:spline color: #green marker:false thickness:3;
+				data "Oligo awake %" value: (sum(S_Strategist collect (each.awake_population)) / length(S_Strategist)) * 100 style:spline color: #blue marker:false thickness:3;
 				data "Nematode awake %" value: (sum(Nematode collect (each.awake as int)) / length(Nematode)) * 100 style:spline color: #yellow marker:false thickness:3;
 			}
 		}
@@ -414,9 +414,9 @@ experiment camisol {
 		
 		display "populations" type:java2D {
 			chart "Bacteria populations" type:series {
-				data "Copiotrophe R" value: (sum(Copiotrophe_R collect each.C)) style:spline color: #red marker:false thickness:3;
-				data "Copiotrophe K" value: (sum(Copiotrophe_K collect each.C)) style:spline color: #green marker:false thickness:3;
-				data "Oligotrophe K" value: (sum(Oligotrophe_K collect each.C)) style:spline color: #blue marker:false thickness:3;
+				data "Copiotrophe R" value: (sum(Y_Strategist collect each.C)) style:spline color: #red marker:false thickness:3;
+				data "Copiotrophe K" value: (sum(A_Strategist collect each.C)) style:spline color: #green marker:false thickness:3;
+				data "Oligotrophe K" value: (sum(S_Strategist collect each.C)) style:spline color: #blue marker:false thickness:3;
 			}
 		}
 	}
