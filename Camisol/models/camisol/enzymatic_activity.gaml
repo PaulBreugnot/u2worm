@@ -292,8 +292,7 @@ species EnzymaticActivityProblem schedules: [] {
 		return P_attacked * C_labile / P_labile;
 	}
 	
-	// TODO: optimize all max computations
-	float d_recal_max {
+	float d_C_recal_max {
 		float result;
 		create WeightedEnzymes with: [
 			T_recal::C_microbes * max_enzymes.T_recal
@@ -544,94 +543,71 @@ species MaxCP parent: Objective schedules: [] {
 	}
 }
 
+species MaxRecalC parent: Objective schedules: [] {
+	action value(SimulatedAnnealingState state) type: float {
+		// Assumes max_enzymes.T_recal > 0.0. Otherwise, this objective should not be used.
+		float result;
+		ask state {
+			float max_recal_C_decomposition <- problem.d_C_recal_max();
+			if(max_recal_C_decomposition > 0.0) {
+				result <- 1.0 - enzymatic_activity.X_C_recal / max_recal_C_decomposition;
+			} else {
+				// Forces T_recal to tend to 0 if max_recal_C_decomposition = 0.0
+				result <- exp(ln(2) * budget[T_RECALCITRANT_BUDGET]) - 1.0;	
+			}
+		}
+		return result;
+	}
+}
+
 species MaxLabileC parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
-		float max_C_decomposition;
-		ask state.problem {
-			// TODO: define this at problem level
-//			max_C_decomposition <- min(
-//				max(
-//					max_enzymes.T_cellulolytic,
-//					max_enzymes.T_amino, // TODO: limiting factor
-//					alpha_CP * max_enzymes.T_P
-//				) * dt * C_microbes,
-//				total_C_labile
-//			);
-			max_C_decomposition <- d_C_labile_max();
+		float result;
+		ask state {
+			float max_C_decomposition;
+			max_C_decomposition <- problem.d_C_labile_max();
+			if(max_C_decomposition > 0.0) {
+				result <- 1.0 - (enzymatic_activity.X_C_cellulolytic + enzymatic_activity.X_C_amino + enzymatic_activity.X_C_P)
+						/ max_C_decomposition;
+			} else {
+				// Forces T_cellulolytic, T_amino and T_P budgets to 0 since no labile C/N/P can be decomposed anyway.
+				result <- exp(ln(2) * (state.budget[T_CELLULOLYTIC_BUDGET] + budget[T_AMINO_BUDGET] + budget[T_P_BUDGET])/3) - 1.0;
+			}
 		}
-		if(max_C_decomposition > 0.0) {
-			return 1.0 - (state.enzymatic_activity.X_C_cellulolytic + state.enzymatic_activity.X_C_amino + state.enzymatic_activity.X_C_P)
-					/ max_C_decomposition;
-		}
-		// Forces T_cellulolytic, T_amino and T_P budgets to 0 since no labile C/N/P can be decomposed anyway.
-		return exp(ln(2) * (state.budget[T_CELLULOLYTIC_BUDGET] + state.budget[T_AMINO_BUDGET] + state.budget[T_P_BUDGET])/3) - 1.0;
+		return result;
 	}
 }
 
 species MaxP parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
-		float max_P_decomposition; 
-		ask state.problem {
-//		max_P_decomposition <- max(
-//				min(
-//					total_C_labile > 0.0 ?
-//					dt * C_microbes
-//						* max_enzymes.T_P * (total_P_labile / total_C_labile) : 0.0,
-//					total_P_labile
-//				),
-//				min(
-//					total_C_recal > 0.0 ?
-//					alpha_P_recal_to_dim * dt * C_microbes
-//						* max_enzymes.T_recal * (total_P_recal / total_C_recal) : 0.0,
-//					total_P_recal
-//				)
-//			);
-			max_P_decomposition <- d_P_max();
+		float result;
+		ask state {
+			float max_P_decomposition <- problem.d_P_max();
+			if(max_P_decomposition > 0.0) {
+				result <- 1.0 - (enzymatic_activity.X_P_recal_to_dim + enzymatic_activity.X_P_labile_to_dom + enzymatic_activity.X_P_labile_to_dim)
+						/ max_P_decomposition;
+			} else {
+				// No P can be decomposed anyway
+				result <- exp(ln(2) * (budget[T_P_BUDGET] + budget[T_RECALCITRANT_BUDGET])/2) - 1.0;
+			}
 		}
-		if(max_P_decomposition > 0.0) {
-			return 1.0 - (state.enzymatic_activity.X_P_recal_to_dim + state.enzymatic_activity.X_P_labile_to_dom + state.enzymatic_activity.X_P_labile_to_dim)
-					/ max_P_decomposition;
-		}
-		// No P can be decomposed anyway
-		return exp(ln(2) * (state.budget[T_P_BUDGET] + state.budget[T_RECALCITRANT_BUDGET])/2) - 1.0;
+		return result;
 	}
 }
 
 species MaxN parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
-		// Assumes max_enzymes.T_amino > 0.0. Otherwise, this objective should not be used.
-		float max_N_decomposition;
-		ask state.problem {
-//			max_N_decomposition <- total_C_labile > 0 ?
-//				// dt * C_microbes * max_enzymes.T_amino * (total_N_labile / total_C_labile) : 0.0;
-//				dt * C_microbes * max_enzymes.T_amino / amino_CN : 0.0;
-			max_N_decomposition <- d_N_max();
+		float result;
+		ask state {
+			float max_N_decomposition <- problem.d_N_max();
+			if(max_N_decomposition > 0) {
+				result <- 1.0 - enzymatic_activity.X_N_amino / max_N_decomposition;
+			} else {
+				// max_N_decomposition = 0, so we force T_amino budget to 0
+				result <- exp(ln(2) * state.budget[T_AMINO_BUDGET]) - 1.0;		
+			}
 		}
-		if(max_N_decomposition > 0) {
-			return 1.0 - state.enzymatic_activity.X_N_amino / max_N_decomposition;
-		}
-		// max_N_decomposition = 0, so we force T_amino budget to 0
-		return exp(ln(2) * state.budget[T_AMINO_BUDGET]) - 1.0;
-	}
-}
-
-species MaxRecalC parent: Objective schedules: [] {
-	action value(SimulatedAnnealingState state) type: float {
-		// Assumes max_enzymes.T_recal > 0.0. Otherwise, this objective should not be used.
-		float max_recal_C_decomposition;
-		ask state.problem {
-			max_recal_C_decomposition <- min(
-				max_enzymes.T_recal * dt * C_microbes,
-				C_recal
-				);
-		}
-		if(max_recal_C_decomposition > 0.0) {
-			return 1.0 - state.enzymatic_activity.X_C_recal / max_recal_C_decomposition;
-		}
-		// if(state.problem.max_enzymes.T_recal - state.enzymes.T_recal > 0) {
-		// Forces T_recal to tend to 0 if max_recal_C_decomposition = 0.0
-		return exp(ln(2) * state.budget[T_RECALCITRANT_BUDGET]) - 1.0;
-			// return exp(state.enzymes.T_recal / (state.problem.max_enzymes.T_recal - state.enzymes.T_recal)) - 1.0;
+		return result;
 	}
 }
 
