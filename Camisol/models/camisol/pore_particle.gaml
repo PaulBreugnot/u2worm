@@ -30,13 +30,13 @@ species PoreParticle {
 
 
 	action decompose {
-		float _total_C_labile <- sum(accessible_organics collect each.C_labile);
-		float _total_P_labile <- sum(accessible_organics collect each.P_labile);
-		float _total_N_labile <- sum(accessible_organics collect each.N_labile);
+		float total_C_labile <- sum(accessible_organics collect each.C_labile);
+		float total_P_labile <- sum(accessible_organics collect each.P_labile);
+		float total_N_labile <- sum(accessible_organics collect each.N_labile);
 		
-		float _total_C_recal <- sum(accessible_organics collect each.C_recalcitrant);
-		float _total_N_recal <- sum(accessible_organics collect each.N_recalcitrant);
-		float _total_P_recal <- sum(accessible_organics collect each.P_recalcitrant);
+		float total_C_recal <- sum(accessible_organics collect each.C_recalcitrant);
+		float total_N_recal <- sum(accessible_organics collect each.N_recalcitrant);
+		float total_P_recal <- sum(accessible_organics collect each.P_recalcitrant);
 		
 		WeightedEnzymes enzymes;
 		create WeightedEnzymes with: [
@@ -48,27 +48,27 @@ species PoreParticle {
 			enzymes <- self;
 		}
 		
-		EnzymaticActivity enzymatic_activity;
+		Decomposition decomposition;
 		create EnzymaticActivityProblem with:[
 			dt::local_step,
-			C_labile::_total_C_labile,
-			P_labile::_total_P_labile,
-			N_labile::_total_N_labile,
-			C_recal::_total_C_recal,
-			N_recal::_total_N_recal,
-			P_recal::_total_P_recal,
+			C_labile::total_C_labile,
+			P_labile::total_P_labile,
+			N_labile::total_N_labile,
+			C_recal::total_C_recal,
+			N_recal::total_N_recal,
+			P_recal::total_P_recal,
 			C_DOM::dam.dom[2],
 			N_DOM::dam.dom[0],
 			P_DOM::dam.dom[1],
 			P_DIM::dam.dim[1],
 			N_DIM::dam.dim[0]
 		] {
-			create EnzymaticActivity {
-				do compute_activity(enzymes, myself);
-				enzymatic_activity <- self;
-				ask enzymes {
-					do die;
-				}
+			create Decomposition {
+				decomposition <- self;
+			}
+			do decomposition(enzymes, decomposition);
+			ask enzymes {
+				do die;
 			}
 			do die;
 		}
@@ -93,40 +93,40 @@ species PoreParticle {
 			float X_P_recal_to_dim <- 0.0;
 			float X_P_recal_to_labile <- 0.0;
 			
-			if(_total_C_labile > 0.0) {
+			if(total_C_labile > 0.0) {
 				// Amino activity
-				X_C_amino <- enzymatic_activity.X_C_amino * C_labile / _total_C_labile; // Necessarily < to C_labile
-				if(_total_N_labile > 0.0) {
-					X_N_amino <-enzymatic_activity.X_N_amino * N_labile / _total_N_labile;
+				X_C_amino <- decomposition.X_C_amino * C_labile / total_C_labile; // Necessarily < to C_labile
+				if(total_N_labile > 0.0) {
+					X_N_amino <-decomposition.X_N_amino * N_labile / total_N_labile;
 				}
 				
 				// CP activity
-				X_C_P <- enzymatic_activity.X_C_P * C_labile / _total_C_labile;
-				if(_total_P_labile > 0.0) {
-					X_P_labile_to_dom <- enzymatic_activity.X_P_labile_to_dom * P_labile / _total_P_labile;
-					X_P_labile_to_dim <- enzymatic_activity.X_P_labile_to_dim * P_labile / _total_P_labile;	
+				X_C_P <- decomposition.X_C_P * C_labile / total_C_labile;
+				if(total_P_labile > 0.0) {
+					X_P_labile_to_dom <- decomposition.X_P_labile_to_dom * P_labile / total_P_labile;
+					X_P_labile_to_dim <- decomposition.X_P_labile_to_dim * P_labile / total_P_labile;	
 				}
 				
 				// C activity
-				X_C <- enzymatic_activity.X_C_cellulolytic * C_labile / _total_C_labile;
+				X_C <- decomposition.X_C_cellulolytic * C_labile / total_C_labile;
 			}
 			
 			// Recal activity
-			if(_total_P_recal > 0.0) {
+			if(total_P_recal > 0.0) {
 				// Phytase action
-				X_P_recal_to_dim <- enzymatic_activity.X_P_recal_to_dim * P_recalcitrant / _total_P_recal;
+				X_P_recal_to_dim <- decomposition.X_P_recal_to_dim * P_recalcitrant / total_P_recal;
 			}
 			
 			// TODO: check the consistency of the recal decomposition. What if all C in an organic particle and all N in an other?
-			if(_total_C_recal > 0.0) {
-				X_C_recal <- enzymatic_activity.X_C_recal * C_recalcitrant / _total_C_recal;
+			if(total_C_recal > 0.0) {
+				X_C_recal <- decomposition.X_C_recal * C_recalcitrant / total_C_recal;
 				// Note: X_N_recal=0 and X_P_recal=0 anyway if there is no recalcitrant C.
-				if(_total_N_recal > 0.0) {
-					X_N_recal <- enzymatic_activity.X_N_recal * N_recalcitrant / _total_N_recal;
+				if(total_N_recal > 0.0) {
+					X_N_recal <- decomposition.X_N_recal * N_recalcitrant / total_N_recal;
 				}
-				if(_total_P_recal > 0.0) {
-					X_P_recal_to_dim <- enzymatic_activity.X_P_recal_to_dim * P_recalcitrant / _total_P_recal;
-					X_P_recal_to_labile <- enzymatic_activity.X_P_recal_to_labile * P_recalcitrant / _total_P_recal;			
+				if(total_P_recal > 0.0) {
+					X_P_recal_to_dim <- decomposition.X_P_recal_to_dim * P_recalcitrant / total_P_recal;
+					X_P_recal_to_labile <- decomposition.X_P_recal_to_labile * P_recalcitrant / total_P_recal;			
 				}
 			}
 			
@@ -147,7 +147,7 @@ species PoreParticle {
 				dom[2] <- dom[2] + X_C_amino + X_C_P + X_C;
 			}
 		}
-		ask enzymatic_activity {
+		ask decomposition {
 			do die;
 		}
 	}

@@ -194,7 +194,7 @@ species MicrobePopulation
 				ask weighted_enzymes {
 					do die;
 				}
-				ask enzymatic_activity {
+				ask decomposition {
 					do die;
 				}
 				do die;

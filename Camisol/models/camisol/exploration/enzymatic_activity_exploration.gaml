@@ -83,7 +83,7 @@ global {
 			do optimize_enzymes(world.pore_particle.dam, [world.organic_particle]);
 			
 			// Computes output
-			create EnzymaticActivity {
+			create Decomposition {
 				WeightedEnzymes weighted_enzymes;
 				create WeightedEnzymes with: [
 					T_cellulolytic::myself.enzymes.T_cellulolytic*myself.C_actif,
@@ -94,7 +94,9 @@ global {
 					weighted_enzymes <- self;
 				}
 				
-				do compute_activity(weighted_enzymes, myself.enzymatic_activity_problem);
+				ask myself.enzymatic_activity_problem {
+					do decomposition(weighted_enzymes, myself);
+				}
 				
 				output[species(myself)].T_r <- myself.enzymes.T_recal;
 				output[species(myself)].T_C <- myself.enzymes.T_cellulolytic;
