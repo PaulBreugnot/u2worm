@@ -51,12 +51,12 @@ species PoreParticle {
 		EnzymaticActivity enzymatic_activity;
 		create EnzymaticActivityProblem with:[
 			dt::local_step,
-			total_C_labile::_total_C_labile,
-			total_P_labile::_total_P_labile,
-			total_N_labile::_total_N_labile,
-			total_C_recal::_total_C_recal,
-			total_N_recal::_total_N_recal,
-			total_P_recal::_total_P_recal,
+			C_labile::_total_C_labile,
+			P_labile::_total_P_labile,
+			N_labile::_total_N_labile,
+			C_recal::_total_C_recal,
+			N_recal::_total_N_recal,
+			P_recal::_total_P_recal,
 			C_DOM::dam.dom[2],
 			N_DOM::dam.dom[0],
 			P_DOM::dam.dom[1],

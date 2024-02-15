@@ -47,48 +47,48 @@ species EnzymaticActivity schedules: [] {
 		WeightedEnzymes enzymes, EnzymaticActivityProblem problem
 	) {
 		ask problem {
-			if(total_C_labile > 0) {
+			if(C_labile > 0) {
 				// Cellulolytic action
 				float d_C_cellulolytic <- d_C_cellulolytic(enzymes);
 				float d_C_P <- d_C_P(enzymes);
 				float d_C_amino <- d_C_amino(enzymes);
 				
 				myself.X_C_cellulolytic <- d_C_cellulolytic
-					- beta_cellulolytic_amino * d_C_amino * d_C_cellulolytic / total_C_labile
-					- beta_cellulolytic_P * d_C_P * d_C_cellulolytic / total_C_labile;
+					- beta_cellulolytic_amino * d_C_amino * d_C_cellulolytic / C_labile
+					- beta_cellulolytic_P * d_C_P * d_C_cellulolytic / C_labile;
 					
 				myself.X_C_amino <- d_C_amino
-					- (1-beta_cellulolytic_amino) * d_C_amino * d_C_cellulolytic / total_C_labile
-					- beta_amino_P * d_C_amino * d_C_P / total_C_labile;
+					- (1-beta_cellulolytic_amino) * d_C_amino * d_C_cellulolytic / C_labile
+					- beta_amino_P * d_C_amino * d_C_P / C_labile;
 
 				float D_C_P <- d_C_P
-					- (1-beta_cellulolytic_P) * d_C_P * d_C_cellulolytic / total_C_labile
-					- (1-beta_amino_P) * d_C_amino * d_C_P / total_C_labile;
+					- (1-beta_cellulolytic_P) * d_C_P * d_C_cellulolytic / C_labile
+					- (1-beta_amino_P) * d_C_amino * d_C_P / C_labile;
 					
 				myself.X_N_amino <- myself.X_C_amino / amino_CN;
-				if(total_P_labile > 0) {
-					float D_P <- D_C_P * (total_P_labile / total_C_labile);
+				if(P_labile > 0) {
+					float D_P <- D_C_P * (P_labile / C_labile);
 					
-					myself.X_P_labile_to_dim <- alpha_P_labile_to_dim * D_P;
+					myself.X_P_labile_to_dim <- alpha_P_e_P * D_P;
 							
 					// Only a fraction goes to the dom, the rest is left in the labile section
-					myself.X_C_P <- alpha_CP * D_C_P;
-					myself.X_P_labile_to_dom <- alpha_CP * (D_P-myself.X_P_labile_to_dim);
+					myself.X_C_P <- alpha_C_e_P * D_C_P;
+					myself.X_P_labile_to_dom <- alpha_C_e_P * (D_P-myself.X_P_labile_to_dim);
 				}
 			}
 	
-			if(total_C_recal > 0) {
+			if(C_recal > 0) {
 				// Recalcitrant C decomposition
 				myself.X_C_recal <- d_C_recal(enzymes);
-				if(total_N_recal > 0) {
-					myself.X_N_recal <- myself.X_C_recal * (total_N_recal / total_C_recal);
+				if(N_recal > 0) {
+					myself.X_N_recal <- myself.X_C_recal * (N_recal / C_recal);
 				}
-				if(total_P_recal > 0) {
-					float D_P_recal <- myself.X_C_recal * (total_P_recal / total_C_recal);
+				if(P_recal > 0) {
+					float D_P_recal <- myself.X_C_recal * (P_recal / C_recal);
 					myself.X_P_recal_to_dim <-
-						alpha_P_recal_to_dim * D_P_recal;
+						alpha_P_e_r * D_P_recal;
 					myself.X_P_recal_to_labile <-
-						(1-alpha_P_recal_to_dim) * D_P_recal;
+						(1-alpha_P_e_r) * D_P_recal;
 				}
 			}
 		}
@@ -154,36 +154,111 @@ species Objective schedules: [] {
 }
 
 species EnzymaticActivityProblem schedules: [] {
-	float C_N;
-	float C_P;
+	/**
+	 * Microbe population active structural C.
+	 */
 	float C_microbes;
+	/**
+	 * Requested microbe CN rate.
+	 */
+	float C_N;
+	/**
+	 * Requested microbe CP rate.
+	 */
+	float C_P;
+	/**
+	 * Time step duration, over which the enzymatic activity is optimized.
+	 * Also used to compute the decomposition.
+	 */
 	float dt;
 	
-	/** Insert the global definitions, variables and actions here */
+	/**
+	 * Initial C labile that can be decomposed.
+	 */
+	float C_labile;
+	/**
+	 * Initial N labile that can be decomposed.
+	 */
+	float N_labile;
+	/**
+	 * Initial P labile that can be decomposed.
+	 */
+	float P_labile;
+	
+	/**
+	 * Initial C recalcitrant that can be decomposed.
+	 */
+	float C_recal;
+	/**
+	 * Initial N recalcitrant that can be decomposed.
+	 */
+	float N_recal;
+	/**
+	 * Initial P recalcitrant that can be decomposed.
+	 */
+	float P_recal;
+	
+	/**
+	 * Initial C available in the DOM.
+	 */
+	float C_DOM;
+	/**
+	 * Initial N available in the DOM.
+	 */
+	float N_DOM;
+	/**
+	 * Initial P available in the DOM.
+	 */
+	float P_DOM;
+	/**
+	 * Initial N available in the DIM.
+	 */
+	float N_DIM;
+	/**
+	 * Initial P available in the DIM.
+	 */
+	float P_DIM;
+	
+	/**
+	 * Fixed CN rates of amino acids.
+	 * Represent the distribution of amino acids.
+	 */
 	float amino_CN <- 4.0;
 	
-	float total_C_labile;
-	float total_N_labile;
-	float total_P_labile;
-	float total_C_recal;
-	float total_N_recal;
-	float total_P_recal;
-	
-	float C_DOM;
-	float P_DOM;
-	float N_DOM;
-	float P_DIM;
-	float N_DIM;
-	
+	/**
+	 * Rate of C decomposed by the cellulolytic action if only the cellulolytic and amino actions request all the labile C.
+	 */
 	float beta_cellulolytic_amino <- 0.5;
+	/**
+	 * Rate of C decomposed by the cellulolytic action if only the cellulolytic and P mineralisation actions request all the labile C.
+	 */
 	float beta_cellulolytic_P <- 0.5;
+	/**
+	 * Rate of C decomposed by the amino action if only the amino and P mineralisation actions request all the labile C.
+	 */
 	float beta_amino_P <- 0.5;
 	
-	float alpha_CP <- 0.01;
-	float alpha_P_recal_to_dim <- 1e-3;
-	float alpha_P_labile_to_dim <- 0.9;
+	/**
+	 * Rate of organic C sent from labile to DOM among the C decomposed by the P mineralisation.
+	 */
+	float alpha_C_e_P <- 0.1;
+	/**
+	 * Rate of organic P sent from labile to DIM among the P decomposed by the P mineralisation.
+	 */
+	float alpha_P_e_P <- 0.9;
+	/**
+	 * Rate of organic P sent from recalcitrant to DIM among the P decomposed by recalcitrant cleavage.
+	 * Represents the the action of phytases.
+	 */
+	float alpha_P_e_r <- 1e-3;
 	
+	/**
+	 * Constitutive enzymatic rates.
+	 */
 	Enzymes min_enzymes;
+	/**
+	 * Maximum enzymatic rates.
+	 */
 	Enzymes max_enzymes;
 	
 	// The smallest K is, the more powerful the enzyme is. When K=0, the enzyme instantly imposes the limiting reaction rate, whatever the substrate concentration is.
@@ -199,14 +274,14 @@ species EnzymaticActivityProblem schedules: [] {
 	float d_C_recal(WeightedEnzymes enzymes) {
 		return min(
 					dt * enzymes.T_recal /* *total_C_recal / (K_recal + total_C_recal) */,
-					total_C_recal
+					C_recal
 				);
 	}
 
 	float d_C_cellulolytic(WeightedEnzymes enzymes) {
 		return min(
 					(dt * enzymes.T_cellulolytic) /* *total_C_labile / (K_cellulolytic + total_C_labile) */,
-					total_C_labile
+					C_labile
 				);
 	}
 	
@@ -214,7 +289,7 @@ species EnzymaticActivityProblem schedules: [] {
 		float expected_C_amino <- (dt * enzymes.T_amino) /* *total_C_labile / (K_amino + total_C_labile)*/;
 		float expected_N_amino <- expected_C_amino / amino_CN;
 		float limiting_amino <- expected_C_amino > 0 ?
-			min(1.0, total_C_labile / expected_C_amino, total_N_labile / expected_N_amino)
+			min(1.0, C_labile / expected_C_amino, N_labile / expected_N_amino)
 			: 0.0;
 		return expected_C_amino * limiting_amino;
 	}
@@ -222,9 +297,9 @@ species EnzymaticActivityProblem schedules: [] {
 	float d_C_P(WeightedEnzymes enzymes) {
 		float P_attacked <- min(
 					(dt * enzymes.T_P) /* *total_C_labile / (K_P + total_C_labile)*/,
-					total_P_labile
+					P_labile
 				);
-		return P_attacked * total_C_labile / total_P_labile;
+		return P_attacked * C_labile / P_labile;
 	}
 	
 	// TODO: optimize all max computations
@@ -252,7 +327,7 @@ species EnzymaticActivityProblem schedules: [] {
 			// - the maximum of d_C_cellulolytic is only computed from the max_enzymes.T_cellulolytic (assuming other T_* = 0)
 			// - the maximum of d_C_amino is only computed from the max_enzymes.T_amino (assuming other T_* = 0)
 			// - ... idem form d_C_P
-			result <- max(myself.d_C_cellulolytic(self), myself.d_C_amino(self), myself.alpha_CP * myself.d_C_P(self));
+			result <- max(myself.d_C_cellulolytic(self), myself.d_C_amino(self), myself.alpha_C_e_P * myself.d_C_P(self));
 			do die;
 		}
 		return result;
@@ -276,8 +351,8 @@ species EnzymaticActivityProblem schedules: [] {
 			T_recal::C_microbes*max_enzymes.T_recal
 		] {
 			result <- max(
-				myself.alpha_P_recal_to_dim * myself.d_C_recal(self),
-				(myself.alpha_CP + myself.alpha_P_labile_to_dim - myself.alpha_CP * myself.alpha_P_labile_to_dim)
+				myself.alpha_P_e_r * myself.d_C_recal(self),
+				(myself.alpha_C_e_P + myself.alpha_P_e_P - myself.alpha_C_e_P * myself.alpha_P_e_P)
 					* myself.d_C_P(self)
 			);
 			do die;
@@ -420,7 +495,7 @@ species ExactCN parent: Objective schedules: [] {
 		if(C_avail > 0) {
 			return 1.0 - state.problem.C_N * (N_avail / C_avail);
 		}
-		if(state.problem.total_C_labile > 0.0) {
+		if(state.problem.C_labile > 0.0) {
 			// Max out the value, since C can be decomposed but no C is decomposed.
 			return 1.0;
 		}
@@ -437,7 +512,7 @@ species MaxCN parent: Objective schedules: [] {
 			// If N_avail/C_avail > required N/C, then N_avail is in excess and its not a problem so value=0 in this case.
 			return 1.0 - state.problem.C_N * min(N_avail / C_avail, 1.0/state.problem.C_N);
 		}
-		if(state.problem.total_C_labile > 0.0) {
+		if(state.problem.C_labile > 0.0) {
 			// Max out the value, since C can be decomposed but no C is decomposed.
 			return 1.0;
 		}
@@ -453,7 +528,7 @@ species ExactCP parent: Objective schedules: [] {
 		if(C_avail > 0) {
 			return 1.0 - state.problem.C_P * (P_avail / C_avail);
 		}
-		if(state.problem.total_C_labile > 0.0) {
+		if(state.problem.C_labile > 0.0) {
 			// Max out the value, since C can be decomposed but no C is decomposed.
 			return 1.0;
 		}
@@ -470,7 +545,7 @@ species MaxCP parent: Objective schedules: [] {
 			// If P_avail/C_avail > required P/C, then P_avail is in excess and its not a problem so value=0 in this case.
 			return 1.0 - state.problem.C_P * min((P_avail / C_avail), 1.0/state.problem.C_P);	
 		}
-		if(state.problem.total_C_labile > 0.0) {
+		if(state.problem.C_labile > 0.0) {
 			// Max out the value, since C can be decomposed but no C is decomposed.
 			return 1.0;
 		}
@@ -557,7 +632,7 @@ species MaxRecalC parent: Objective schedules: [] {
 		ask state.problem {
 			max_recal_C_decomposition <- min(
 				max_enzymes.T_recal * dt * C_microbes,
-				total_C_recal
+				C_recal
 				);
 		}
 		if(max_recal_C_decomposition > 0.0) {
@@ -588,26 +663,26 @@ species MaxTotalC parent: Objective schedules: [] {
 			float max_labile_C_enzyme <- max(
 				max_enzymes.T_cellulolytic,
 				max_enzymes.T_amino, // TODO: limiting factor
-				alpha_CP * max_enzymes.T_P
+				alpha_C_e_P * max_enzymes.T_P
 			);
 			if(max_enzymes.T_recal > 0 and max_labile_C_enzyme > 0) {
 				float max_C_decomposition <- min(
 					max_labile_C_enzyme * dt * C_microbes,
-					total_C_labile
+					C_labile
 				);
 				float max_C_recal_decomposition <- min(
 					max_enzymes.T_recal * dt * C_microbes,
-					total_C_recal
+					C_recal
 				);
 				// It is possible to produce recalcitrant enzymes
-				if(total_C_recal > 0 and total_C_labile > 0) {
+				if(C_recal > 0 and C_labile > 0) {
 					result <- (1.0 - (
 						state.enzymatic_activity.X_C_recal +
 						state.enzymatic_activity.X_C_cellulolytic +
 						state.enzymatic_activity.X_C_amino +
 						state.enzymatic_activity.X_C_P
 					) / (max_C_decomposition + max_C_recal_decomposition)) ^ 2;
-				} else if (total_C_labile > 0) {
+				} else if (C_labile > 0) {
 					// Maximize labile C decomposition while prohibiting recalcitrant enzyme production (since total_C_recal = 0).
 					result <- (max_enzymes.T_recal - state.enzymes.T_recal) > 0 ?
 						(1.0 - (
@@ -617,11 +692,11 @@ species MaxTotalC parent: Objective schedules: [] {
 						) / (max_C_decomposition)) ^ 2
 							* exp(state.enzymes.T_recal / (max_enzymes.T_recal - state.enzymes.T_recal))
 						: #infinity;
-				} else if (total_C_recal > 0) {
+				} else if (C_recal > 0) {
 					// Maximize recalcitrant C decomposition while prohibiting labile enzyme production (since total_C_labile = 0).
-					float T_labile <- state.enzymes.T_cellulolytic + state.enzymes.T_amino + alpha_CP * state.enzymes.T_P;
+					float T_labile <- state.enzymes.T_cellulolytic + state.enzymes.T_amino + alpha_C_e_P * state.enzymes.T_P;
 					float T_max_labile <- max_enzymes.T_cellulolytic + max_enzymes.T_amino
-						+ alpha_CP * max_enzymes.T_P;
+						+ alpha_C_e_P * max_enzymes.T_P;
 					result <- (T_max_labile - T_labile) > 0 ?
 							(1.0 - (state.enzymatic_activity.X_C_cellulolytic + state.enzymatic_activity.X_C_amino + state.enzymatic_activity.X_C_P) / (max_C_decomposition)) ^ 2
 								* exp(T_labile / (T_max_labile - T_labile))
@@ -686,12 +761,12 @@ experiment TestSimulatedAnnealing type: gui {
 			C_P::C_P_microbes,
 			C_microbes::1#gram,
 			dt::1#d,
-			total_C_labile::200#gram,
-			total_N_labile::(200#gram/C_N_labile),
-			total_P_labile::(200#gram/C_P_labile),
-			total_C_recal::0.0,
-			total_N_recal::0.0,
-			total_P_recal::0.0,
+			C_labile::200#gram,
+			N_labile::(200#gram/C_N_labile),
+			P_labile::(200#gram/C_P_labile),
+			C_recal::0.0,
+			N_recal::0.0,
+			P_recal::0.0,
 			C_DOM::0.0,
 			P_DOM::0.0,
 			N_DOM::0.0,
@@ -966,12 +1041,12 @@ experiment ExpEnzymaticActivity type: gui {
 			C_microbes::exp.C_microbes#gram,
 			dt::1#d,
 			amino_CN::amino_CN,
-			total_C_labile::total_C_labile,
-			total_N_labile::total_N_labile,
-			total_P_labile::total_P_labile,
-			total_C_recal::total_C_recal,
-			total_N_recal::0.0,
-			total_P_recal::0.0,
+			C_labile::total_C_labile,
+			N_labile::total_N_labile,
+			P_labile::total_P_labile,
+			C_recal::total_C_recal,
+			N_recal::0.0,
+			P_recal::0.0,
 			C_DOM::exp.C_dom#gram,
 			N_DOM::(exp.C_dom#gram/(exp.C_N_dom_init + cycle * (exp.C_N_dom_final - exp.C_N_dom_init)/exp.steps)),
 			P_DOM::(exp.C_dom#gram/(exp.C_P_dom_init + cycle * (exp.C_P_dom_final - exp.C_P_dom_init)/exp.steps)),
@@ -1053,7 +1128,7 @@ experiment ExpEnzymaticActivity type: gui {
 		display "C/N" type:2d {
 			chart "C/N" type:series style:line {
 				data "organic C/N" value: sum(SimulatedAnnealing collect (
-					each.problem.total_N_labile > 0 ? each.problem.total_C_labile/each.problem.total_N_labile : 0.0
+					each.problem.N_labile > 0 ? each.problem.C_labile/each.problem.N_labile : 0.0
 				)) marker:false;
 				data "dom C/N" value: sum(SimulatedAnnealing collect (
 					each.problem.N_DOM > 0 ? each.problem.C_DOM/each.problem.N_DOM : 0.0
@@ -1068,7 +1143,7 @@ experiment ExpEnzymaticActivity type: gui {
 		display "C/P" type:2d {
 			chart "C/P" type:series style:line {
 				data "organic C/P" value: sum(SimulatedAnnealing collect (
-					each.problem.total_P_labile > 0 ? each.problem.total_C_labile/each.problem.total_P_labile : 0.0
+					each.problem.P_labile > 0 ? each.problem.C_labile/each.problem.P_labile : 0.0
 				)) marker:false;
 				data "dom C/P" value: sum(SimulatedAnnealing collect (
 					each.problem.P_DOM > 0 ? each.problem.C_DOM/each.problem.P_DOM : 0.0

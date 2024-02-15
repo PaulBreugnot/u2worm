@@ -167,12 +167,12 @@ species MicrobePopulation
 			C_N <- myself.C_N;
 			C_P <- myself.C_P;
 			C_microbes <- myself.C_actif;
-			total_C_labile <- sum(particles_to_decompose collect each.C_labile);
-			total_N_labile <- sum(particles_to_decompose collect each.N_labile);
-			total_P_labile <- sum(particles_to_decompose collect each.P_labile);
-			total_C_recal <- sum(particles_to_decompose collect each.C_recalcitrant);
-			total_N_recal <- sum(particles_to_decompose collect each.N_recalcitrant);
-			total_P_recal <- sum(particles_to_decompose collect each.P_recalcitrant);
+			C_labile <- sum(particles_to_decompose collect each.C_labile);
+			N_labile <- sum(particles_to_decompose collect each.N_labile);
+			P_labile <- sum(particles_to_decompose collect each.P_labile);
+			C_recal <- sum(particles_to_decompose collect each.C_recalcitrant);
+			N_recal <- sum(particles_to_decompose collect each.N_recalcitrant);
+			P_recal <- sum(particles_to_decompose collect each.P_recalcitrant);
 			C_DOM <- dam.dom[2];
 			N_DOM <- dam.dom[0];
 			P_DOM <- dam.dom[1];

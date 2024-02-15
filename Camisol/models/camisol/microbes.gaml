@@ -58,9 +58,10 @@ species Y_Strategist parent:MicrobePopulation {
 		
 		Enzymes _max_enzymes;
 		create Enzymes with: [
-			T_cellulolytic::0.15 #gram/ #gram / #d,
+			T_cellulolytic::0.5 #gram/ #gram / #d,
 			T_amino::0.1 #gram / #gram / #d,
-			T_P::0.01 #gram / #gram / #d,
+//			T_P::0.1 #gram / #gram / #d,
+			T_P::0.05 #gram / #gram / #d,
 			T_recal::0.001 #gram / #gram / #d
 		] {
 			_max_enzymes <- self;
@@ -105,10 +106,11 @@ species A_Strategist parent:MicrobePopulation {
 		
 		Enzymes _max_enzymes;
 		create Enzymes with: [
-			T_cellulolytic::0.1 #gram/ #gram / #d,
+			T_cellulolytic::0.4 #gram/ #gram / #d,
 			T_amino::0.08 #gram / #gram / #d,
-			T_P::0.008 #gram / #gram / #d,
-			T_recal::0.1 #gram / #gram / #d
+//			T_P::0.08 #gram / #gram / #d,
+			T_P::0.02 #gram / #gram / #d,
+			T_recal::0.08 #gram / #gram / #d
 		] {
 			_max_enzymes <- self;
 		}
@@ -152,9 +154,10 @@ species S_Strategist parent:MicrobePopulation {
 		
 		Enzymes _max_enzymes;
 		create Enzymes with: [
-			T_cellulolytic::0.08 #gram/ #gram / #d,
+			T_cellulolytic::0.2 #gram/ #gram / #d,
 			T_amino::0.05 #gram / #gram / #d,
-			T_P::0.005 #gram / #gram / #d,
+//			T_P::0.05 #gram / #gram / #d,
+			T_P::0.01 #gram / #gram / #d,
 			T_recal::0.02 #gram / #gram / #d
 		] {
 			_max_enzymes <- self;
