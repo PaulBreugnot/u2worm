@@ -261,32 +261,22 @@ species EnzymaticActivityProblem schedules: [] {
 	 */
 	Enzymes max_enzymes;
 	
-	// The smallest K is, the more powerful the enzyme is. When K=0, the enzyme instantly imposes the limiting reaction rate, whatever the substrate concentration is.
-	// Concentration at which the reaction rate from [labile C] to [C dom] is half of the limiting reaction rate.
-	float K_cellulolytic <- 0.0;
-	// Concentration at which the reaction rate from [labile C] to [CN dom] is half of the limiting reaction rate.
-	float K_amino <- 0.0;
-	// Concentration at which the reaction rate from [labile C] to [P dim] is half of the limiting reaction rate.
-	float K_P <- 0.0;
-	// Concentration at which the reaction rate from [recal C/N/P] to [labile C/N/P] is half of the limiting reaction rate.
-	float K_recal <- 0.0;
-	
 	float d_C_recal(WeightedEnzymes enzymes) {
 		return min(
-					dt * enzymes.T_recal /* *total_C_recal / (K_recal + total_C_recal) */,
+					dt * enzymes.T_recal,
 					C_recal
 				);
 	}
 
 	float d_C_cellulolytic(WeightedEnzymes enzymes) {
 		return min(
-					(dt * enzymes.T_cellulolytic) /* *total_C_labile / (K_cellulolytic + total_C_labile) */,
+					dt * enzymes.T_cellulolytic,
 					C_labile
 				);
 	}
 	
 	float d_C_amino(WeightedEnzymes enzymes) {
-		float expected_C_amino <- (dt * enzymes.T_amino) /* *total_C_labile / (K_amino + total_C_labile)*/;
+		float expected_C_amino <- dt * enzymes.T_amino;
 		float expected_N_amino <- expected_C_amino / amino_CN;
 		float limiting_amino <- expected_C_amino > 0 ?
 			min(1.0, C_labile / expected_C_amino, N_labile / expected_N_amino)
@@ -296,7 +286,7 @@ species EnzymaticActivityProblem schedules: [] {
 	
 	float d_C_P(WeightedEnzymes enzymes) {
 		float P_attacked <- min(
-					(dt * enzymes.T_P) /* *total_C_labile / (K_P + total_C_labile)*/,
+					dt * enzymes.T_P,
 					P_labile
 				);
 		return P_attacked * C_labile / P_labile;
