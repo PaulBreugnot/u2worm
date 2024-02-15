@@ -644,81 +644,6 @@ species MaxRecalC parent: Objective schedules: [] {
 			// return exp(state.enzymes.T_recal / (state.problem.max_enzymes.T_recal - state.enzymes.T_recal)) - 1.0;
 	}
 }
-	
-species MaxTotalC parent: Objective schedules: [] {
-	MaxLabileC max_C;
-	MaxRecalC max_recal_C;
-	
-	init {
-		create MaxLabileC {
-			myself.max_C <- self;
-		}
-		create MaxRecalC {
-			myself.max_recal_C <- self;
-		}
-	}
-	action value(SimulatedAnnealingState state) type: float {
-		float result;
-		ask state.problem {
-			float max_labile_C_enzyme <- max(
-				max_enzymes.T_cellulolytic,
-				max_enzymes.T_amino, // TODO: limiting factor
-				alpha_C_e_P * max_enzymes.T_P
-			);
-			if(max_enzymes.T_recal > 0 and max_labile_C_enzyme > 0) {
-				float max_C_decomposition <- min(
-					max_labile_C_enzyme * dt * C_microbes,
-					C_labile
-				);
-				float max_C_recal_decomposition <- min(
-					max_enzymes.T_recal * dt * C_microbes,
-					C_recal
-				);
-				// It is possible to produce recalcitrant enzymes
-				if(C_recal > 0 and C_labile > 0) {
-					result <- (1.0 - (
-						state.enzymatic_activity.X_C_recal +
-						state.enzymatic_activity.X_C_cellulolytic +
-						state.enzymatic_activity.X_C_amino +
-						state.enzymatic_activity.X_C_P
-					) / (max_C_decomposition + max_C_recal_decomposition)) ^ 2;
-				} else if (C_labile > 0) {
-					// Maximize labile C decomposition while prohibiting recalcitrant enzyme production (since total_C_recal = 0).
-					result <- (max_enzymes.T_recal - state.enzymes.T_recal) > 0 ?
-						(1.0 - (
-							state.enzymatic_activity.X_C_cellulolytic +
-							state.enzymatic_activity.X_C_amino +
-							state.enzymatic_activity.X_C_P
-						) / (max_C_decomposition)) ^ 2
-							* exp(state.enzymes.T_recal / (max_enzymes.T_recal - state.enzymes.T_recal))
-						: #infinity;
-				} else if (C_recal > 0) {
-					// Maximize recalcitrant C decomposition while prohibiting labile enzyme production (since total_C_labile = 0).
-					float T_labile <- state.enzymes.T_cellulolytic + state.enzymes.T_amino + alpha_C_e_P * state.enzymes.T_P;
-					float T_max_labile <- max_enzymes.T_cellulolytic + max_enzymes.T_amino
-						+ alpha_C_e_P * max_enzymes.T_P;
-					result <- (T_max_labile - T_labile) > 0 ?
-							(1.0 - (state.enzymatic_activity.X_C_cellulolytic + state.enzymatic_activity.X_C_amino + state.enzymatic_activity.X_C_P) / (max_C_decomposition)) ^ 2
-								* exp(T_labile / (T_max_labile - T_labile))
-						: #infinity;
-				} else {
-					result <- 0.0;
-				}
-			} else if (max_labile_C_enzyme > 0) {
-				// It is not possible to produce recalcitrant enzyme, so act like if they do not exist
-				result <- myself.max_C.value(state);
-			} else if(max_enzymes.T_recal > 0) {
-				// It is not possible to produce labile enzyme, so act like if they do not exist
-				result <- myself.max_recal_C.value(state);
-			} else {
-				// No C enzyme can be produced.
-				result <- 0.0;
-			}
-		}
-		return result;
-	}
-}
-
 
 experiment TestSimulatedAnnealing type: gui {
 	SimulatedAnnealing simulated_annealing;
@@ -752,7 +677,7 @@ experiment TestSimulatedAnnealing type: gui {
 		}
 		
 		Objective objective;
-		create MaxTotalC {
+		create MaxLabileC {
 			objective <- self;
 		}
 		
@@ -825,8 +750,6 @@ experiment ExpEnzymaticActivity type: gui {
 	float C_labile_objective_weight;
 	string C_recal_objective;
 	float C_recal_objective_weight;
-	string C_total_objective;
-	float C_total_objective_weight;
 	string N_objective;
 	float N_objective_weight;
 	string P_objective;
@@ -868,8 +791,6 @@ experiment ExpEnzymaticActivity type: gui {
 	parameter "C labile weight" category: "Objectives" var: C_labile_objective_weight init: 10.0;
 	parameter "C recal" category: "Objectives" var: C_recal_objective init: "Max recal C" among: ["none", "Max recal C"];
 	parameter "C recal weight" category: "Objectives" var: C_recal_objective_weight init: 1.0;
-	parameter "C total" category: "Objectives" var: C_total_objective init: "none" among: ["none", "Max total C"];
-	parameter "C total weight" category: "Objectives" var: C_total_objective_weight init: 1.0;
 	parameter "N" category: "Objectives" var: N_objective init: "none" among: ["none", "Max N"];
 	parameter "N weight" category: "Objectives" var: N_objective_weight init: 1.0;
 	parameter "P" category: "Objectives" var: P_objective init: "none" among: ["none", "Max P"];
@@ -948,12 +869,6 @@ experiment ExpEnzymaticActivity type: gui {
 		
 		if(C_recal_objective = "Max recalcitrant C") {
 			create MaxRecalC with: (weight: C_recal_objective_weight) {
-				add self to: myself.objectives;
-			}
-		}
-		
-		if(C_total_objective = "Max total C") {
-			create MaxTotalC with: (weight: C_total_objective_weight) {
 				add self to: myself.objectives;
 			}
 		}
