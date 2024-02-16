@@ -80,6 +80,7 @@ species MicrobePopulation
 	Enzymes enzymes;
 	Enzymes min_enzymes;
 	Enzymes max_enzymes;
+	DecompositionProblem decomposition_problem;
 	EnzymaticActivityProblem enzymatic_activity_problem;
 	
 	// float P_C <- 8;
@@ -105,8 +106,13 @@ species MicrobePopulation
 		create Enzymes {
 			myself.enzymes <- self;
 		}
-		create EnzymaticActivityProblem with: [
+		create DecompositionProblem with: [
 			dt::enzymes_optimization_period
+		] {
+			myself.decomposition_problem <- self;
+		}
+		create EnzymaticActivityProblem with: [
+			decomposition_problem: decomposition_problem
 		] {
 			myself.enzymatic_activity_problem <- self;
 		}
@@ -163,10 +169,9 @@ species MicrobePopulation
 	
 	action optimize_enzymes(Dam dam, list<OrganicParticle> particles_to_decompose) {
 		MicrobePopulation population <- self;
-		ask enzymatic_activity_problem {
-			C_N <- myself.C_N;
-			C_P <- myself.C_P;
-			C_microbes <- myself.C_actif;
+		ask decomposition_problem {
+			// Updates initial substrate and available matter
+			// Organic particles around are considered as a single and aggregated organic compartment
 			C_labile <- sum(particles_to_decompose collect each.C_labile);
 			N_labile <- sum(particles_to_decompose collect each.N_labile);
 			P_labile <- sum(particles_to_decompose collect each.P_labile);
@@ -178,6 +183,12 @@ species MicrobePopulation
 			P_DOM <- dam.dom[1];
 			P_DIM <- dam.dim[1];
 			N_DIM <- dam.dim[0];
+		}
+		ask enzymatic_activity_problem {
+			// Update required C/N and C/P rate, and microbe biomass
+			C_N <- myself.C_N;
+			C_P <- myself.C_P;
+			C_microbes <- myself.C_actif;
 		}
 		create SimulatedAnnealing with:[
 				problem::self.enzymatic_activity_problem,

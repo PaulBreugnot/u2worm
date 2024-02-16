@@ -94,7 +94,7 @@ global {
 					weighted_enzymes <- self;
 				}
 				
-				ask myself.enzymatic_activity_problem {
+				ask myself.decomposition_problem {
 					do decomposition(weighted_enzymes, myself);
 				}
 				
@@ -109,7 +109,7 @@ global {
 				output[species(myself)].X_recal <- X_C_recal/#gram;
 				
 				float C_avail; float N_avail; float P_avail;
-				ask myself.enzymatic_activity_problem {
+				ask myself.decomposition_problem {
 					C_avail <- C_avail(myself);
 					N_avail <- N_avail(myself);
 					P_avail <- P_avail(myself);

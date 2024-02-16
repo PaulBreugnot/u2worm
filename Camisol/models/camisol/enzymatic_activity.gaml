@@ -14,111 +14,101 @@ global {
 	int T_RECALCITRANT_BUDGET <- 3;
 }
 
+/**
+ * Enzymatic action rates.
+ */
 species Enzymes schedules: [] {
-	// Enzymatic action rates
+	/**
+	 * Cellulolytic action.
+	 */
 	float T_cellulolytic <- 0.0#gram/#gram/#d;
+	/**
+	 * Amino acid production action.
+	 */
 	float T_amino <- 0.0#gram/#gram/#d;
+	/**
+	 * P mineralisation action.
+	 */
 	float T_P <- 0.0#gram/#gram/#d;
+	/**
+	 * Recalcitrant cleavage action.
+	 */
 	float T_recal <- 0.0#gram/#gram/#d;
 }
 
+/**
+ * Enzymatic action rates, multiplied by the active microbe biomass.
+ * Notice the difference of units.
+ */
 species WeightedEnzymes schedules: [] {
-	// Enzymatic action rates. Notice the unit is not the same as enzymes.
 	float T_cellulolytic <- 0.0#gram/#d;
 	float T_amino <- 0.0#gram/#d;
 	float T_P <- 0.0#gram/#d;
 	float T_recal <- 0.0#gram/#d;
 }
 
+/**
+ * Exchanges of matter between nutrient compartments.
+ */
 species Decomposition schedules: [] {
+	/**
+	 * Quantity of matter removed from C labile and added to C dom due to
+	 * cellulolytic action.
+	 */
 	float X_C_cellulolytic <- 0.0;
+	/**
+	 * Quantity of matter removed from C labile and added to C dom due to amino
+	 * action.
+	 */
 	float X_C_amino <- 0.0;
+	/**
+	 * Quantity of matter removed from C labile and added to N dom due to amino
+	 * action.
+	 */
 	float X_N_amino <- 0.0;
+	/**
+	 * Quantity of matter removed from C labile and added to C dom due to P
+	 * mineralisation action.
+	 */
 	float X_C_P <- 0.0;
+	/**
+	 * Quantity of matter removed from P labile and added to P dom due to P
+	 * mineralisation action.
+	 */
 	float X_P_labile_to_dom <- 0.0;
+	/**
+	 * Quantity of matter removed from P labile and added to P dim due to P
+	 * mineralisation action.
+	 */
 	float X_P_labile_to_dim <- 0.0;
 	
+	/**
+	 * Quantity of matter removed from C recalcitrant and added to C labile.
+	 */
 	float X_C_recal <- 0.0;
+	/**
+	 * Quantity of matter removed from N recalcitrant and added to N labile.
+	 */
 	float X_N_recal <- 0.0;
+	/**
+	 * Quantity of matter removed from P recalcitrant and added to P labile.
+	 */
 	float X_P_recal_to_labile <- 0.0;
+	/**
+	 * Quantity of matter removed from P recalcitrant and added to P dim.
+	 */
 	float X_P_recal_to_dim <- 0.0;
-	
-	
 }
 
-species SimulatedAnnealingState schedules: [] {
-	EnzymaticActivityProblem problem;
-	Enzymes enzymes;
-	WeightedEnzymes weighted_enzymes;
-	Decomposition decomposition;
-	list<float> budget;
-
-
-	init {
-		enzymes <- build_enzyme();
-		create WeightedEnzymes with: [
-			T_cellulolytic::problem.C_microbes*enzymes.T_cellulolytic,
-			T_amino::problem.C_microbes*enzymes.T_amino,
-			T_P::problem.C_microbes*enzymes.T_P,
-			T_recal::problem.C_microbes*enzymes.T_recal
-		] {
-			myself.weighted_enzymes <- self;
-		}
-		create Decomposition {
-			myself.decomposition <- self;
-		}
-		ask problem {
-			do decomposition(myself.weighted_enzymes, myself.decomposition);
-		}
-	}
-	
-	Enzymes build_enzyme {
-		Enzymes new_enzymes;
-		ask problem {
-			create Enzymes with: [
-				T_cellulolytic: min_enzymes.T_cellulolytic + myself.budget[T_CELLULOLYTIC_BUDGET]*(max_enzymes.T_cellulolytic - min_enzymes.T_cellulolytic),
-				T_amino: min_enzymes.T_amino + myself.budget[T_AMINO_BUDGET]*(max_enzymes.T_amino - min_enzymes.T_amino),
-				T_P: min_enzymes.T_P + myself.budget[T_P_BUDGET]*(max_enzymes.T_P - min_enzymes.T_P),
-				T_recal: min_enzymes.T_recal + myself.budget[T_RECALCITRANT_BUDGET]*(max_enzymes.T_recal - min_enzymes.T_recal)
-			] {
-				new_enzymes <- self;
-			}
-		}
-		return new_enzymes;
-	}
-
-	float C_avail {
-		return problem.C_avail(decomposition);
-	}
-	
-	float N_avail {
-		return problem.N_avail(decomposition);
-	}
-	
-	float P_avail {
-		return problem.P_avail(decomposition);
-	}
-}
-
-species Objective schedules: [] {
-	float weight <- 1.0;
-	
-	action value(SimulatedAnnealingState state) virtual: true type: float;
-}
-
-species EnzymaticActivityProblem schedules: [] {
-	/**
-	 * Microbe population active structural C.
-	 */
-	float C_microbes;
-	/**
-	 * Requested microbe CN rate.
-	 */
-	float C_N;
-	/**
-	 * Requested microbe CP rate.
-	 */
-	float C_P;
+/**
+ * The decomposition problem embeds all parameters required to compute the
+ * decomposition of matter due given a set of enzymatic activities.
+ *
+ * It is notably used to estimate the quality of an enzymatic budget allocation
+ * in the EnzymaticActivityProblem, but also standalone to compute the
+ * decomposition of organic particles at each time step, without optimisation.
+ */
+species DecompositionProblem schedules: [] {
 	/**
 	 * Time step duration, over which the enzymatic activity is optimized.
 	 * Also used to compute the decomposition.
@@ -179,53 +169,50 @@ species EnzymaticActivityProblem schedules: [] {
 	float amino_CN <- 4.0;
 	
 	/**
-	 * Rate of C decomposed by the cellulolytic action if only the cellulolytic and amino actions request all the labile C.
+	 * Rate of C decomposed by the cellulolytic action if only the cellulolytic
+	 * and amino actions request all the labile C.
 	 */
 	float beta_cellulolytic_amino <- 0.5;
 	/**
-	 * Rate of C decomposed by the cellulolytic action if only the cellulolytic and P mineralisation actions request all the labile C.
+	 * Rate of C decomposed by the cellulolytic action if only the cellulolytic
+	 * and P mineralisation actions request all the labile C.
 	 */
 	float beta_cellulolytic_P <- 0.5;
 	/**
-	 * Rate of C decomposed by the amino action if only the amino and P mineralisation actions request all the labile C.
+	 * Rate of C decomposed by the amino action if only the amino and P
+	 * mineralisation actions request all the labile C.
 	 */
 	float beta_amino_P <- 0.5;
 	
 	/**
-	 * Rate of organic C sent from labile to DOM among the C decomposed by the P mineralisation.
+	 * Rate of organic C sent from labile to DOM among the C decomposed by the P
+	 * mineralisation.
 	 */
 	float alpha_C_e_P <- 0.1;
 	/**
-	 * Rate of organic P sent from labile to DIM among the P decomposed by the P mineralisation.
+	 * Rate of organic P sent from labile to DIM among the P decomposed by the P
+	 * mineralisation.
 	 */
 	float alpha_P_e_P <- 0.9;
 	/**
-	 * Rate of organic P sent from recalcitrant to DIM among the P decomposed by recalcitrant cleavage.
-	 * Represents the the action of phytases.
+	 * Rate of organic P sent from recalcitrant to DIM among the P decomposed by
+	 * recalcitrant cleavage. Represents the the action of phytases.
 	 */
 	float alpha_P_e_r <- 1e-3;
 	
 	/**
-	 * Constitutive enzymatic rates.
+	 * Quantity of carbon requested by the recalcitrant cleavage action.
 	 */
-	Enzymes min_enzymes;
-	/**
-	 * Maximum enzymatic rates.
-	 */
-	Enzymes max_enzymes;
-	
-	float d_C_recal_max;
-	float d_C_labile_max;
-	float d_N_max;
-	float d_P_max;
-	
 	float d_C_recal(WeightedEnzymes enzymes) {
 		return min(
 					dt * enzymes.T_recal,
 					C_recal
 				);
 	}
-
+	
+	/**
+	 * Quantity of carbon requested by the cellulolytic action.
+	 */
 	float d_C_cellulolytic(WeightedEnzymes enzymes) {
 		return min(
 					dt * enzymes.T_cellulolytic,
@@ -233,6 +220,9 @@ species EnzymaticActivityProblem schedules: [] {
 				);
 	}
 	
+	/**
+	 * Quantity of carbon requested by the amino acid production action.
+	 */
 	float d_C_amino(WeightedEnzymes enzymes) {
 		float expected_C_amino <- dt * enzymes.T_amino;
 		float expected_N_amino <- expected_C_amino / amino_CN;
@@ -242,6 +232,9 @@ species EnzymaticActivityProblem schedules: [] {
 		return expected_C_amino * limiting_amino;
 	}
 	
+	/**
+	 * Quantity of carbon requested by the P mineralisation action.
+	 */
 	float d_C_P(WeightedEnzymes enzymes) {
 		float P_attacked <- min(
 					dt * enzymes.T_P,
@@ -250,72 +243,38 @@ species EnzymaticActivityProblem schedules: [] {
 		return P_attacked * C_labile / P_labile;
 	}
 	
-	action update_d_C_recal_max {
-		create WeightedEnzymes with: [
-			T_recal::C_microbes * max_enzymes.T_recal
-		] {
-			myself.d_C_recal_max <- myself.d_C_recal(self);
-			do die;
-		}
-	}
-	
-	action update_d_C_labile_max {
-		create WeightedEnzymes with: [
-			T_cellulolytic::C_microbes*max_enzymes.T_cellulolytic,
-			T_amino::C_microbes*max_enzymes.T_amino,
-			T_P::C_microbes*max_enzymes.T_P,
-			T_recal::0.0
-		] {
-			// The current weighted enzymes is impossible in terms of budget, but it is a way
-			// to easily compute each d_* max since:
-			// - the maximum of d_C_cellulolytic is only computed from the max_enzymes.T_cellulolytic (assuming other T_* = 0)
-			// - the maximum of d_C_amino is only computed from the max_enzymes.T_amino (assuming other T_* = 0)
-			// - ... idem form d_C_P
-			myself.d_C_labile_max <- max(myself.d_C_cellulolytic(self), myself.d_C_amino(self), myself.alpha_C_e_P * myself.d_C_P(self));
-			do die;
-		}
-	}
-	
-	action update_d_N_max {
-		create WeightedEnzymes with: [
-			T_amino::C_microbes*max_enzymes.T_amino
-		] {
-			myself.d_N_max <- myself.d_C_amino(self) / myself.amino_CN;
-			do die;
-		}
-	}
-		
-	action update_d_P_max {
-		create WeightedEnzymes with: [
-			T_P::C_microbes*max_enzymes.T_P,
-			T_recal::C_microbes*max_enzymes.T_recal
-		] {
-			myself.d_P_max <- max(
-				myself.alpha_P_e_r * myself.d_C_recal(self),
-				(myself.alpha_C_e_P + myself.alpha_P_e_P - myself.alpha_C_e_P * myself.alpha_P_e_P)
-					* myself.d_C_P(self)
-			);
-			do die;
-		}
-	}
-	
+	/**
+	 * Computes the available C that results from the provided decomposition.
+	 */
 	float C_avail(Decomposition decomposition) {
 		return C_DOM + decomposition.X_C_cellulolytic + decomposition.X_C_amino + decomposition.X_C_P;
 	}
 	
+	/**
+	 * Computes the available N that results from the provided decomposition.
+	 */
 	float N_avail(Decomposition decomposition) {
 		return N_DOM + N_DIM + decomposition.X_N_amino;
 	}
 	
+	/**
+	 * Computes the available P that results from the provided decomposition.
+	 */
 	float P_avail(Decomposition decomposition) {
 		return P_DOM + P_DIM + decomposition.X_P_labile_to_dom + decomposition.X_P_labile_to_dim + decomposition.X_P_recal_to_dim;
 	}
 	
+	/**
+	 * Computes the decomposition obtained from the specified enzymes.
+	 * 
+	 * The result is stored in the provided Decomposition instance.
+	 */
 	action decomposition(
-		WeightedEnzymes enzymes, Decomposition result
+		WeightedEnzymes enzymes,
+		Decomposition result
 	) {
 		if(C_labile > 0) {
-			// Cellulolytic action
+			// Requested labile C by each action
 			float d_C_cellulolytic <- d_C_cellulolytic(enzymes);
 			float d_C_P <- d_C_P(enzymes);
 			float d_C_amino <- d_C_amino(enzymes);
@@ -356,7 +315,6 @@ species EnzymaticActivityProblem schedules: [] {
 		}
 
 		if(C_recal > 0) {
-			// Recalcitrant C decomposition
 			result.X_C_recal <- d_C_recal(enzymes);
 			if(N_recal > 0) {
 				result.X_N_recal <- result.X_C_recal * (N_recal / C_recal);
@@ -382,20 +340,272 @@ species EnzymaticActivityProblem schedules: [] {
 	}
 }
 
+/**
+ * Represents the state of the problem optimised by the simulated annealing
+ * algorithm.
+ */
+species SimulatedAnnealingState schedules: [] {
+	/**
+	 * Current problem to solve.
+	 */
+	EnzymaticActivityProblem problem;
+	/**
+	 * Current enzymatic budget allocation, used to represent
+	 */
+	list<float> budget;
+	
+	/**
+	 * Current enzymatic activities, computed from the budget.
+	 */
+	Enzymes enzymes;
+	/**
+	 * Current enzymatic activities, weighted by the active microbe biomass,
+	 * computed from the budget.
+	 */
+	WeightedEnzymes weighted_enzymes;
+	/**
+	 * Estimated decomposition, computed from the current problem and enzymes.
+	 */
+	Decomposition decomposition;
+
+	init {
+		SimulatedAnnealingState current_state <- self;
+		ask problem {
+			create Enzymes with: [
+				T_cellulolytic: min_enzymes.T_cellulolytic + myself.budget[T_CELLULOLYTIC_BUDGET]*(max_enzymes.T_cellulolytic - min_enzymes.T_cellulolytic),
+				T_amino: min_enzymes.T_amino + myself.budget[T_AMINO_BUDGET]*(max_enzymes.T_amino - min_enzymes.T_amino),
+				T_P: min_enzymes.T_P + myself.budget[T_P_BUDGET]*(max_enzymes.T_P - min_enzymes.T_P),
+				T_recal: min_enzymes.T_recal + myself.budget[T_RECALCITRANT_BUDGET]*(max_enzymes.T_recal - min_enzymes.T_recal)
+			] {
+				current_state.enzymes <- self;
+			}
+		}
+		
+		create WeightedEnzymes with: [
+			T_cellulolytic::problem.C_microbes*enzymes.T_cellulolytic,
+			T_amino::problem.C_microbes*enzymes.T_amino,
+			T_P::problem.C_microbes*enzymes.T_P,
+			T_recal::problem.C_microbes*enzymes.T_recal
+		] {
+			current_state.weighted_enzymes <- self;
+		}
+		
+		create Decomposition {
+			current_state.decomposition <- self;
+		}
+		
+		ask problem.decomposition_problem {
+			do decomposition(current_state.weighted_enzymes, current_state.decomposition);
+		}
+	}
+
+	/**
+	 * Computes the estimation of available C obtained in the current state.
+	 */
+	float C_avail {
+		return problem.decomposition_problem.C_avail(decomposition);
+	}
+	/**
+	 * Computes the estimation of available N obtained in the current state.
+	 */
+	float N_avail {
+		return problem.decomposition_problem.N_avail(decomposition);
+	}
+	/**
+	 * Computes the estimation of available P obtained in the current state.
+	 */
+	float P_avail {
+		return problem.decomposition_problem.P_avail(decomposition);
+	}
+}
+
+/**
+ * Definition of a generic objective, that will be optimized by the simulated
+ * annealing algorithm.
+ */
+species Objective schedules: [] {
+	/**
+	 * Relative weight of the objective used in multi-objective optimization.
+	 */
+	float weight <- 1.0;
+	
+	/**
+	 * Returns the value of the objective for the specified state.
+	 */
+	action value(SimulatedAnnealingState state) virtual: true type: float;
+}
+
+/**
+ * The enzymatic activity problem embeds all parameters required to optimize the
+ * enzymatic budget allocation.
+ * 
+ * The environment state on which enzymatic activity is optimized is given by
+ * the embedded decomposition problem, used to estimate decomposition for each
+ * state in the optimization process.
+ */
+species EnzymaticActivityProblem schedules: [] {
+	DecompositionProblem decomposition_problem;
+	
+	/**
+	 * Microbe population active structural C.
+	 */
+	float C_microbes;
+	/**
+	 * Requested microbe CN rate.
+	 */
+	float C_N;
+	/**
+	 * Requested microbe CP rate.
+	 */
+	float C_P;
+	/**
+	 * Constitutive enzymatic rates.
+	 */
+	Enzymes min_enzymes;
+	/**
+	 * Maximum enzymatic rates.
+	 */
+	Enzymes max_enzymes;
+	
+	// Useful values used in the computation of objectives
+	/**
+	 * Estimation of the maximum quantity of C that can be added to C labile due
+	 * to the recalcitrant cleavage action.
+	 */
+	float X_C_labile_max;
+	/**
+	 * Estimation of the maximum quantity of C that can be added to the dam due
+	 * to the cellulolytic, amino acid production and P mineralisation actions.
+	 */
+	float X_C_dam_max;
+	/**
+	 * Estimation of the maximum quantity of N that can be added to the dam due
+	 * to the amino acid production action. 
+	 */
+	float X_N_dam_max;
+	/**
+	 * Estimation of the maximum quantity of P that can be added to the dam due
+	 * to the recalcitrant cleavage and P mineralisation actions.
+	 */
+	float X_P_dam_max;
+	
+	action update_X_C_labile_max {
+		create WeightedEnzymes with: [
+			T_recal::C_microbes * max_enzymes.T_recal
+		] {
+			myself.X_C_labile_max <- myself.decomposition_problem.d_C_recal(self);
+			do die;
+		}
+	}
+	
+	action update_X_C_dam_max {
+		WeightedEnzymes enzymes;
+		create WeightedEnzymes with: [
+			T_cellulolytic::C_microbes*max_enzymes.T_cellulolytic,
+			T_amino::C_microbes*max_enzymes.T_amino,
+			T_P::C_microbes*max_enzymes.T_P,
+			T_recal::0.0
+		] {
+			// The current weighted enzymes is impossible in terms of budget, but it is a way
+			// to easily compute each d_* max since:
+			// - the maximum of d_C_cellulolytic is only computed from the max_enzymes.T_cellulolytic (assuming other T_* = 0)
+			// - the maximum of d_C_amino is only computed from the max_enzymes.T_amino (assuming other T_* = 0)
+			// - ... idem form d_C_P
+			enzymes <- self;
+		}
+		ask decomposition_problem {
+			myself.X_C_dam_max <- max(
+				d_C_cellulolytic(enzymes),
+				d_C_amino(enzymes),
+				alpha_C_e_P * d_C_P(enzymes)
+			);
+		}
+		ask enzymes {
+			do die;
+		}
+	}
+	
+	action update_X_N_dam_max {
+		WeightedEnzymes enzymes;
+		create WeightedEnzymes with: [
+			T_amino::C_microbes*max_enzymes.T_amino
+		] {
+			enzymes <- self;
+		}
+		ask decomposition_problem {
+			myself.X_N_dam_max <- d_C_amino(enzymes) / amino_CN;
+		}
+		ask enzymes {
+			do die;
+		}
+	}
+		
+	action update_X_P_dam_max {
+		WeightedEnzymes enzymes;
+		create WeightedEnzymes with: [
+			T_P::C_microbes*max_enzymes.T_P,
+			T_recal::C_microbes*max_enzymes.T_recal
+		] {
+			enzymes <- self;
+		}
+		ask decomposition_problem {
+			myself.X_P_dam_max <- max(
+				alpha_P_e_r * d_C_recal(enzymes),
+				(alpha_C_e_P + alpha_P_e_P - alpha_C_e_P * alpha_P_e_P)
+					* d_C_P(enzymes)
+			);
+		}
+		ask enzymes {
+			do die;
+		}
+	}
+}
+
+/**
+ * Generic simulated annealing algorithm.
+ */
 species SimulatedAnnealing schedules: [] {
+	/**
+	 * Problem to solve.
+	 */
 	EnzymaticActivityProblem problem;
 	
+	/**
+	 * Maximum count of steps.
+	 */
 	int N <- 1000;
+	/**
+	 * If the value of the objective is below this threshold, the current state is returned, even if N has not been reached yet.
+	 */
 	float epsilon <- 0.0;
 	
+	/**
+	 * Initial temperature. Must be in the order of the values of the objective function.
+	 */
 	float T_init;
+	/**
+	 * Current temperature.
+	 */
 	float T;
+	/**
+	 * Current energy to minimize.
+	 */
 	float e;
+	/**
+	 * Current state.
+	 */
 	SimulatedAnnealingState s;
+	/**
+	 * List of objectives to optimize.
+	 */
 	list<Objective> objectives;
 	
+	/**
+	 * Initial enzymatic budget allocation.
+	 */
 	list<float> init_budget;
 	int budget_size;
+	
 	// TODO: define indexes used in neighbor here to allow T_amino = 0 and others
 	
 	init {
@@ -452,10 +662,10 @@ species SimulatedAnnealing schedules: [] {
 	
 	action optimize {
 		ask problem {
-			do update_d_C_recal_max;
-			do update_d_C_labile_max;
-			do update_d_N_max;
-			do update_d_P_max;
+			do update_X_C_labile_max;
+			do update_X_C_dam_max;
+			do update_X_N_dam_max;
+			do update_X_P_dam_max;
 		}
 		
 		int i <- 0;
@@ -499,7 +709,6 @@ species SimulatedAnnealing schedules: [] {
 	float E(
 		SimulatedAnnealingState state
 	) {
-//		return sqrt(sum(objectives collect (each.weight * each.value(state)^2)))/sum(objectives collect each.weight);
 		return sum(objectives collect (each.weight * each.value(state)^2));
 	}
 }
@@ -511,7 +720,7 @@ species ExactCN parent: Objective schedules: [] {
 		if(C_avail > 0) {
 			return 1.0 - state.problem.C_N * (N_avail / C_avail);
 		}
-		if(state.problem.C_labile > 0.0) {
+		if(state.problem.decomposition_problem.C_labile > 0.0) {
 			// Max out the value, since C can be decomposed but no C is decomposed.
 			return 1.0;
 		}
@@ -528,7 +737,7 @@ species MaxCN parent: Objective schedules: [] {
 			// If N_avail/C_avail > required N/C, then N_avail is in excess and its not a problem so value=0 in this case.
 			return 1.0 - state.problem.C_N * min(N_avail / C_avail, 1.0/state.problem.C_N);
 		}
-		if(state.problem.C_labile > 0.0) {
+		if(state.problem.decomposition_problem.C_labile > 0.0) {
 			// Max out the value, since C can be decomposed but no C is decomposed.
 			return 1.0;
 		}
@@ -544,7 +753,7 @@ species ExactCP parent: Objective schedules: [] {
 		if(C_avail > 0) {
 			return 1.0 - state.problem.C_P * (P_avail / C_avail);
 		}
-		if(state.problem.C_labile > 0.0) {
+		if(state.problem.decomposition_problem.C_labile > 0.0) {
 			// Max out the value, since C can be decomposed but no C is decomposed.
 			return 1.0;
 		}
@@ -561,7 +770,7 @@ species MaxCP parent: Objective schedules: [] {
 			// If P_avail/C_avail > required P/C, then P_avail is in excess and its not a problem so value=0 in this case.
 			return 1.0 - state.problem.C_P * min((P_avail / C_avail), 1.0/state.problem.C_P);	
 		}
-		if(state.problem.C_labile > 0.0) {
+		if(state.problem.decomposition_problem.C_labile > 0.0) {
 			// Max out the value, since C can be decomposed but no C is decomposed.
 			return 1.0;
 		}
@@ -575,8 +784,8 @@ species MaxRecalC parent: Objective schedules: [] {
 		// Assumes max_enzymes.T_recal > 0.0. Otherwise, this objective should not be used.
 		float result;
 		ask state {
-			if(problem.d_C_recal_max > 0.0) {
-				result <- 1.0 - decomposition.X_C_recal / problem.d_C_recal_max;
+			if(problem.X_C_labile_max > 0.0) {
+				result <- 1.0 - decomposition.X_C_recal / problem.X_C_labile_max;
 			} else {
 				// Forces T_recal to tend to 0 if max_recal_C_decomposition = 0.0
 				result <- exp(ln(2) * budget[T_RECALCITRANT_BUDGET]) - 1.0;	
@@ -590,9 +799,9 @@ species MaxLabileC parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
 		float result;
 		ask state {
-			if(problem.d_C_labile_max > 0.0) {
+			if(problem.X_C_dam_max > 0.0) {
 				result <- 1.0 - (decomposition.X_C_cellulolytic + decomposition.X_C_amino + decomposition.X_C_P)
-						/ problem.d_C_labile_max;
+						/ problem.X_C_dam_max;
 			} else {
 				// Forces T_cellulolytic, T_amino and T_P budgets to 0 since no labile C/N/P can be decomposed anyway.
 				result <- exp(ln(2) * (state.budget[T_CELLULOLYTIC_BUDGET] + budget[T_AMINO_BUDGET] + budget[T_P_BUDGET])/3) - 1.0;
@@ -606,9 +815,9 @@ species MaxP parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
 		float result;
 		ask state {
-			if(problem.d_P_max > 0.0) {
+			if(problem.X_P_dam_max > 0.0) {
 				result <- 1.0 - (decomposition.X_P_recal_to_dim + decomposition.X_P_labile_to_dom + decomposition.X_P_labile_to_dim)
-						/ problem.d_P_max;
+						/ problem.X_P_dam_max;
 			} else {
 				// No P can be decomposed anyway
 				result <- exp(ln(2) * (budget[T_P_BUDGET] + budget[T_RECALCITRANT_BUDGET])/2) - 1.0;
@@ -622,8 +831,8 @@ species MaxN parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
 		float result;
 		ask state {
-			if(problem.d_N_max > 0) {
-				result <- 1.0 - decomposition.X_N_amino / problem.d_N_max;
+			if(problem.X_N_dam_max > 0) {
+				result <- 1.0 - decomposition.X_N_amino / problem.X_N_dam_max;
 			} else {
 				// max_N_decomposition = 0, so we force T_amino budget to 0
 				result <- exp(ln(2) * state.budget[T_AMINO_BUDGET]) - 1.0;		
@@ -668,11 +877,7 @@ experiment TestSimulatedAnnealing type: gui {
 		create MaxLabileC {
 			objective <- self;
 		}
-		
-		create EnzymaticActivityProblem with: [
-			C_N::C_N_microbes,
-			C_P::C_P_microbes,
-			C_microbes::1#gram,
+		create DecompositionProblem with: [
 			dt::1#d,
 			C_labile::200#gram,
 			N_labile::(200#gram/C_N_labile),
@@ -684,15 +889,22 @@ experiment TestSimulatedAnnealing type: gui {
 			P_DOM::0.0,
 			N_DOM::0.0,
 			P_DIM::0.0,
-			N_DIM::0.0,
-			min_enzymes::min_enzymes,
-			max_enzymes::max_enzymes
+			N_DIM::0.0
 		] {
-			create SimulatedAnnealing with:[
-				problem::self,
-				objectives::[objective]
+			create EnzymaticActivityProblem with: [
+				decomposition_problem::self,
+				C_N::C_N_microbes,
+				C_P::C_P_microbes,
+				C_microbes::1#gram,
+				min_enzymes::min_enzymes,
+				max_enzymes::max_enzymes
 			] {
-				current_experiment.simulated_annealing <- self;
+				create SimulatedAnnealing with:[
+					problem::self,
+					objectives::[objective]
+				] {
+					current_experiment.simulated_annealing <- self;
+				}
 			}
 		}
 		
@@ -938,10 +1150,8 @@ experiment ExpEnzymaticActivity type: gui {
 			total_P_labile <- 0.0;
 		}
 		float total_C_recal <- (exp.C_recal_init + cycle * (exp.C_recal_final - exp.C_recal_init)/exp.steps)#gram;
-		create EnzymaticActivityProblem with: [
-			C_N::exp.C_N_microbes,
-			C_P::exp.C_P_microbes,
-			C_microbes::exp.C_microbes#gram,
+		
+		create DecompositionProblem with: [
 			dt::1#d,
 			amino_CN::amino_CN,
 			C_labile::total_C_labile,
@@ -954,44 +1164,50 @@ experiment ExpEnzymaticActivity type: gui {
 			N_DOM::(exp.C_dom#gram/(exp.C_N_dom_init + cycle * (exp.C_N_dom_final - exp.C_N_dom_init)/exp.steps)),
 			P_DOM::(exp.C_dom#gram/(exp.C_P_dom_init + cycle * (exp.C_P_dom_final - exp.C_P_dom_init)/exp.steps)),
 			P_DIM::0.0,
-			N_DIM::0.0,
-			min_enzymes::min_enzymes,
-			max_enzymes::max_enzymes
+			N_DIM::0.0
 		] {
-			
-			create SimulatedAnnealing with:[
-				problem::self,
-				objectives::exp.objectives,
-				N::1000,
-				epsilon::1e-3
+			create EnzymaticActivityProblem with: [
+				decomposition_problem::self,
+				C_N::exp.C_N_microbes,
+				C_P::exp.C_P_microbes,
+				C_microbes::exp.C_microbes#gram,
+				min_enzymes::min_enzymes,
+				max_enzymes::max_enzymes
 			] {
-				do optimize;
-				
-				float C_avail <- s.C_avail();
-				float N_avail <- s.N_avail();
-				float P_avail <- s.P_avail();
-				write "";
-				write "s: " + s;
-				write "T_cellylolytic: " + s.enzymes.T_cellulolytic / (#gram / #gram / #d);
-				write "T_amino: " + s.enzymes.T_amino / (#gram / #gram / #d);
-				write "T_P: " + s.enzymes.T_P / (#gram / #gram / #d);
-				write "C/N: " + (N_avail > 0 ? C_avail / N_avail : 0.0);
-				write "C/P: " + (P_avail > 0 ? C_avail / P_avail : 0.0);
-				write "C_DOM: " + myself.C_DOM;
-				write "N_DOM: " + myself.N_DOM;
-				write "e: " + E(s);
-							
-				ask s.decomposition {
-					write "X_C_cellulolytic: " + X_C_cellulolytic / #gram;
-					write "X_C_amino: " + X_C_amino / #gram;
-					write "X_N_amino: " + X_N_amino / #gram;
-					write "X_C_P: " + X_C_P / #gram;
-					write "X_P_labile_to_dom:" + X_P_labile_to_dom / #gram;
-					write "X_P_labile_to_dim: " + X_P_labile_to_dim / #gram;
-					write "X_C_recal: " + X_C_recal / #gram;
-					write "X_P_recal_to_dim:" + X_P_recal_to_dim / #gram;
+				create SimulatedAnnealing with:[
+					problem::self,
+					objectives::exp.objectives,
+					N::1000,
+					epsilon::1e-3
+				] {
+					do optimize;
+					
+					float C_avail <- s.C_avail();
+					float N_avail <- s.N_avail();
+					float P_avail <- s.P_avail();
+					write "";
+					write "s: " + s;
+					write "T_cellylolytic: " + s.enzymes.T_cellulolytic / (#gram / #gram / #d);
+					write "T_amino: " + s.enzymes.T_amino / (#gram / #gram / #d);
+					write "T_P: " + s.enzymes.T_P / (#gram / #gram / #d);
+					write "C/N: " + (N_avail > 0 ? C_avail / N_avail : 0.0);
+					write "C/P: " + (P_avail > 0 ? C_avail / P_avail : 0.0);
+					write "C_DOM: " + myself.decomposition_problem.C_DOM;
+					write "N_DOM: " + myself.decomposition_problem.N_DOM;
+					write "e: " + E(s);
+								
+					ask s.decomposition {
+						write "X_C_cellulolytic: " + X_C_cellulolytic / #gram;
+						write "X_C_amino: " + X_C_amino / #gram;
+						write "X_N_amino: " + X_N_amino / #gram;
+						write "X_C_P: " + X_C_P / #gram;
+						write "X_P_labile_to_dom:" + X_P_labile_to_dom / #gram;
+						write "X_P_labile_to_dim: " + X_P_labile_to_dim / #gram;
+						write "X_C_recal: " + X_C_recal / #gram;
+						write "X_P_recal_to_dim:" + X_P_recal_to_dim / #gram;
+					}
+					exp.simulated_annealing <- self;
 				}
-				exp.simulated_annealing <- self;
 			}
 		}
 	}
@@ -1031,10 +1247,12 @@ experiment ExpEnzymaticActivity type: gui {
 		display "C/N" type:2d {
 			chart "C/N" type:series style:line {
 				data "organic C/N" value: sum(SimulatedAnnealing collect (
-					each.problem.N_labile > 0 ? each.problem.C_labile/each.problem.N_labile : 0.0
+					each.problem.decomposition_problem.N_labile > 0 ?
+						each.problem.decomposition_problem.C_labile/each.problem.decomposition_problem.N_labile : 0.0
 				)) marker:false;
 				data "dom C/N" value: sum(SimulatedAnnealing collect (
-					each.problem.N_DOM > 0 ? each.problem.C_DOM/each.problem.N_DOM : 0.0
+					each.problem.decomposition_problem.N_DOM > 0 ?
+					each.problem.decomposition_problem.C_DOM/each.problem.decomposition_problem.N_DOM : 0.0
 				)) marker:false;
 				data "available C/N" value: sum(SimulatedAnnealing collect (
 					each.s.N_avail() > 0 ?
@@ -1046,10 +1264,12 @@ experiment ExpEnzymaticActivity type: gui {
 		display "C/P" type:2d {
 			chart "C/P" type:series style:line {
 				data "organic C/P" value: sum(SimulatedAnnealing collect (
-					each.problem.P_labile > 0 ? each.problem.C_labile/each.problem.P_labile : 0.0
+					each.problem.decomposition_problem.P_labile > 0 ?
+					each.problem.decomposition_problem.C_labile/each.problem.decomposition_problem.P_labile : 0.0
 				)) marker:false;
 				data "dom C/P" value: sum(SimulatedAnnealing collect (
-					each.problem.P_DOM > 0 ? each.problem.C_DOM/each.problem.P_DOM : 0.0
+					each.problem.decomposition_problem.P_DOM > 0 ?
+					each.problem.decomposition_problem.C_DOM/each.problem.decomposition_problem.P_DOM : 0.0
 				)) marker:false;
 				data "available C/P" value: sum(SimulatedAnnealing collect (
 					each.s.P_avail() > 0 ?

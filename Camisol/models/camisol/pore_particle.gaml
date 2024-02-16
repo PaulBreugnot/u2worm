@@ -49,7 +49,7 @@ species PoreParticle {
 		}
 		
 		Decomposition decomposition;
-		create EnzymaticActivityProblem with:[
+		create DecompositionProblem with:[
 			dt::local_step,
 			C_labile::total_C_labile,
 			P_labile::total_P_labile,
