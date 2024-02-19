@@ -8,9 +8,21 @@
 model enzyme_activity
 
 global {
+	/**
+	 * Index of the budget allocated to the cellulolytic action.
+	 */
 	int T_CELLULOLYTIC_BUDGET <- 0;
+	/**
+	 * Index of the budget allocated to the amino acid production action.
+	 */
 	int T_AMINO_BUDGET <- 1;
+	/**
+	 * Index of the budget allocated to the P mineralisation action.
+	 */
 	int T_P_BUDGET <- 2;
+	/**
+	 * Index of the budget allocated to the recalcitrant cleavage action.
+	 */
 	int T_RECALCITRANT_BUDGET <- 3;
 }
 
@@ -167,39 +179,43 @@ species DecompositionProblem schedules: [] {
 	 * Represent the distribution of amino acids.
 	 */
 	float amino_CN <- 4.0;
-	
-	/**
-	 * Rate of C decomposed by the cellulolytic action if only the cellulolytic
-	 * and amino actions request all the labile C.
-	 */
-	float beta_cellulolytic_amino <- 0.5;
-	/**
-	 * Rate of C decomposed by the cellulolytic action if only the cellulolytic
-	 * and P mineralisation actions request all the labile C.
-	 */
-	float beta_cellulolytic_P <- 0.5;
-	/**
-	 * Rate of C decomposed by the amino action if only the amino and P
-	 * mineralisation actions request all the labile C.
-	 */
-	float beta_amino_P <- 0.5;
-	
-	/**
-	 * Rate of organic C sent from labile to DOM among the C decomposed by the P
-	 * mineralisation.
-	 */
-	float alpha_C_e_P <- 0.1;
-	/**
-	 * Rate of organic P sent from labile to DIM among the P decomposed by the P
-	 * mineralisation.
-	 */
-	float alpha_P_e_P <- 0.9;
+
 	/**
 	 * Rate of organic P sent from recalcitrant to DIM among the P decomposed by
 	 * recalcitrant cleavage. Represents the the action of phytases.
 	 */
 	float alpha_P_e_r <- 1e-3;
-	
+
+	/**
+	 * Rate of organic C sent from labile to DOM among the C decomposed by the P
+	 * mineralisation.
+	 */
+	float alpha_C_e_P <- 0.1;
+
+	/**
+	 * Rate of organic P sent from labile to DIM among the P decomposed by the P
+	 * mineralisation.
+	 */
+	float alpha_P_e_P <- 0.9;
+
+	/**
+	 * Rate of C decomposed by the cellulolytic action if only the cellulolytic
+	 * and amino actions request all the labile C.
+	 */
+	float beta_cellulolytic_amino <- 0.5;
+
+	/**
+	 * Rate of C decomposed by the cellulolytic action if only the cellulolytic
+	 * and P mineralisation actions request all the labile C.
+	 */
+	float beta_cellulolytic_P <- 0.5;
+
+	/**
+	 * Rate of C decomposed by the amino action if only the amino and P
+	 * mineralisation actions request all the labile C.
+	 */
+	float beta_amino_P <- 0.5;
+
 	/**
 	 * Quantity of carbon requested by the recalcitrant cleavage action.
 	 */
@@ -350,7 +366,8 @@ species SimulatedAnnealingState schedules: [] {
 	 */
 	EnzymaticActivityProblem problem;
 	/**
-	 * Current enzymatic budget allocation, used to represent
+	 * Current enzymatic budget allocation, used to represent the part of the
+	 * budget allocated to each action.
 	 */
 	list<float> budget;
 	
@@ -604,9 +621,12 @@ species SimulatedAnnealing schedules: [] {
 	 * Initial enzymatic budget allocation.
 	 */
 	list<float> init_budget;
+
+	/**
+	 * Indexes of actions used in the optimisation (when the enzymatic activity
+	 * of an action is fixed, it is ignored in the optimisation process).
+	 */
 	list<int> budget_indexes;
-	
-	// TODO: define indexes used in neighbor here to allow T_amino = 0 and others
 	
 	init {
 		T_init <- float(length(objectives));
@@ -625,6 +645,8 @@ species SimulatedAnnealing schedules: [] {
 		}
 		init_budget <- [0.0, 0.0, 0.0, 0.0];
 		loop i over: budget_indexes {
+			// The budget is initially distributed equally between all possible
+			// actions
 			init_budget[i] <- 1.0 / length(budget_indexes);
 		}
 		
@@ -639,6 +661,7 @@ species SimulatedAnnealing schedules: [] {
 		float e_new <- E(s_new);
 		if e_new < e or rnd(1.0) < exp(-(e_new - e) / T) {
 			ask s {
+				// Clears current state
 				ask enzymes {
 					do die;
 				}
@@ -650,10 +673,12 @@ species SimulatedAnnealing schedules: [] {
 				}
 				do die;
 			}
+			// Update current state
 			s <- s_new;
 			e <- e_new;
 		} else {
 			ask s_new {
+				// Discards new state
 				ask enzymes {
 					do die;
 				}
@@ -684,6 +709,9 @@ species SimulatedAnnealing schedules: [] {
 		}
 	}
 	
+	/**
+	 * Generates a random neighbour of the current state.
+	 */
 	SimulatedAnnealingState neighbour {
 		SimulatedAnnealingState result;
 		
@@ -693,8 +721,8 @@ species SimulatedAnnealing schedules: [] {
 		}
 
 		// The indexes list is shuffled to determine in which order each component will vary.
-		// This the total budget (1.0) is fixed, this allows a fair access to the budget for
-		// each component (i.e. the last component does not always get the last part left after
+		// Since the total budget (1.0) is fixed, this allows a fair access to the budget for
+		// each action (i.e. the last component does not always get the last part left after
 		// all other get their own part).
 		list<int> indexes <- shuffle(budget_indexes);
 		float delta <- 0.1;
@@ -711,13 +739,21 @@ species SimulatedAnnealing schedules: [] {
 		return result;
 	}
 	
+	/**
+	 * Energy of the system to minimize.
+	 */
 	float E(
 		SimulatedAnnealingState state
 	) {
+		// Multi-objective function to minimize
 		return sum(objectives collect (each.weight * each.value(state)^2));
 	}
 }
 
+/**
+ * Objective that is minimised when the available CN rate is exactly equal to
+ * the requested CN rate.
+ */
 species ExactCN parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
 		float N_avail <- state.N_avail();
@@ -734,6 +770,10 @@ species ExactCN parent: Objective schedules: [] {
 	}
 }
 
+/**
+ * Objective that is minimised when the available CN rate is at most equal to
+ * the requested CN rate.
+ */
 species MaxCN parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
 		float N_avail <- state.N_avail();
@@ -751,6 +791,10 @@ species MaxCN parent: Objective schedules: [] {
 	}
 }
 
+/**
+ * Objective that is minimised when the available CP rate is exactly equal to
+ * the requested CP rate.
+ */
 species ExactCP parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
 		float P_avail <- state.P_avail();
@@ -767,6 +811,10 @@ species ExactCP parent: Objective schedules: [] {
 	}
 }
 
+/**
+ * Objective that is minimised when the available CP rate is at most equal to
+ * the requested CP rate.
+ */
 species MaxCP parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
 		float P_avail <- state.P_avail();
@@ -784,6 +832,10 @@ species MaxCP parent: Objective schedules: [] {
 	}
 }
 
+/**
+ * Objective minimised when the decomposition from recalcitrant C to labile C is
+ * maximised.
+ */
 species MaxRecalC parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
 		// Assumes max_enzymes.T_recal > 0.0. Otherwise, this objective should not be used.
@@ -800,6 +852,10 @@ species MaxRecalC parent: Objective schedules: [] {
 	}
 }
 
+/**
+ * Objective minimised when the decomposition from labile C to C dam is
+ * maximised.
+ */
 species MaxLabileC parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
 		float result;
@@ -816,6 +872,10 @@ species MaxLabileC parent: Objective schedules: [] {
 	}
 }
 
+/**
+ * Objective minimised when the decomposition from labile and recalcitrant P to
+ * P dam is maximised.
+ */
 species MaxP parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
 		float result;
@@ -832,6 +892,10 @@ species MaxP parent: Objective schedules: [] {
 	}
 }
 
+/**
+ * Objective minimised when the decomposition from labile N to N dam is
+ * maximised.
+ */
 species MaxN parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
 		float result;
@@ -847,14 +911,23 @@ species MaxN parent: Objective schedules: [] {
 	}
 }
 
+/**
+ * Experiments that allows to test the simulated annealing core.
+ * 
+ * An example problem is instantiated, and the visualisation shows the evolution
+ * of E at each step of the optimisation. If the algorithm works well, E should
+ * converge to a minimal value as the optimisation step increases.
+ */
 experiment TestSimulatedAnnealing type: gui {
 	SimulatedAnnealing simulated_annealing;
 	
 	init {
 		float C_N_microbes <- 10.0;
-		float C_N_labile <- 10.0;
-		float C_P_microbes <- 20.0;
-		float C_P_labile <- 20.0;
+		float C_N_labile <- 20.0;
+		float C_N_recal <- 10.0;
+		float C_P_microbes <- 17.0;
+		float C_P_labile <- 34.0;
+		float C_P_recal <- 20.0;
 		
 		TestSimulatedAnnealing current_experiment <- self;
 		
@@ -870,10 +943,10 @@ experiment TestSimulatedAnnealing type: gui {
 		
 		Enzymes max_enzymes;
 		create Enzymes with: [
-			T_cellulolytic::1 #gram / #gram / #d,
-			T_amino::1 #gram / #gram / #d,
-			T_P::1 #gram / #gram / #d,
-			T_recal::0.2 #gram / #gram / #d
+			T_cellulolytic::0.4 #gram / #gram / #d,
+			T_amino::0.08 #gram / #gram / #d,
+			T_P::0.02 #gram / #gram / #d,
+			T_recal::0.08 #gram / #gram / #d
 		] {
 			max_enzymes <- self;
 		}
@@ -884,12 +957,12 @@ experiment TestSimulatedAnnealing type: gui {
 		}
 		create DecompositionProblem with: [
 			dt::1#d,
-			C_labile::200#gram,
-			N_labile::(200#gram/C_N_labile),
-			P_labile::(200#gram/C_P_labile),
-			C_recal::0.0,
-			N_recal::0.0,
-			P_recal::0.0,
+			C_labile::0.1#gram,
+			N_labile::0.1#gram/C_N_labile,
+			P_labile::0.1#gram/C_P_labile,
+			C_recal::1#gram,
+			N_recal::1#gram/C_N_recal,
+			P_recal::1#gram/C_P_recal,
 			C_DOM::0.0,
 			P_DOM::0.0,
 			N_DOM::0.0,
@@ -946,7 +1019,11 @@ experiment TestSimulatedAnnealing type: gui {
 	}
 }
 
-experiment ExpEnzymaticActivity type: gui {
+/**
+ * An experiment with many user defined parameters that allows to test the
+ * behaviour of the enzymatic activity model in specific configurations.
+ */
+experiment EnzymaticActivityWorkbench type: gui {
 	string C_N_objective;
 	float C_N_objective_weight;
 	string C_P_objective;
@@ -961,15 +1038,26 @@ experiment ExpEnzymaticActivity type: gui {
 	float P_objective_weight;
 	list<Objective> objectives;
 
-	float T_cellulolytic;
-	float T_amino;
-	float T_P;
-	float T_recal;
-	float amino_CN;
+	float min_T_cellulolytic;
+	float min_T_amino;
+	float min_T_P;
+	float min_T_recal;
+	float max_T_cellulolytic;
+	float max_T_amino;
+	float max_T_P;
+	float max_T_recal;
+	
 	float C_microbes;
-	float C_dom;
 	float C_N_microbes;
 	float C_P_microbes;
+	
+	float amino_CN;
+	float alpha_P_e_r;
+	float alpha_C_e_P;
+	float alpha_P_e_P;
+	float beta_cellulolytic_amino;
+	float beta_cellulolytic_P;
+	float beta_amino_P;
 	
 	float C_labile_init;
 	float C_labile_final;
@@ -978,6 +1066,8 @@ experiment ExpEnzymaticActivity type: gui {
 	float C_P_labile_init;
 	float C_P_labile_final;
 	
+	float C_dom_init;
+	float C_dom_final;
 	float C_N_dom_init;
 	float C_N_dom_final;
 	float C_P_dom_init;
@@ -987,29 +1077,48 @@ experiment ExpEnzymaticActivity type: gui {
 	float C_recal_final;
 	
 	int steps;
+	bool show_max_rates;
 	
 	parameter "C/N" category: "Objectives" var: C_N_objective init: "Max C/N" among: ["none", "Exact C/N", "Max C/N"];
 	parameter "C/N weight" category: "Objectives" var: C_N_objective_weight init: 10.0;
 	parameter "C/P" category: "Objectives" var: C_P_objective init: "Max C/P" among: ["none", "Exact C/P", "Max C/P"];
 	parameter "C/P weight" category: "Objectives" var: C_P_objective_weight init: 10.0;
 	parameter "C labile" category: "Objectives" var: C_labile_objective init: "Max labile C" among: ["none", "Max labile C"];
-	parameter "C labile weight" category: "Objectives" var: C_labile_objective_weight init: 10.0;
+	parameter "C labile weight" category: "Objectives" var: C_labile_objective_weight init: 5.0;
 	parameter "C recal" category: "Objectives" var: C_recal_objective init: "Max recal C" among: ["none", "Max recal C"];
 	parameter "C recal weight" category: "Objectives" var: C_recal_objective_weight init: 1.0;
-	parameter "N" category: "Objectives" var: N_objective init: "none" among: ["none", "Max N"];
-	parameter "N weight" category: "Objectives" var: N_objective_weight init: 1.0;
-	parameter "P" category: "Objectives" var: P_objective init: "none" among: ["none", "Max P"];
-	parameter "P weight" category: "Objectives" var: P_objective_weight init: 1.0;
+	parameter "N" category: "Objectives" var: N_objective init: "Max N" among: ["none", "Max N"];
+	parameter "N weight" category: "Objectives" var: N_objective_weight init: 5.0;
+	parameter "P" category: "Objectives" var: P_objective init: "Max P" among: ["none", "Max P"];
+	parameter "P weight" category: "Objectives" var: P_objective_weight init: 5.0;
 	
-	parameter "Max cellulolytic (gC/gM/d)" category: "Constants" var: T_cellulolytic init: 0.1;
-	parameter "Max amino (gC/gM/d)" category: "Constants" var: T_amino init: 0.1;
-	parameter "Max P (gC/gM/d)" category: "Constants" var: T_P init: 0.1;
-	parameter "Max recalcitrant (gC/gM/d)" category: "Constants" var: T_recal init: 0.0;
-	parameter "Amino CN" category: "Constants" var: amino_CN init: 6.0;
-	parameter "C microbes (g)" category: "Constants" var: C_microbes init: 1.0;
-	parameter "C dom (g)" category: "Constants" var: C_dom init: 1.0;
-	parameter "Microbe population's C/N" category: "Constants" var:C_N_microbes init:10.0;
-	parameter "Microbe population's C/P" category: "Constants" var:C_P_microbes init:20.0;
+	parameter "Min cellulolytic (gC/gM/d)" category: "Microbe population" var: min_T_cellulolytic init: 0.0;
+	parameter "Min amino (gC/gM/d)" category: "Microbe population" var: min_T_amino init: 0.0;
+	parameter "Min P (gC/gM/d)" category: "Microbe population" var: min_T_P init: 0.0;
+	parameter "Min recalcitrant (gC/gM/d)" category: "Microbe population" var: min_T_recal init: 0.0;
+	parameter "Max cellulolytic (gC/gM/d)" category: "Microbe population" var: max_T_cellulolytic init: 0.4;
+	parameter "Max amino (gC/gM/d)" category: "Microbe population" var: max_T_amino init: 0.08;
+	parameter "Max P (gC/gM/d)" category: "Microbe population" var: max_T_P init: 0.02;
+	parameter "Max recalcitrant (gC/gM/d)" category: "Microbe population" var: max_T_recal init: 0.08;
+
+	parameter "C microbes (g)" category: "Microbe population" var: C_microbes init: 1.0;
+	parameter "Microbe population's C/N" category: "Microbe population" var:C_N_microbes init:10.0;
+	parameter "Microbe population's C/P" category: "Microbe population" var:C_P_microbes init:17.0;
+		
+	parameter "Amino CN" category: "Constants" var: amino_CN init: 4.0;
+	parameter "Alpha P eR" category: "Constants" var: alpha_P_e_r init: 0.001;
+	parameter "Alpha C eP" category: "Constants" var: alpha_C_e_P init: 0.1;
+	parameter "Alpha P eP" category: "Constants" var: alpha_P_e_P init: 0.9;
+	parameter "Beta cellulolytic amino" category: "Constants" var: beta_cellulolytic_amino init: 0.5;
+	parameter "Beta cellulolytic P" category: "Constants" var: beta_cellulolytic_P init: 0.5;
+	parameter "Beta amino P" category: "Constants" var: beta_amino_P init: 0.5;
+		
+	parameter "Initial C dom (g)" category: "DOM" var: C_dom_init init: 0.0;
+	parameter "Final C dom (g)" category: "DOM" var: C_dom_final init: 0.0;
+	parameter "Initial C/N dom" category: "DOM" var: C_N_dom_init init: 10.0;
+	parameter "Final C/N dom" category: "DOM" var:C_N_dom_final init:10.0;
+	parameter "Initial C/P dom" category: "DOM" var:C_P_dom_init init:17.0;
+	parameter "Final C/P dom" category: "DOM" var:C_P_dom_final init:17.0;
 	
 	parameter "Initial C (labile, g)" category: "Labile OM" var: C_labile_init init: 1.0;
 	parameter "Final C (labile, g)" category: "Labile OM" var: C_labile_final init: 1.0;
@@ -1018,20 +1127,14 @@ experiment ExpEnzymaticActivity type: gui {
 	parameter "Initial C/P (labile)" category: "Labile OM" var:C_P_labile_init init:20.0;
 	parameter "Final C/P (labile)" category: "Labile OM" var:C_P_labile_final init:20.0;
 	
-	parameter "Initial C/N (DOM)" category: "DOM" var: C_N_dom_init init: 0.5 ;
-	parameter "Final C/N (DOM)" category: "DOM" var:C_N_dom_final init:20.0;
-	parameter "Initial C/P (DOM)" category: "DOM" var:C_P_dom_init init:20.0;
-	parameter "Final C/P (DOM)" category: "DOM" var:C_P_dom_final init:20.0;
-	
 	parameter "Initial C (recalcitrant, g)" category: "Recalcitrant OM" var: C_recal_init init: 0.0;
 	parameter "Final C (recalcitrant, g)" category: "Recalcitrant OM" var: C_recal_final init: 0.0;
 	
 	SimulatedAnnealing simulated_annealing;
 	parameter "Count of steps" category: "Experiment" var: steps init: 100;
+	parameter "Show max enzymatic rates" category: "Experiment" var:show_max_rates init: false;
 	
 	init {
-//		write "Labile C threshold: " + C_microbes * T_cellulolytic #gram/#h * 1#h / #gram;
-//		write "Recalcitrant C threshold: " + C_microbes * T_recal #gram/#h * 1#h / #gram;
 		Objective _C_N_objective;
 		if(C_N_objective = "Exact C/N") {
 			create ExactCN {
@@ -1123,23 +1226,23 @@ experiment ExpEnzymaticActivity type: gui {
 		
 		Enzymes min_enzymes;
 		create Enzymes with: [
-			T_cellulolytic::0.0,
-			T_amino::0.0,
-			T_P::0.0,
-			T_recal::0.0
+			T_cellulolytic::min_T_cellulolytic #gram/#gram/#d,
+			T_amino::min_T_amino #gram/#gram/#d,
+			T_P::min_T_P #gram/#gram/#d,
+			T_recal::min_T_recal #gram/#gram/#d
 		] {
 			min_enzymes <- self;
 		}
 		Enzymes max_enzymes;
 		create Enzymes with: [
-			T_cellulolytic::T_cellulolytic #gram/#gram/#d,
-			T_amino::T_amino #gram/#gram/#d,
-			T_P::T_P #gram/#gram/#d,
-			T_recal::T_recal #gram/#gram/#d
+			T_cellulolytic::max_T_cellulolytic #gram/#gram/#d,
+			T_amino::max_T_amino #gram/#gram/#d,
+			T_P::max_T_P #gram/#gram/#d,
+			T_recal::max_T_recal #gram/#gram/#d
 		] {
 			max_enzymes <- self;
 		}
-		ExpEnzymaticActivity exp <- self;
+		EnzymaticActivityWorkbench exp <- self;
 		
 		float total_C_labile <- (exp.C_labile_init + cycle * (exp.C_labile_final - exp.C_labile_init)/exp.steps)#gram;
 		float total_N_labile;
@@ -1156,18 +1259,38 @@ experiment ExpEnzymaticActivity type: gui {
 		}
 		float total_C_recal <- (exp.C_recal_init + cycle * (exp.C_recal_final - exp.C_recal_init)/exp.steps)#gram;
 		
+		float C_dom <- (exp.C_dom_init + cycle * (exp.C_dom_final - exp.C_dom_init)/exp.steps)#gram;
+		float N_dom;
+		if(exp.C_N_dom_final < #infinity and exp.C_N_dom_init < #infinity) {
+			N_dom <- C_dom/(exp.C_N_dom_init + cycle * (exp.C_N_dom_final - exp.C_N_dom_init)/exp.steps);
+		} else {
+			N_dom <- 0.0;	
+		}
+		float P_dom;
+		if(exp.C_P_dom_final < #infinity and exp.C_P_dom_init < #infinity) {
+			P_dom <- C_dom/(exp.C_P_dom_init + cycle * (exp.C_P_dom_final - exp.C_P_dom_init)/exp.steps);
+		} else {
+			P_dom <- 0.0;
+		}
+		
 		create DecompositionProblem with: [
 			dt::1#d,
 			amino_CN::amino_CN,
+			alpha_P_e_r::alpha_P_e_r,
+			alpha_C_e_P::alpha_C_e_P,
+			alpha_P_e_P::alpha_P_e_P,
+			beta_cellulolytic_amino::beta_cellulolytic_amino,
+			beta_cellulolytic_P::beta_cellulolytic_P,
+			beta_amino_P::beta_amino_P,
 			C_labile::total_C_labile,
 			N_labile::total_N_labile,
 			P_labile::total_P_labile,
 			C_recal::total_C_recal,
 			N_recal::0.0,
 			P_recal::0.0,
-			C_DOM::exp.C_dom#gram,
-			N_DOM::(exp.C_dom#gram/(exp.C_N_dom_init + cycle * (exp.C_N_dom_final - exp.C_N_dom_init)/exp.steps)),
-			P_DOM::(exp.C_dom#gram/(exp.C_P_dom_init + cycle * (exp.C_P_dom_final - exp.C_P_dom_init)/exp.steps)),
+			C_DOM::C_dom,
+			N_DOM::N_dom,
+			P_DOM::P_dom,
 			P_DIM::0.0,
 			N_DIM::0.0
 		] {
@@ -1224,14 +1347,15 @@ experiment ExpEnzymaticActivity type: gui {
 	}
 	
 	output {
-		display "OM" type:2d {
-			chart "OM" type:series style:line {
-//				data "C (labile)" value: sum(SimulatedAnnealing collect each.problem.total_C_labile)/#gram marker:false;
-//				data "N (labile)" value: sum(SimulatedAnnealing collect each.problem.total_N_labile)/#gram marker:false;
-//				data "P (labile)" value: sum(SimulatedAnnealing collect each.problem.total_P_labile)/#gram marker:false;
-//				data "C (recal)" value: sum(SimulatedAnnealing collect each.problem.total_C_recal)/#gram marker:false;
-//				data "N (recal)" value: sum(SimulatedAnnealing collect each.problem.total_N_recal)/#gram marker:false;
-//				data "P (recal)" value: sum(SimulatedAnnealing collect each.problem.total_P_recal)/#gram marker:false;
+		display "Labile" type:2d {
+			chart "Labile" type:series style:line {
+				data "C (labile)" value: sum(SimulatedAnnealing collect each.problem.decomposition_problem.C_labile)/#gram marker:false;
+				data "N (labile)" value: sum(SimulatedAnnealing collect each.problem.decomposition_problem.N_labile)/#gram marker:false;
+				data "P (labile)" value: sum(SimulatedAnnealing collect each.problem.decomposition_problem.P_labile)/#gram marker:false;
+			}
+		}
+		display "DAM" type:2d {
+			chart "DAM" type:series style:line {
 				data "C (avail)" value: sum(SimulatedAnnealing collect each.s.C_avail())/#gram marker:false;
 				data "N (avail)" value: sum(SimulatedAnnealing collect each.s.N_avail())/#gram marker:false;
 				data "P (avail)" value: sum(SimulatedAnnealing collect each.s.P_avail())/#gram marker:false;
@@ -1243,10 +1367,12 @@ experiment ExpEnzymaticActivity type: gui {
 				data "T_amino" value: sum(SimulatedAnnealing collect (each.s.enzymes.T_amino / (#gram / #gram / #d))) marker:false;
 				data "T_P" value: sum(SimulatedAnnealing collect (each.s.enzymes.T_P / (#gram / #gram / #d))) marker:false;
 				data "T_recal" value: sum(SimulatedAnnealing collect (each.s.enzymes.T_recal / (#gram / #gram / #d))) marker:false;
-				data "T_cellulolytic (max)" value: sum(SimulatedAnnealing collect (each.problem.max_enzymes.T_cellulolytic / (#gram / #gram / #d))) marker:false;
-				data "T_amino (max)" value: sum(SimulatedAnnealing collect (each.problem.max_enzymes.T_amino / (#gram / #gram / #d))) marker:false;
-				data "T_P (max)" value: sum(SimulatedAnnealing collect (each.problem.max_enzymes.T_P / (#gram / #gram / #d))) marker:false;
-				data "T_recal (max)" value: sum(SimulatedAnnealing collect (each.problem.max_enzymes.T_recal / (#gram / #gram / #d))) marker:false;
+				if show_max_rates {
+					data "T_cellulolytic (max)" value: sum(SimulatedAnnealing collect (each.problem.max_enzymes.T_cellulolytic / (#gram / #gram / #d))) marker:false;
+					data "T_amino (max)" value: sum(SimulatedAnnealing collect (each.problem.max_enzymes.T_amino / (#gram / #gram / #d))) marker:false;
+					data "T_P (max)" value: sum(SimulatedAnnealing collect (each.problem.max_enzymes.T_P / (#gram / #gram / #d))) marker:false;
+					data "T_recal (max)" value: sum(SimulatedAnnealing collect (each.problem.max_enzymes.T_recal / (#gram / #gram / #d))) marker:false;			
+				}
 			}
 		}
 		display "C/N" type:2d {
