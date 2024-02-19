@@ -8,7 +8,7 @@
 
 model camisoladapter
 
-import "../camisol/camisol.gaml"
+import "../cammisol/cammisol.gaml"
 
 global {
 	float N_P_dim_available_to_plant <- 0.08;
