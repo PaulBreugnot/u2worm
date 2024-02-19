@@ -9,7 +9,7 @@
 model dam
 
 import "organic_particle.gaml"
-import "enzymatic_activity.gaml"
+import "enzymatic_activity/enzymatic_activity.gaml"
 
 global {
 	/**

@@ -10,7 +10,9 @@ model enzymatic_activity_exploration
 import "../microbes.gaml"
 
 global {
-	/* Parameters to explore */
+	/* 
+	 * Default values for all parameters to explore.
+	 */
 	float C_labile <- 0.1#gram;
 	float CN_labile <- 20.0;
 	float CP_labile <- 34.0;
@@ -23,8 +25,6 @@ global {
 	
 	OrganicParticle organic_particle;
 	PoreParticle pore_particle;
-	/** Insert the global definitions, variables and actions here */
-	
 	
 	map<species<MicrobePopulation>, DataOutput> output;
 	
