@@ -604,19 +604,28 @@ species SimulatedAnnealing schedules: [] {
 	 * Initial enzymatic budget allocation.
 	 */
 	list<float> init_budget;
-	int budget_size;
+	list<int> budget_indexes;
 	
 	// TODO: define indexes used in neighbor here to allow T_amino = 0 and others
 	
 	init {
 		T_init <- float(length(objectives));
 		T <- T_init;
-		if(problem.max_enzymes.T_recal > 0.0) {
-			init_budget <- [1.0/4, 1.0/4, 1.0/4, 1.0/4];
-			budget_size <- 4;
-		} else {
-			init_budget <- [1.0/3, 1.0/3, 1.0/3, 0.0];
-			budget_size <- 3; // So the last budget stays to 0
+		if(problem.max_enzymes.T_recal - problem.min_enzymes.T_recal > 0.0) {
+			add T_RECALCITRANT_BUDGET to: budget_indexes;
+		}
+		if(problem.max_enzymes.T_cellulolytic - problem.min_enzymes.T_cellulolytic > 0.0) {
+			add T_CELLULOLYTIC_BUDGET to: budget_indexes;
+		}
+		if(problem.max_enzymes.T_amino - problem.min_enzymes.T_amino > 0.0) {
+			add T_AMINO_BUDGET to: budget_indexes;
+		}
+		if(problem.max_enzymes.T_P - problem.min_enzymes.T_P > 0.0) {
+			add T_P_BUDGET to: budget_indexes;
+		}
+		init_budget <- [0.0, 0.0, 0.0, 0.0];
+		loop i over: budget_indexes {
+			init_budget[i] <- 1.0 / length(budget_indexes);
 		}
 		
 		create SimulatedAnnealingState with:[problem::problem, budget::init_budget] {
@@ -687,11 +696,7 @@ species SimulatedAnnealing schedules: [] {
 		// This the total budget (1.0) is fixed, this allows a fair access to the budget for
 		// each component (i.e. the last component does not always get the last part left after
 		// all other get their own part).
-		list<int> indexes;
-		loop i from: 0 to: budget_size-1 {
-			add i to: indexes;
-		}
-		indexes <- shuffle(indexes);
+		list<int> indexes <- shuffle(budget_indexes);
 		float delta <- 0.1;
 		float range <- 1.0;
 		loop i from: 0 to: length(indexes)-2 {
