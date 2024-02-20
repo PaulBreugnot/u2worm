@@ -154,21 +154,20 @@ global {
 		
 	reflex rain when: rnd(1.0) < (1/rain_period)*local_step {
 //		write "It's raining today!";
-		map<string, MicrobePopulation> extracted_populations;
+		map<species<MicrobePopulation>, MicrobePopulation> extracted_populations;
 		loop bacteria_type over: bacteria_types {
 			create MicrobePopulation with: (
 				C: 0.0, cytosol_C: 0.0,
 				N: 0.0, cytosol_N: 0.0,
-				P: 0.0, cytosol_P: 0.0,
-				bacteria_name: bacteria_type
+				P: 0.0, cytosol_P: 0.0
 			) {
-				extracted_populations[self.bacteria_name] <- self;
+				extracted_populations[bacteria_type] <- self;
 			}
 		}
 		
 		ask PoreParticle {
 			ask populations {
-				ask extracted_populations[self.bacteria_name] {
+				ask extracted_populations[species(self)] {
 					float extracted_C <- myself.C * rain_diffusion_rate;
 					self.C <- self.C + extracted_C;
 					myself.C <- myself.C - extracted_C;
@@ -198,7 +197,7 @@ global {
 		
 		ask PoreParticle {
 			ask populations {
-				MicrobePopulation extracted_pop <- extracted_populations[self.bacteria_name];
+				MicrobePopulation extracted_pop <- extracted_populations[species(self)];
 				self.C <- self.C + extracted_pop.C/length(PoreParticle);
 				self.N <- self.N + extracted_pop.N/length(PoreParticle);
 				self.P <- self.P + extracted_pop.P/length(PoreParticle);

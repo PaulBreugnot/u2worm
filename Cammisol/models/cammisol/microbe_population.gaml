@@ -46,13 +46,10 @@ global {
 
 species MicrobePopulation
 {
-	string bacteria_name;
 	float respiration_rate <- 0.5;
 	float division_enzyme_rate <- 0.0;
 	
 	float dividing_time <- 0.0;
-	//taux labile récalcitrant
-	float L_R_enzyme_rate; // labile_recalcitrante_rate
 	float C_N <- 10.0;
 	float C_P <- 17.0;
 	
