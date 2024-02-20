@@ -213,11 +213,6 @@ global {
 			}
 		}
 	}
-
-	reflex increase_time {
-		local_cycle <- local_cycle+1;
-		local_time <- local_cycle * local_step;
-	}
 }
 
 grid Particle width: grid_size height: grid_size neighbors: 4 {
