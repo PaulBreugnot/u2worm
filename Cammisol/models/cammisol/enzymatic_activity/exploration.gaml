@@ -1,9 +1,8 @@
 /**
-* Name: enzymesactivityexploration
-* Based on the internal skeleton template. 
-* Author: pbreugno
-* Tags: 
-*/
+ * The purpose of this model is to explore the reactions of the enzymatic activity in different scenarios, that correspond to different environmental conditions.
+ * 
+ * It a standalone and experiment only model that does not add any feature to the cammisol or enzymatic activity models.
+ */
 
 model enzymatic_activity_exploration
 
@@ -12,6 +11,7 @@ import "../microbes.gaml"
 global {
 	/* 
 	 * Default values for all parameters to explore.
+	 * Values are set and explored using experiment parameters.
 	 */
 	float C_labile <- 0.1#gram;
 	float CN_labile <- 20.0;
@@ -23,9 +23,18 @@ global {
 	float CN_dom <- 10.0;
 	float CP_dom <- 17.0;
 	
+	/**
+	 * A single organic particle is decomposed.
+	 */
 	OrganicParticle organic_particle;
+	/**
+	 * A single dam is considered in the environment.
+	 */
 	PoreParticle pore_particle;
 	
+	/**
+	 * Output for each species (Y-A-S strategies).
+	 */
 	map<species<MicrobePopulation>, DataOutput> output;
 	
 	init {
@@ -46,28 +55,29 @@ global {
 				world.pore_particle <- self;
 			}
 		}
+
 		create Y_Strategist with: [
-			C: 1#gram
+			C: 1#gram,
+			C_N: 10.0,
+			C_P: 17.0,
+			awake_population: 1.0
 		] {
-			C_N <- 10.0;
-			C_P <- 17.0;
-			awake_population <- 1.0;
 		}
 		
 		create A_Strategist with: [
-			C: 1#gram
+			C: 1#gram,
+			C_N: 10.0,
+			C_P: 17.0,
+			awake_population: 1.0
 		] {
-			C_N <- 10.0;
-			C_P <- 17.0;
-			awake_population <- 1.0;
 		}
 		
 		create S_Strategist with: [
-			C: 1#gram
+			C: 1#gram,
+			C_N: 10.0,
+			C_P: 17.0,
+			awake_population: 1.0
 		] {
-			C_N <- 10.0;
-			C_P <- 17.0;
-			awake_population <- 1.0;
 		}
 		
 		loop s over: [Y_Strategist, A_Strategist, S_Strategist] {
@@ -134,7 +144,10 @@ global {
 	}
 }
 
-species DataOutput {
+/**
+ * Data structure used to store enzymatic activities and decomposition results for each species.
+ */
+species DataOutput schedules:[] {
 	float T_r;
 	float T_C;
 	float T_N;
@@ -154,11 +167,23 @@ species DataOutput {
 	float P_avail;
 }
 
+/**
+ * Base virtual experiment that define outputs and displays.
+ */
 experiment Explore {
 	method exploration;
+	/**
+	 * Name of the experimentation used to name the CSV output file.
+	 */
 	string exp_name;
-	string plot <- "N" among: ["N", "P", "C"];
+	/**
+	 * Parameters used to plot P or N decomposition, depending on the parameter currently explored.
+	 */
+	string plot <- "N" among: ["N", "P"];
 	
+	/**
+	 * Initialise CSV headers.
+	 */
 	action init_header {
 		list<string> header <- ["n", x_label()];
 		loop strategy over: ["Y", "A", "S"] {
@@ -183,7 +208,13 @@ experiment Explore {
 		save header header:false rewrite: true to: exp_name + ".csv" format: "csv";
 	}
 	
+	/**
+	 * Name of the explored parameter (e.g. C/N or C/P).
+	 */
 	string x_label virtual: true;
+	/**
+	 * Returns the current value of the explored parameter.
+	 */
 	float x_param(enzymatic_activity_exploration_model sim) virtual:true;
 	
 	reflex {
@@ -281,7 +312,10 @@ experiment Explore {
 	}
 }
 
-experiment ExploreCP_labile parent:Explore type:batch until: cycle>0 repeat: 20 {
+/**
+ * Base virtual experiment used to explore the variation of the labile C/P rate, with an empty dam.
+ */
+experiment ExploreCP_labile parent:Explore {
 	float min_CP_labile <- CP_labile;
 	float max_CP_labile <- CP_labile;
 	parameter "CP" var: CP_labile min: min_CP_labile max: max_CP_labile step: 1.0;
@@ -298,6 +332,9 @@ experiment ExploreCP_labile parent:Explore type:batch until: cycle>0 repeat: 20 
 	}
 }
 
+/**
+ * Experiment used to explore the labile C/P rate with an "high" labile C availability of 1 gram.
+ */
 experiment ExploreCP_High_C_labile type:batch parent:ExploreCP_labile until: cycle>0 repeat: 20 {
 	init {
 		min_CP_labile <- 1.0;
@@ -308,6 +345,9 @@ experiment ExploreCP_High_C_labile type:batch parent:ExploreCP_labile until: cyc
 	}
 }
 
+/**
+ * Experiment used to explore the labile C/P rate with a "low" labile C availability of 0.1 gram.
+ */
 experiment ExploreCP_Low_C_labile type:batch parent:ExploreCP_labile until: cycle>0 repeat: 20 {
 	init {
 		min_CP_labile <- 1.0;
@@ -318,7 +358,10 @@ experiment ExploreCP_Low_C_labile type:batch parent:ExploreCP_labile until: cycl
 	}
 }
 
-experiment ExploreCN_labile parent:Explore type:batch until:true {
+/**
+ * Base virtual experiment used to explore the variation of the labile C/N rate, with an empty dam.
+ */
+experiment ExploreCN_labile parent:Explore {
 	float min_CN_labile <- CN_labile;
 	float max_CN_labile <- CN_labile;
 	
@@ -336,6 +379,9 @@ experiment ExploreCN_labile parent:Explore type:batch until:true {
 	}
 }
 
+/**
+ * Experiment used to explore the labile C/N rate with an "high" labile C availability of 1 gram.
+ */
 experiment ExploreCN_High_C_labile type:batch parent:ExploreCN_labile until: cycle>0 repeat: 20 {
 	init {
 		min_CN_labile <- 4.0;
@@ -346,6 +392,9 @@ experiment ExploreCN_High_C_labile type:batch parent:ExploreCN_labile until: cyc
 	}
 }
 
+/**
+ * Experiment used to explore the labile C/N rate with a "low" labile C availability of 0.1 gram.
+ */
 experiment ExploreCN_Low_C_labile type:batch parent:ExploreCN_labile until: cycle>0 repeat: 20 {
 	init {
 		min_CN_labile <- 4.0;
@@ -356,6 +405,9 @@ experiment ExploreCN_Low_C_labile type:batch parent:ExploreCN_labile until: cycl
 	}
 }
 
+/**
+ * Base virtual experiment used to explore the variation of the dom C/N rate.
+ */
 experiment ExploreCN_dom parent:Explore type:batch until:cycle > 0 repeat: 20 {
 	float min_CN_dom <- CN_dom;
 	float max_CN_dom <- CN_dom;
@@ -380,6 +432,9 @@ experiment ExploreCN_dom parent:Explore type:batch until:cycle > 0 repeat: 20 {
 	}
 }
 
+/**
+ * Base virtual experiment used to explore the variation of the dom C/P rate.
+ */
 experiment ExploreCP_dom parent:Explore type:batch until:cycle > 0 repeat: 20 {
 	float min_CP_dom <- CP_dom;
 	float max_CP_dom <- CP_dom;

@@ -128,19 +128,6 @@ species DecompositionProblem schedules: [] {
 	float dt;
 	
 	/**
-	 * Initial C labile that can be decomposed.
-	 */
-	float C_labile;
-	/**
-	 * Initial N labile that can be decomposed.
-	 */
-	float N_labile;
-	/**
-	 * Initial P labile that can be decomposed.
-	 */
-	float P_labile;
-	
-	/**
 	 * Initial C recalcitrant that can be decomposed.
 	 */
 	float C_recal;
@@ -152,6 +139,19 @@ species DecompositionProblem schedules: [] {
 	 * Initial P recalcitrant that can be decomposed.
 	 */
 	float P_recal;
+	
+	/**
+	 * Initial C labile that can be decomposed.
+	 */
+	float C_labile;
+	/**
+	 * Initial N labile that can be decomposed.
+	 */
+	float N_labile;
+	/**
+	 * Initial P labile that can be decomposed.
+	 */
+	float P_labile;
 	
 	/**
 	 * Initial C available in the DOM.
@@ -259,25 +259,69 @@ species DecompositionProblem schedules: [] {
 		return P_attacked * C_labile / P_labile;
 	}
 	
+	float C_recal(Decomposition decomposition) {
+		return C_recal - decomposition.X_C_recal;
+	}
+	
+	float N_recal(Decomposition decomposition) {
+		return N_recal - decomposition.X_N_recal;
+	}
+	
+	float P_recal(Decomposition decomposition) {
+		return P_recal - decomposition.X_P_recal_to_labile - decomposition.X_P_recal_to_dim;
+	}
+	
+	float C_labile(Decomposition decomposition) {
+		return C_labile + decomposition.X_C_recal - decomposition.X_C_cellulolytic - decomposition.X_C_P - decomposition.X_C_amino;
+	}
+	
+	float N_labile(Decomposition decomposition) {
+		return N_labile + decomposition.X_N_recal - decomposition.X_N_amino;
+	}
+	
+	float P_labile(Decomposition decomposition) {
+		return P_labile + decomposition.X_P_recal_to_labile - decomposition.X_P_labile_to_dom - decomposition.X_P_labile_to_dim;
+	}
+	
+	float C_DOM(Decomposition decomposition) {
+		return C_DOM + decomposition.X_C_cellulolytic + decomposition.X_C_amino + decomposition.X_C_P;
+	}
+	
+	float N_DOM(Decomposition decomposition) {
+		return N_DOM + decomposition.X_N_amino;
+	}
+	
+	float P_DOM(Decomposition decomposition) {
+		return P_DOM + decomposition.X_P_labile_to_dom;
+	}
+	
+	float N_DIM(Decomposition decomposition) {
+		return N_DIM;
+	}
+	
+	float P_DIM(Decomposition decomposition) {
+		return P_DIM + decomposition.X_P_labile_to_dim + decomposition.X_P_recal_to_dim;
+	}
+	
 	/**
 	 * Computes the available C that results from the provided decomposition.
 	 */
 	float C_avail(Decomposition decomposition) {
-		return C_DOM + decomposition.X_C_cellulolytic + decomposition.X_C_amino + decomposition.X_C_P;
+		return C_DOM(decomposition);
 	}
 	
 	/**
 	 * Computes the available N that results from the provided decomposition.
 	 */
 	float N_avail(Decomposition decomposition) {
-		return N_DOM + N_DIM + decomposition.X_N_amino;
+		return N_DOM(decomposition) + N_DIM(decomposition);
 	}
-	
+		
 	/**
 	 * Computes the available P that results from the provided decomposition.
 	 */
 	float P_avail(Decomposition decomposition) {
-		return P_DOM + P_DIM + decomposition.X_P_labile_to_dom + decomposition.X_P_labile_to_dim + decomposition.X_P_recal_to_dim;
+		return P_DOM(decomposition) + P_DIM(decomposition);
 	}
 	
 	/**
@@ -415,7 +459,26 @@ species SimulatedAnnealingState schedules: [] {
 			do decomposition(current_state.weighted_enzymes, current_state.decomposition);
 		}
 	}
-
+	
+	/**
+	 * Computes the estimation of labile C resulting from the current state.
+	 */
+	float C_labile {
+		return problem.decomposition_problem.C_labile(decomposition);
+	}
+	/**
+	 * Computes the estimation of labile N resulting from the current state.
+	 */
+	float N_labile {
+		return problem.decomposition_problem.N_labile(decomposition);
+	}
+	/**
+	 * Computes the estimation of labile P resulting from the current state.
+	 */
+	float P_labile {
+		return problem.decomposition_problem.P_labile(decomposition);
+	}
+	
 	/**
 	 * Computes the estimation of available C obtained in the current state.
 	 */
@@ -911,6 +974,61 @@ species MaxN parent: Objective schedules: [] {
 	}
 }
 
+experiment DecompositionTest type: test autorun: true {
+	test "MassConservation" {
+		DecompositionProblem decomposition_problem;
+		float init_C_recal <- 1#gram;
+		float init_N_recal <- init_C_recal/10;
+		float init_P_recal <- init_C_recal/20;
+		float init_C_labile <- 1#gram;
+		float init_N_labile <- init_C_labile/20;
+		float init_P_labile <- init_C_labile/34;
+		float init_C_dom <- 0.1#gram;
+		float init_N_dom <- init_C_dom/10;
+		float init_P_dom <- init_C_dom/17;
+		float init_N_dim <- 0.01#gram;
+		float init_P_dim <- 0.005#gram;
+		
+		create DecompositionProblem with: [
+			C_recal: init_C_recal,
+			N_recal: init_N_recal,
+			P_recal: init_P_recal,
+			C_labile: init_C_labile,
+			N_labile: init_N_labile,
+			P_labile: init_P_labile,
+			C_DOM: init_C_dom,
+			N_DOM: init_N_dom,
+			P_DOM: init_P_dom,
+			N_DIM: init_N_dim,
+			P_DIM: init_P_dim
+		] {
+			decomposition_problem <- self;
+		}
+		WeightedEnzymes random_enzymes;
+		create WeightedEnzymes with: [
+			T_cellulolytic: 1#gram * rnd(0.0, 0.4#gram/#gram/#d),
+			T_amino: 1#gram * rnd(0.0, 0.08#gram/#gram/#d),
+			T_P: 1#gram * rnd(0.0, 0.02#gram/#gram/#d),
+			T_recal: 1#gram * rnd(0.0, 0.08#gram/#gram/#d)
+		] {
+			random_enzymes <- self;
+		}
+		Decomposition decomposition;
+		create Decomposition {
+			decomposition <- self;
+		}
+		ask decomposition_problem {
+			do decomposition(random_enzymes, decomposition);
+		}
+		assert decomposition_problem.C_recal(decomposition) + decomposition_problem.C_labile(decomposition) + decomposition_problem.C_avail(decomposition)
+			= init_C_recal + init_C_labile + init_C_dom;
+		assert decomposition_problem.N_recal(decomposition) + decomposition_problem.N_labile(decomposition) + decomposition_problem.N_avail(decomposition)
+			= init_N_recal + init_N_labile + init_N_dom + init_N_dim;
+		assert decomposition_problem.P_recal(decomposition) + decomposition_problem.P_labile(decomposition) + decomposition_problem.P_avail(decomposition)
+			= init_P_recal + init_P_labile + init_P_dom + init_P_dim;
+	}
+}
+
 /**
  * Experiments that allows to test the simulated annealing core.
  * 
@@ -1349,9 +1467,9 @@ experiment EnzymaticActivityWorkbench type: gui {
 	output {
 		display "Labile" type:2d {
 			chart "Labile" type:series style:line {
-				data "C (labile)" value: sum(SimulatedAnnealing collect each.problem.decomposition_problem.C_labile)/#gram marker:false;
-				data "N (labile)" value: sum(SimulatedAnnealing collect each.problem.decomposition_problem.N_labile)/#gram marker:false;
-				data "P (labile)" value: sum(SimulatedAnnealing collect each.problem.decomposition_problem.P_labile)/#gram marker:false;
+				data "C (labile)" value: sum(SimulatedAnnealing collect each.s.C_labile())/#gram marker:false;
+				data "N (labile)" value: sum(SimulatedAnnealing collect each.s.N_labile())/#gram marker:false;
+				data "P (labile)" value: sum(SimulatedAnnealing collect each.s.P_labile())/#gram marker:false;
 			}
 		}
 		display "DAM" type:2d {
