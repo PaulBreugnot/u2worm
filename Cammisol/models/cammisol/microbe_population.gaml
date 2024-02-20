@@ -61,7 +61,7 @@ species MicrobePopulation
 	float P <- 1.0;
 	
 	float awake_population <- 0.5;
-	float wakeup_factor <- 0.50;
+	float wakeup_factor <- 0.5;
 	float C_actif -> {C * awake_population};
 	
 	// Mon estomac le cytosol 
@@ -169,17 +169,17 @@ species MicrobePopulation
 		ask decomposition_problem {
 			// Updates initial substrate and available matter
 			// Organic particles around are considered as a single and aggregated organic compartment
-			C_labile <- sum(particles_to_decompose collect each.C_labile);
-			N_labile <- sum(particles_to_decompose collect each.N_labile);
-			P_labile <- sum(particles_to_decompose collect each.P_labile);
-			C_recal <- sum(particles_to_decompose collect each.C_recalcitrant);
-			N_recal <- sum(particles_to_decompose collect each.N_recalcitrant);
-			P_recal <- sum(particles_to_decompose collect each.P_recalcitrant);
-			C_DOM <- dam.dom[2];
-			N_DOM <- dam.dom[0];
-			P_DOM <- dam.dom[1];
-			P_DIM <- dam.dim[1];
-			N_DIM <- dam.dim[0];
+			C_labile_init <- sum(particles_to_decompose collect each.C_labile);
+			N_labile_init <- sum(particles_to_decompose collect each.N_labile);
+			P_labile_init <- sum(particles_to_decompose collect each.P_labile);
+			C_recal_init <- sum(particles_to_decompose collect each.C_recalcitrant);
+			N_recal_init <- sum(particles_to_decompose collect each.N_recalcitrant);
+			P_recal_init <- sum(particles_to_decompose collect each.P_recalcitrant);
+			C_DOM_init <- dam.dom[2];
+			N_DOM_init <- dam.dom[0];
+			P_DOM_init <- dam.dom[1];
+			P_DIM_init <- dam.dim[1];
+			N_DIM_init <- dam.dim[0];
 		}
 		ask enzymatic_activity_problem {
 			// Update required C/N and C/P rate, and microbe biomass

@@ -120,9 +120,9 @@ global {
 				
 				float C_avail; float N_avail; float P_avail;
 				ask myself.decomposition_problem {
-					C_avail <- C_avail(myself);
-					N_avail <- N_avail(myself);
-					P_avail <- P_avail(myself);
+					C_avail <- C_avail_final(myself);
+					N_avail <- N_avail_final(myself);
+					P_avail <- P_avail_final(myself);
 				}
 				
 				output[species(myself)].C_recal <- (world.C_recalcitrant - X_C_recal)/#gram;

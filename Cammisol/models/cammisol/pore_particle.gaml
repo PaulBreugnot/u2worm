@@ -31,121 +31,82 @@ species PoreParticle {
 
 	action decompose {
 		float total_C_labile <- sum(accessible_organics collect each.C_labile);
-		float total_P_labile <- sum(accessible_organics collect each.P_labile);
-		float total_N_labile <- sum(accessible_organics collect each.N_labile);
-		
 		float total_C_recal <- sum(accessible_organics collect each.C_recalcitrant);
-		float total_N_recal <- sum(accessible_organics collect each.N_recalcitrant);
-		float total_P_recal <- sum(accessible_organics collect each.P_recalcitrant);
 		
-		WeightedEnzymes enzymes;
+		WeightedEnzymes total_enzymes;
 		create WeightedEnzymes with: [
 			T_cellulolytic: sum(populations collect (each.C_actif * each.enzymes.T_cellulolytic)),
 			T_amino: sum(populations collect (each.C_actif * each.enzymes.T_amino)),
 			T_P: sum(populations collect (each.C_actif * each.enzymes.T_P)),
 			T_recal: sum(populations collect (each.C_actif * each.enzymes.T_recal))
 		] {
-			enzymes <- self;
+			total_enzymes <- self;
 		}
 		
+		DecompositionProblem decomposition_problem;
+		create DecompositionProblem with: [
+			dt::local_step
+			] {
+			decomposition_problem <- self;
+		}
 		Decomposition decomposition;
-		create DecompositionProblem with:[
-			dt::local_step,
-			C_labile::total_C_labile,
-			P_labile::total_P_labile,
-			N_labile::total_N_labile,
-			C_recal::total_C_recal,
-			N_recal::total_N_recal,
-			P_recal::total_P_recal,
-			C_DOM::dam.dom[2],
-			N_DOM::dam.dom[0],
-			P_DOM::dam.dom[1],
-			P_DIM::dam.dim[1],
-			N_DIM::dam.dim[0]
-		] {
-			create Decomposition {
-				decomposition <- self;
+		create Decomposition {
+			decomposition <- self;
+		}
+		ask accessible_organics {
+			OrganicParticle organic <- self;
+			PoreParticle pore <- myself;
+			
+			WeightedEnzymes local_enzymes;
+			create WeightedEnzymes with: [
+				T_cellulolytic: total_enzymes.T_cellulolytic * C_labile / total_C_labile,
+				T_amino: total_enzymes.T_amino * C_labile / total_C_labile,
+				T_P: total_enzymes.T_P * C_labile / total_C_labile,
+				T_recal: total_enzymes.T_recal * C_recalcitrant / total_C_recal
+			] {
+				total_enzymes <- self;
 			}
-			do decomposition(enzymes, decomposition);
-			ask enzymes {
+			
+			ask decomposition_problem {
+				C_recal_init <- organic.C_recalcitrant;
+				N_recal_init <- organic.N_recalcitrant;
+				P_recal_init <- organic.P_recalcitrant;
+				C_labile_init <- organic.C_labile;
+				N_labile_init <- organic.N_labile;
+				P_labile_init <- organic.P_labile;
+				C_DOM_init <- pore.dam.dom[2];
+				N_DOM_init <- pore.dam.dom[0];
+				P_DOM_init <- pore.dam.dom[1];
+				N_DIM_init <- pore.dam.dim[0];
+				P_DIM_init <- pore.dam.dim[1];
+				
+				do decomposition(local_enzymes, decomposition);
+				
+				organic.C_recalcitrant <- C_recal_final(decomposition);
+				organic.N_recalcitrant <- N_recal_final(decomposition);
+				organic.P_recalcitrant <- P_recal_final(decomposition);
+				
+				organic.C_recalcitrant <- C_labile_final(decomposition);
+				organic.N_recalcitrant <- N_labile_final(decomposition);
+				organic.P_recalcitrant <- P_labile_final(decomposition);
+				
+				pore.dam.dom[2] <- C_DOM_final(decomposition);
+				pore.dam.dom[0] <- N_DOM_final(decomposition);
+				pore.dam.dom[1] <- P_DOM_final(decomposition);
+				
+				pore.dam.dim[0] <- N_DIM_final(decomposition);
+				pore.dam.dim[1] <- P_DIM_final(decomposition);
+			}
+			
+			ask local_enzymes {
 				do die;
 			}
+		}
+		ask total_enzymes {
 			do die;
 		}
-					
-		ask accessible_organics {
-			// Amino activity
-			float X_C_amino <- 0.0; // Necessarily < to C_labile
-			float X_N_amino <- 0.0;
-			
-			// CP activity
-			float X_C_P <- 0.0;
-			float X_P_labile_to_dom <- 0.0;
-			float X_P_labile_to_dim <- 0.0;
-			
-			// C activity
-			float X_C <- 0.0;
-			
-			// Recal activity
-			
-			float X_C_recal <- 0.0;
-			float X_N_recal <- 0.0;
-			float X_P_recal_to_dim <- 0.0;
-			float X_P_recal_to_labile <- 0.0;
-			
-			if(total_C_labile > 0.0) {
-				// Amino activity
-				X_C_amino <- decomposition.X_C_amino * C_labile / total_C_labile; // Necessarily < to C_labile
-				if(total_N_labile > 0.0) {
-					X_N_amino <-decomposition.X_N_amino * N_labile / total_N_labile;
-				}
-				
-				// CP activity
-				X_C_P <- decomposition.X_C_P * C_labile / total_C_labile;
-				if(total_P_labile > 0.0) {
-					X_P_labile_to_dom <- decomposition.X_P_labile_to_dom * P_labile / total_P_labile;
-					X_P_labile_to_dim <- decomposition.X_P_labile_to_dim * P_labile / total_P_labile;	
-				}
-				
-				// C activity
-				X_C <- decomposition.X_C_cellulolytic * C_labile / total_C_labile;
-			}
-			
-			// Recal activity
-			if(total_P_recal > 0.0) {
-				// Phytase action
-				X_P_recal_to_dim <- decomposition.X_P_recal_to_dim * P_recalcitrant / total_P_recal;
-			}
-			
-			// TODO: check the consistency of the recal decomposition. What if all C in an organic particle and all N in an other?
-			if(total_C_recal > 0.0) {
-				X_C_recal <- decomposition.X_C_recal * C_recalcitrant / total_C_recal;
-				// Note: X_N_recal=0 and X_P_recal=0 anyway if there is no recalcitrant C.
-				if(total_N_recal > 0.0) {
-					X_N_recal <- decomposition.X_N_recal * N_recalcitrant / total_N_recal;
-				}
-				if(total_P_recal > 0.0) {
-					X_P_recal_to_dim <- decomposition.X_P_recal_to_dim * P_recalcitrant / total_P_recal;
-					X_P_recal_to_labile <- decomposition.X_P_recal_to_labile * P_recalcitrant / total_P_recal;			
-				}
-			}
-			
-			// Commit fluxes
-			C_labile <- C_labile + X_C_recal - X_C_amino - X_C_P - X_C;
-			N_labile <- N_labile + X_N_recal - X_N_amino;
-			P_labile <- P_labile + X_P_recal_to_labile - X_P_labile_to_dom - X_P_labile_to_dim - X_P_recal_to_dim;
-			
-			C_recalcitrant <- C_recalcitrant - X_C_recal;
-			N_recalcitrant <- N_recalcitrant - X_N_recal;
-			P_recalcitrant <- P_recalcitrant - X_P_recal_to_labile - X_P_recal_to_dim;
-			
-			ask myself.dam {
-				dim[1] <- dim[1] + X_P_recal_to_dim + X_P_labile_to_dim;
-				
-				dom[0] <- dom[0] + X_N_amino;
-				dom[1] <- dom[1] + X_P_labile_to_dom;
-				dom[2] <- dom[2] + X_C_amino + X_C_P + X_C;
-			}
+		ask decomposition_problem {
+			do die;
 		}
 		ask decomposition {
 			do die;

@@ -130,49 +130,49 @@ species DecompositionProblem schedules: [] {
 	/**
 	 * Initial C recalcitrant that can be decomposed.
 	 */
-	float C_recal;
+	float C_recal_init;
 	/**
 	 * Initial N recalcitrant that can be decomposed.
 	 */
-	float N_recal;
+	float N_recal_init;
 	/**
 	 * Initial P recalcitrant that can be decomposed.
 	 */
-	float P_recal;
+	float P_recal_init;
 	
 	/**
 	 * Initial C labile that can be decomposed.
 	 */
-	float C_labile;
+	float C_labile_init;
 	/**
 	 * Initial N labile that can be decomposed.
 	 */
-	float N_labile;
+	float N_labile_init;
 	/**
 	 * Initial P labile that can be decomposed.
 	 */
-	float P_labile;
+	float P_labile_init;
 	
 	/**
 	 * Initial C available in the DOM.
 	 */
-	float C_DOM;
+	float C_DOM_init;
 	/**
 	 * Initial N available in the DOM.
 	 */
-	float N_DOM;
+	float N_DOM_init;
 	/**
 	 * Initial P available in the DOM.
 	 */
-	float P_DOM;
+	float P_DOM_init;
 	/**
 	 * Initial N available in the DIM.
 	 */
-	float N_DIM;
+	float N_DIM_init;
 	/**
 	 * Initial P available in the DIM.
 	 */
-	float P_DIM;
+	float P_DIM_init;
 	
 	/**
 	 * Fixed CN rates of amino acids.
@@ -216,13 +216,29 @@ species DecompositionProblem schedules: [] {
 	 */
 	float beta_amino_P <- 0.5;
 
+	float recal_substrate {
+		return C_recal_init;
+	}
+	
+	float cellulolytic_substrate {
+		return C_labile_init;
+	}
+	
+	float amino_substrate {
+		return min(C_labile_init, N_labile_init * amino_CN);
+	}
+	
+	float P_substrate {
+		return P_labile_init;
+	}
+	
 	/**
 	 * Quantity of carbon requested by the recalcitrant cleavage action.
 	 */
 	float d_C_recal(WeightedEnzymes enzymes) {
 		return min(
 					dt * enzymes.T_recal,
-					C_recal
+					recal_substrate()
 				);
 	}
 	
@@ -232,7 +248,7 @@ species DecompositionProblem schedules: [] {
 	float d_C_cellulolytic(WeightedEnzymes enzymes) {
 		return min(
 					dt * enzymes.T_cellulolytic,
-					C_labile
+					cellulolytic_substrate()
 				);
 	}
 	
@@ -240,12 +256,10 @@ species DecompositionProblem schedules: [] {
 	 * Quantity of carbon requested by the amino acid production action.
 	 */
 	float d_C_amino(WeightedEnzymes enzymes) {
-		float expected_C_amino <- dt * enzymes.T_amino;
-		float expected_N_amino <- expected_C_amino / amino_CN;
-		float limiting_amino <- expected_C_amino > 0 ?
-			min(1.0, C_labile / expected_C_amino, N_labile / expected_N_amino)
-			: 0.0;
-		return expected_C_amino * limiting_amino;
+		return min(
+			dt * enzymes.T_amino,
+			amino_substrate()
+		);
 	}
 	
 	/**
@@ -254,74 +268,74 @@ species DecompositionProblem schedules: [] {
 	float d_C_P(WeightedEnzymes enzymes) {
 		float P_attacked <- min(
 					dt * enzymes.T_P,
-					P_labile
+					P_substrate()
 				);
-		return P_attacked * C_labile / P_labile;
+		return P_attacked * C_labile_init / P_labile_init;
 	}
 	
-	float C_recal(Decomposition decomposition) {
-		return C_recal - decomposition.X_C_recal;
+	float C_recal_final(Decomposition decomposition) {
+		return C_recal_init - decomposition.X_C_recal;
 	}
 	
-	float N_recal(Decomposition decomposition) {
-		return N_recal - decomposition.X_N_recal;
+	float N_recal_final(Decomposition decomposition) {
+		return N_recal_init - decomposition.X_N_recal;
 	}
 	
-	float P_recal(Decomposition decomposition) {
-		return P_recal - decomposition.X_P_recal_to_labile - decomposition.X_P_recal_to_dim;
+	float P_recal_final(Decomposition decomposition) {
+		return P_recal_init - decomposition.X_P_recal_to_labile - decomposition.X_P_recal_to_dim;
 	}
 	
-	float C_labile(Decomposition decomposition) {
-		return C_labile + decomposition.X_C_recal - decomposition.X_C_cellulolytic - decomposition.X_C_P - decomposition.X_C_amino;
+	float C_labile_final(Decomposition decomposition) {
+		return C_labile_init + decomposition.X_C_recal - decomposition.X_C_cellulolytic - decomposition.X_C_P - decomposition.X_C_amino;
 	}
 	
-	float N_labile(Decomposition decomposition) {
-		return N_labile + decomposition.X_N_recal - decomposition.X_N_amino;
+	float N_labile_final(Decomposition decomposition) {
+		return N_labile_init + decomposition.X_N_recal - decomposition.X_N_amino;
 	}
 	
-	float P_labile(Decomposition decomposition) {
-		return P_labile + decomposition.X_P_recal_to_labile - decomposition.X_P_labile_to_dom - decomposition.X_P_labile_to_dim;
+	float P_labile_final(Decomposition decomposition) {
+		return P_labile_init + decomposition.X_P_recal_to_labile - decomposition.X_P_labile_to_dom - decomposition.X_P_labile_to_dim;
 	}
 	
-	float C_DOM(Decomposition decomposition) {
-		return C_DOM + decomposition.X_C_cellulolytic + decomposition.X_C_amino + decomposition.X_C_P;
+	float C_DOM_final(Decomposition decomposition) {
+		return C_DOM_init + decomposition.X_C_cellulolytic + decomposition.X_C_amino + decomposition.X_C_P;
 	}
 	
-	float N_DOM(Decomposition decomposition) {
-		return N_DOM + decomposition.X_N_amino;
+	float N_DOM_final(Decomposition decomposition) {
+		return N_DOM_init + decomposition.X_N_amino;
 	}
 	
-	float P_DOM(Decomposition decomposition) {
-		return P_DOM + decomposition.X_P_labile_to_dom;
+	float P_DOM_final(Decomposition decomposition) {
+		return P_DOM_init + decomposition.X_P_labile_to_dom;
 	}
 	
-	float N_DIM(Decomposition decomposition) {
-		return N_DIM;
+	float N_DIM_final(Decomposition decomposition) {
+		return N_DIM_init;
 	}
 	
-	float P_DIM(Decomposition decomposition) {
-		return P_DIM + decomposition.X_P_labile_to_dim + decomposition.X_P_recal_to_dim;
+	float P_DIM_final(Decomposition decomposition) {
+		return P_DIM_init + decomposition.X_P_labile_to_dim + decomposition.X_P_recal_to_dim;
 	}
 	
 	/**
 	 * Computes the available C that results from the provided decomposition.
 	 */
-	float C_avail(Decomposition decomposition) {
-		return C_DOM(decomposition);
+	float C_avail_final(Decomposition decomposition) {
+		return C_DOM_final(decomposition);
 	}
 	
 	/**
 	 * Computes the available N that results from the provided decomposition.
 	 */
-	float N_avail(Decomposition decomposition) {
-		return N_DOM(decomposition) + N_DIM(decomposition);
+	float N_avail_final(Decomposition decomposition) {
+		return N_DOM_final(decomposition) + N_DIM_final(decomposition);
 	}
 		
 	/**
 	 * Computes the available P that results from the provided decomposition.
 	 */
-	float P_avail(Decomposition decomposition) {
-		return P_DOM(decomposition) + P_DIM(decomposition);
+	float P_avail_final(Decomposition decomposition) {
+		return P_DOM_final(decomposition) + P_DIM_final(decomposition);
 	}
 	
 	/**
@@ -333,27 +347,27 @@ species DecompositionProblem schedules: [] {
 		WeightedEnzymes enzymes,
 		Decomposition result
 	) {
-		if(C_labile > 0) {
+		if(C_labile_init > 0) {
 			// Requested labile C by each action
 			float d_C_cellulolytic <- d_C_cellulolytic(enzymes);
 			float d_C_P <- d_C_P(enzymes);
 			float d_C_amino <- d_C_amino(enzymes);
 			
 			result.X_C_cellulolytic <- d_C_cellulolytic
-				- beta_cellulolytic_amino * d_C_amino * d_C_cellulolytic / C_labile
-				- beta_cellulolytic_P * d_C_P * d_C_cellulolytic / C_labile;
+				- beta_cellulolytic_amino * d_C_amino * d_C_cellulolytic / C_labile_init
+				- beta_cellulolytic_P * d_C_P * d_C_cellulolytic / C_labile_init;
 				
 			result.X_C_amino <- d_C_amino
-				- (1-beta_cellulolytic_amino) * d_C_amino * d_C_cellulolytic / C_labile
-				- beta_amino_P * d_C_amino * d_C_P / C_labile;
+				- (1-beta_cellulolytic_amino) * d_C_amino * d_C_cellulolytic / C_labile_init
+				- beta_amino_P * d_C_amino * d_C_P / C_labile_init;
 
 			float D_C_P <- d_C_P
-				- (1-beta_cellulolytic_P) * d_C_P * d_C_cellulolytic / C_labile
-				- (1-beta_amino_P) * d_C_amino * d_C_P / C_labile;
+				- (1-beta_cellulolytic_P) * d_C_P * d_C_cellulolytic / C_labile_init
+				- (1-beta_amino_P) * d_C_amino * d_C_P / C_labile_init;
 				
 			result.X_N_amino <- result.X_C_amino / amino_CN;
-			if(P_labile > 0) {
-				float D_P <- D_C_P * (P_labile / C_labile);
+			if(P_labile_init > 0) {
+				float D_P <- D_C_P * (P_labile_init / C_labile_init);
 				
 				result.X_P_labile_to_dim <- alpha_P_e_P * D_P;
 						
@@ -374,15 +388,15 @@ species DecompositionProblem schedules: [] {
 			result.X_P_labile_to_dom <- 0.0;
 		}
 
-		if(C_recal > 0) {
+		if(C_recal_init > 0) {
 			result.X_C_recal <- d_C_recal(enzymes);
-			if(N_recal > 0) {
-				result.X_N_recal <- result.X_C_recal * (N_recal / C_recal);
+			if(N_recal_init > 0) {
+				result.X_N_recal <- result.X_C_recal * (N_recal_init / C_recal_init);
 			} else {
 				result.X_N_recal <- 0.0;
 			}
-			if(P_recal > 0) {
-				float D_P_recal <- result.X_C_recal * (P_recal / C_recal);
+			if(P_recal_init > 0) {
+				float D_P_recal <- result.X_C_recal * (P_recal_init / C_recal_init);
 				result.X_P_recal_to_dim <-
 					alpha_P_e_r * D_P_recal;
 				result.X_P_recal_to_labile <-
@@ -464,38 +478,38 @@ species SimulatedAnnealingState schedules: [] {
 	 * Computes the estimation of labile C resulting from the current state.
 	 */
 	float C_labile {
-		return problem.decomposition_problem.C_labile(decomposition);
+		return problem.decomposition_problem.C_labile_final(decomposition);
 	}
 	/**
 	 * Computes the estimation of labile N resulting from the current state.
 	 */
 	float N_labile {
-		return problem.decomposition_problem.N_labile(decomposition);
+		return problem.decomposition_problem.N_labile_final(decomposition);
 	}
 	/**
 	 * Computes the estimation of labile P resulting from the current state.
 	 */
 	float P_labile {
-		return problem.decomposition_problem.P_labile(decomposition);
+		return problem.decomposition_problem.P_labile_final(decomposition);
 	}
 	
 	/**
 	 * Computes the estimation of available C obtained in the current state.
 	 */
 	float C_avail {
-		return problem.decomposition_problem.C_avail(decomposition);
+		return problem.decomposition_problem.C_avail_final(decomposition);
 	}
 	/**
 	 * Computes the estimation of available N obtained in the current state.
 	 */
 	float N_avail {
-		return problem.decomposition_problem.N_avail(decomposition);
+		return problem.decomposition_problem.N_avail_final(decomposition);
 	}
 	/**
 	 * Computes the estimation of available P obtained in the current state.
 	 */
 	float P_avail {
-		return problem.decomposition_problem.P_avail(decomposition);
+		return problem.decomposition_problem.P_avail_final(decomposition);
 	}
 }
 
@@ -824,7 +838,7 @@ species ExactCN parent: Objective schedules: [] {
 		if(C_avail > 0) {
 			return 1.0 - state.problem.C_N * (N_avail / C_avail);
 		}
-		if(state.problem.decomposition_problem.C_labile > 0.0) {
+		if(state.problem.decomposition_problem.C_labile_init > 0.0) {
 			// Max out the value, since C can be decomposed but no C is decomposed.
 			return 1.0;
 		}
@@ -845,7 +859,7 @@ species MaxCN parent: Objective schedules: [] {
 			// If N_avail/C_avail > required N/C, then N_avail is in excess and its not a problem so value=0 in this case.
 			return 1.0 - state.problem.C_N * min(N_avail / C_avail, 1.0/state.problem.C_N);
 		}
-		if(state.problem.decomposition_problem.C_labile > 0.0) {
+		if(state.problem.decomposition_problem.C_labile_init > 0.0) {
 			// Max out the value, since C can be decomposed but no C is decomposed.
 			return 1.0;
 		}
@@ -865,7 +879,7 @@ species ExactCP parent: Objective schedules: [] {
 		if(C_avail > 0) {
 			return 1.0 - state.problem.C_P * (P_avail / C_avail);
 		}
-		if(state.problem.decomposition_problem.C_labile > 0.0) {
+		if(state.problem.decomposition_problem.C_labile_init > 0.0) {
 			// Max out the value, since C can be decomposed but no C is decomposed.
 			return 1.0;
 		}
@@ -886,7 +900,7 @@ species MaxCP parent: Objective schedules: [] {
 			// If P_avail/C_avail > required P/C, then P_avail is in excess and its not a problem so value=0 in this case.
 			return 1.0 - state.problem.C_P * min((P_avail / C_avail), 1.0/state.problem.C_P);	
 		}
-		if(state.problem.decomposition_problem.C_labile > 0.0) {
+		if(state.problem.decomposition_problem.C_labile_init > 0.0) {
 			// Max out the value, since C can be decomposed but no C is decomposed.
 			return 1.0;
 		}
@@ -990,17 +1004,17 @@ experiment DecompositionTest type: test autorun: true {
 		float init_P_dim <- 0.005#gram;
 		
 		create DecompositionProblem with: [
-			C_recal: init_C_recal,
-			N_recal: init_N_recal,
-			P_recal: init_P_recal,
-			C_labile: init_C_labile,
-			N_labile: init_N_labile,
-			P_labile: init_P_labile,
-			C_DOM: init_C_dom,
-			N_DOM: init_N_dom,
-			P_DOM: init_P_dom,
-			N_DIM: init_N_dim,
-			P_DIM: init_P_dim
+			C_recal_init: init_C_recal,
+			N_recal_init: init_N_recal,
+			P_recal_init: init_P_recal,
+			C_labile_init: init_C_labile,
+			N_labile_init: init_N_labile,
+			P_labile_init: init_P_labile,
+			C_DOM_init: init_C_dom,
+			N_DOM_init: init_N_dom,
+			P_DOM_init: init_P_dom,
+			N_DIM_init: init_N_dim,
+			P_DIM_init: init_P_dim
 		] {
 			decomposition_problem <- self;
 		}
@@ -1020,11 +1034,11 @@ experiment DecompositionTest type: test autorun: true {
 		ask decomposition_problem {
 			do decomposition(random_enzymes, decomposition);
 		}
-		assert decomposition_problem.C_recal(decomposition) + decomposition_problem.C_labile(decomposition) + decomposition_problem.C_avail(decomposition)
+		assert decomposition_problem.C_recal_final(decomposition) + decomposition_problem.C_labile_final(decomposition) + decomposition_problem.C_avail_final(decomposition)
 			= init_C_recal + init_C_labile + init_C_dom;
-		assert decomposition_problem.N_recal(decomposition) + decomposition_problem.N_labile(decomposition) + decomposition_problem.N_avail(decomposition)
+		assert decomposition_problem.N_recal_final(decomposition) + decomposition_problem.N_labile_final(decomposition) + decomposition_problem.N_avail_final(decomposition)
 			= init_N_recal + init_N_labile + init_N_dom + init_N_dim;
-		assert decomposition_problem.P_recal(decomposition) + decomposition_problem.P_labile(decomposition) + decomposition_problem.P_avail(decomposition)
+		assert decomposition_problem.P_recal_final(decomposition) + decomposition_problem.P_labile_final(decomposition) + decomposition_problem.P_avail_final(decomposition)
 			= init_P_recal + init_P_labile + init_P_dom + init_P_dim;
 	}
 }
@@ -1075,17 +1089,17 @@ experiment TestSimulatedAnnealing type: gui {
 		}
 		create DecompositionProblem with: [
 			dt::1#d,
-			C_labile::0.1#gram,
-			N_labile::0.1#gram/C_N_labile,
-			P_labile::0.1#gram/C_P_labile,
-			C_recal::1#gram,
-			N_recal::1#gram/C_N_recal,
-			P_recal::1#gram/C_P_recal,
-			C_DOM::0.0,
-			P_DOM::0.0,
-			N_DOM::0.0,
-			P_DIM::0.0,
-			N_DIM::0.0
+			C_labile_init::0.1#gram,
+			N_labile_init::0.1#gram/C_N_labile,
+			P_labile_init::0.1#gram/C_P_labile,
+			C_recal_init::1#gram,
+			N_recal_init::1#gram/C_N_recal,
+			P_recal_init::1#gram/C_P_recal,
+			C_DOM_init::0.0,
+			P_DOM_init::0.0,
+			N_DOM_init::0.0,
+			P_DIM_init::0.0,
+			N_DIM_init::0.0
 		] {
 			create EnzymaticActivityProblem with: [
 				decomposition_problem::self,
@@ -1245,8 +1259,8 @@ experiment EnzymaticActivityWorkbench type: gui {
 	parameter "Initial C/P (labile)" category: "Labile OM" var:C_P_labile_init init:20.0;
 	parameter "Final C/P (labile)" category: "Labile OM" var:C_P_labile_final init:20.0;
 	
-	parameter "Initial C (recalcitrant, g)" category: "Recalcitrant OM" var: C_recal_init init: 0.0;
-	parameter "Final C (recalcitrant, g)" category: "Recalcitrant OM" var: C_recal_final init: 0.0;
+	parameter "Initial C (recalcitrant, g)" category: "Recalcitrant OM" var: C_recal_init init: 1.0;
+	parameter "Final C (recalcitrant, g)" category: "Recalcitrant OM" var: C_recal_final init: 1.0;
 	
 	SimulatedAnnealing simulated_annealing;
 	parameter "Count of steps" category: "Experiment" var: steps init: 100;
@@ -1400,17 +1414,17 @@ experiment EnzymaticActivityWorkbench type: gui {
 			beta_cellulolytic_amino::beta_cellulolytic_amino,
 			beta_cellulolytic_P::beta_cellulolytic_P,
 			beta_amino_P::beta_amino_P,
-			C_labile::total_C_labile,
-			N_labile::total_N_labile,
-			P_labile::total_P_labile,
-			C_recal::total_C_recal,
-			N_recal::0.0,
-			P_recal::0.0,
-			C_DOM::C_dom,
-			N_DOM::N_dom,
-			P_DOM::P_dom,
-			P_DIM::0.0,
-			N_DIM::0.0
+			C_labile_init::total_C_labile,
+			N_labile_init::total_N_labile,
+			P_labile_init::total_P_labile,
+			C_recal_init::total_C_recal,
+			N_recal_init::0.0,
+			P_recal_init::0.0,
+			C_DOM_init::C_dom,
+			N_DOM_init::N_dom,
+			P_DOM_init::P_dom,
+			P_DIM_init::0.0,
+			N_DIM_init::0.0
 		] {
 			create EnzymaticActivityProblem with: [
 				decomposition_problem::self,
@@ -1438,8 +1452,8 @@ experiment EnzymaticActivityWorkbench type: gui {
 					write "T_P: " + s.enzymes.T_P / (#gram / #gram / #d);
 					write "C/N: " + (N_avail > 0 ? C_avail / N_avail : 0.0);
 					write "C/P: " + (P_avail > 0 ? C_avail / P_avail : 0.0);
-					write "C_DOM: " + myself.decomposition_problem.C_DOM;
-					write "N_DOM: " + myself.decomposition_problem.N_DOM;
+					write "C_DOM: " + myself.decomposition_problem.C_DOM_init;
+					write "N_DOM: " + myself.decomposition_problem.N_DOM_init;
 					write "e: " + E(s);
 								
 					ask s.decomposition {
@@ -1495,14 +1509,6 @@ experiment EnzymaticActivityWorkbench type: gui {
 		}
 		display "C/N" type:2d {
 			chart "C/N" type:series style:line {
-				data "organic C/N" value: sum(SimulatedAnnealing collect (
-					each.problem.decomposition_problem.N_labile > 0 ?
-						each.problem.decomposition_problem.C_labile/each.problem.decomposition_problem.N_labile : 0.0
-				)) marker:false;
-				data "dom C/N" value: sum(SimulatedAnnealing collect (
-					each.problem.decomposition_problem.N_DOM > 0 ?
-					each.problem.decomposition_problem.C_DOM/each.problem.decomposition_problem.N_DOM : 0.0
-				)) marker:false;
 				data "available C/N" value: sum(SimulatedAnnealing collect (
 					each.s.N_avail() > 0 ?
 					each.s.C_avail()/each.s.N_avail() : 0.0
@@ -1512,14 +1518,6 @@ experiment EnzymaticActivityWorkbench type: gui {
 		}
 		display "C/P" type:2d {
 			chart "C/P" type:series style:line {
-				data "organic C/P" value: sum(SimulatedAnnealing collect (
-					each.problem.decomposition_problem.P_labile > 0 ?
-					each.problem.decomposition_problem.C_labile/each.problem.decomposition_problem.P_labile : 0.0
-				)) marker:false;
-				data "dom C/P" value: sum(SimulatedAnnealing collect (
-					each.problem.decomposition_problem.P_DOM > 0 ?
-					each.problem.decomposition_problem.C_DOM/each.problem.decomposition_problem.P_DOM : 0.0
-				)) marker:false;
 				data "available C/P" value: sum(SimulatedAnnealing collect (
 					each.s.P_avail() > 0 ?
 					each.s.C_avail() / each.s.P_avail() : 0.0
