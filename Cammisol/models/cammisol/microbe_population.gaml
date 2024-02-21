@@ -236,6 +236,9 @@ species MicrobePopulation
 		
 		do respirate(cytosol_respiration);
 		do growth(cytosol_division, total_C_in_pore, pore_carrying_capacity);
+		if(C_actif > 0.0) {
+			do optimize_enzymes(dam, accessible_organics);	
+		}
 		
 		perception_C <- 0.0;
 		perception_N <- 0.0;

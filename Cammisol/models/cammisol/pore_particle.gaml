@@ -29,7 +29,7 @@ species PoreParticle {
 	list<OrganicParticle> accessible_organics;
 
 
-	action decompose {
+	reflex decompose {
 		float total_C_labile <- sum(accessible_organics collect each.C_labile);
 		float total_C_recal <- sum(accessible_organics collect each.C_recalcitrant);
 		
@@ -64,8 +64,12 @@ species PoreParticle {
 				T_P: total_enzymes.T_P * C_labile / total_C_labile,
 				T_recal: total_enzymes.T_recal * C_recalcitrant / total_C_recal
 			] {
-				total_enzymes <- self;
+				local_enzymes <- self;
 			}
+			write "D eC: " + local_enzymes.T_cellulolytic * local_step / #gram;
+			write "D eN: " + local_enzymes.T_amino * local_step / #gram;
+			write "D eP: " + local_enzymes.T_P * local_step / #gram;
+			write "D er: " + local_enzymes.T_recal * local_step / #gram;
 			
 			ask decomposition_problem {
 				C_recal_init <- organic.C_recalcitrant;
@@ -86,9 +90,9 @@ species PoreParticle {
 				organic.N_recalcitrant <- N_recal_final(decomposition);
 				organic.P_recalcitrant <- P_recal_final(decomposition);
 				
-				organic.C_recalcitrant <- C_labile_final(decomposition);
-				organic.N_recalcitrant <- N_labile_final(decomposition);
-				organic.P_recalcitrant <- P_labile_final(decomposition);
+				organic.C_labile <- C_labile_final(decomposition);
+				organic.N_labile <- N_labile_final(decomposition);
+				organic.P_labile <- P_labile_final(decomposition);
 				
 				pore.dam.dom[2] <- C_DOM_final(decomposition);
 				pore.dam.dom[0] <- N_DOM_final(decomposition);
@@ -136,6 +140,11 @@ species PoreParticle {
 			float N_consumed <- total_N_consumed * N_rate;
 			float P_consumed <- total_P_consumed * P_rate;
 			
+			write "";
+			write "C: " + (C_wanted > 0 ? 100*C_consumed / C_wanted : -1);
+			write "N: " + (N_wanted > 0 ? 100*N_consumed / N_wanted : -1);
+			write "P: " + (P_wanted > 0 ? 100*P_consumed / P_wanted : -1);
+			
 			// Makes the C/N/P available for the microbe population
 			perception_C <- C_consumed;
 			perception_N <- N_consumed;
@@ -144,7 +153,7 @@ species PoreParticle {
 			myself.dam.dom[0] <- max([0.0, myself.dam.dom[0] - N_consumed]);
 			myself.dam.dom[1] <- max([0.0, myself.dam.dom[1] - P_consumed]);
 			myself.dam.dom[2] <- max([0.0, myself.dam.dom[2] - C_consumed]);
-			
+
 			do life(myself.dam, myself.accessible_organics, total_bacteria_C, myself.carrying_capacity);
 		}	
 	}

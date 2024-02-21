@@ -266,11 +266,15 @@ species DecompositionProblem schedules: [] {
 	 * Quantity of carbon requested by the P mineralisation action.
 	 */
 	float d_C_P(WeightedEnzymes enzymes) {
-		float P_attacked <- min(
-					dt * enzymes.T_P,
-					P_substrate()
-				);
-		return P_attacked * C_labile_init / P_labile_init;
+		float result <- 0.0;
+		if(P_labile_init > 0.0) {
+			float P_attacked <- min(
+						dt * enzymes.T_P,
+						P_substrate()
+					);
+			result <- P_attacked * C_labile_init / P_labile_init;
+		}
+		return result;
 	}
 	
 	float C_recal_final(Decomposition decomposition) {
