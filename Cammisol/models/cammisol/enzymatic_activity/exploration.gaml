@@ -96,10 +96,10 @@ global {
 			create Decomposition {
 				WeightedEnzymes weighted_enzymes;
 				create WeightedEnzymes with: [
-					T_cellulolytic::myself.enzymes.T_cellulolytic*myself.C_actif,
-					T_amino::myself.enzymes.T_amino*myself.C_actif,
-					T_P::myself.enzymes.T_P*myself.C_actif,
-					T_recal::myself.enzymes.T_recal*myself.C_actif
+					T_cellulolytic::myself.enzymes.T_cellulolytic*myself.active_C(),
+					T_amino::myself.enzymes.T_amino*myself.active_C(),
+					T_P::myself.enzymes.T_P*myself.active_C(),
+					T_recal::myself.enzymes.T_recal*myself.active_C()
 				] {
 					weighted_enzymes <- self;
 				}

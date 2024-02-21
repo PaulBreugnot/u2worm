@@ -46,8 +46,7 @@ global {
 
 species MicrobePopulation
 {
-	float respiration_rate <- 0.5;
-	float division_enzyme_rate <- 0.0;
+	float carbon_use_efficiency;
 	
 	float dividing_time <- 0.0;
 	float C_N <- 10.0;
@@ -61,18 +60,12 @@ species MicrobePopulation
 	float P <- 1.0;
 	
 	float awake_population <- 0.5;
-	float wakeup_factor <- 0.5;
-	float C_actif -> {C * awake_population};
+	float minimum_awake_rate <- 0.5;
 	
 	// Mon estomac le cytosol 
 	float cytosol_C <- 0#gram; 
 	float cytosol_N <- 0#gram; 
-	float cytosol_P <- 0#gram; 
-	
-	// ce que je percois
-	float perception_C <- 0#gram; 
-	float perception_N <- 0#gram;
-	float perception_P <- 0#gram;
+	float cytosol_P <- 0#gram;
 	
 	Enzymes enzymes;
 	Enzymes min_enzymes;
@@ -91,13 +84,8 @@ species MicrobePopulation
 	 */
 	// Quantité de carbone voulue par la colonie
 	//float C_assimilation_speed -> {C_actif * (exp(local_step / dividing_time)-1) / (division_enzyme_rate * (1 - respiration_rate))};
-	float C_assimilation_speed -> {C_actif * local_step / dividing_time / (division_enzyme_rate * (1 - respiration_rate))};
 	
 	float CO2_produced <- 0.0;
-	
-	float C_wanted -> { max([0.0, C_assimilation_speed - cytosol_C]) };
-	float N_wanted -> { (C+cytosol_C+C_wanted) / C_N - (cytosol_N + N)};
-	float P_wanted -> { (C+cytosol_C+C_wanted) / C_P - (cytosol_P + P)};
 	
 	init {
 		create Enzymes {
@@ -124,6 +112,23 @@ species MicrobePopulation
 		}
 	}
 	
+	// TODO: replace following methods with update: variables (https://gama-platform.org/wiki/Statements#variable_regular)
+	float active_C {
+		return C * awake_population;
+	}
+	
+	float requested_C {
+		return active_C() * local_step / (carbon_use_efficiency * dividing_time) - cytosol_C;
+	}
+	
+	float requested_N {
+		return (C + carbon_use_efficiency * requested_C()) / C_N - (N+cytosol_N);
+	}
+	
+	float requested_P {
+		return (C + carbon_use_efficiency * requested_C()) / C_P - (P+cytosol_P);
+	}
+	
 	action respirate(float cytosol_respiration)
 	{
 		cytosol_C <- cytosol_C  - cytosol_respiration; 
@@ -136,32 +141,44 @@ species MicrobePopulation
 	{
 		// quantity de carbone cytosol -> structurel.
 		// Unconsumed C/N/P stays in the cytosol
-		float new_individual <- C * (local_step/dividing_time) * (1 - total_C_in_pore / pore_carrying_capacity);
+		// float new_individual <- C * (local_step/dividing_time) * (1 - total_C_in_pore / pore_carrying_capacity);
 		
-		//new_individual <- min([new_individual , cytosol_C]);
-		new_individual <- min([new_individual , cytosol_division]);
+		float C_growth <- min(cytosol_division, cytosol_N*C_N, cytosol_P*C_P);
+		float N_growth <- C_growth / C_N;
+		float P_growth <- C_growth / C_P;
 		
+		cytosol_C <- cytosol_C - C_growth;
+		cytosol_N <- cytosol_N - N_growth;
+		cytosol_P <- cytosol_P - P_growth;
 		
-		float assi_C_N <- cytosol_N * C_N;  //(assimilated_N=0) ? 0:(assimilated_C/assimilated_N);
-		float assi_C_P <- cytosol_P * C_P; //(assimilated_P=0) ? 0:(assimilated_C/assimilated_P);
+		C <- C + C_growth;
+		N <- N + N_growth;
+		P <- P + P_growth;
 		
-		new_individual <- min([new_individual, (assi_C_N) ]);
-		new_individual <- min([new_individual, (assi_C_P) ]);
-		
-		// write bacteria_name + ": " + new_individual;
-		
-		float transfert_C <- new_individual;
-		float transfert_N <- transfert_C / C_N;
-		float transfert_P <- transfert_C / C_P;
-		
-		cytosol_C <- cytosol_C - transfert_C;
-		cytosol_N <- cytosol_N - transfert_N;
-		cytosol_P <- cytosol_P - transfert_P;
-		
-		
-		C <- C + transfert_C;
-		N <- N + transfert_N;
-		P <- P + transfert_P;
+//		//new_individual <- min([new_individual , cytosol_C]);
+//		new_individual <- min([new_individual , cytosol_division]);
+//		
+//		
+//		float assi_C_N <- cytosol_N * C_N;  //(assimilated_N=0) ? 0:(assimilated_C/assimilated_N);
+//		float assi_C_P <- cytosol_P * C_P; //(assimilated_P=0) ? 0:(assimilated_C/assimilated_P);
+//		
+//		new_individual <- min([new_individual, (assi_C_N) ]);
+//		new_individual <- min([new_individual, (assi_C_P) ]);
+//		
+//		// write bacteria_name + ": " + new_individual;
+//		
+//		float transfert_C <- new_individual;
+//		float transfert_N <- transfert_C / C_N;
+//		float transfert_P <- transfert_C / C_P;
+//		
+//		cytosol_C <- cytosol_C - transfert_C;
+//		cytosol_N <- cytosol_N - transfert_N;
+//		cytosol_P <- cytosol_P - transfert_P;
+//		
+//		
+//		C <- C + transfert_C;
+//		N <- N + transfert_N;
+//		P <- P + transfert_P;
 	}
 	
 	action optimize_enzymes(Dam dam, list<OrganicParticle> particles_to_decompose) {
@@ -185,7 +202,7 @@ species MicrobePopulation
 			// Update required C/N and C/P rate, and microbe biomass
 			C_N <- myself.C_N;
 			C_P <- myself.C_P;
-			C_microbes <- myself.C_actif;
+			C_microbes <- myself.active_C();
 		}
 		create SimulatedAnnealing with:[
 				problem::self.enzymatic_activity_problem,
@@ -211,38 +228,36 @@ species MicrobePopulation
 		}
 	}
 	
-	action life(Dam dam, list<OrganicParticle> accessible_organics, float total_C_in_pore, float pore_carrying_capacity)
+	action life(
+		Dam dam, list<OrganicParticle> accessible_organics,
+		float assimilated_C, float assimilated_N, float assimilated_P,
+		float total_C_in_pore, float pore_carrying_capacity
+	)
 	{
 		CO2_produced <- 0.0;
 		
-		if(C_wanted = 0) {
+		if(requested_C() = 0) {
 			awake_population <- 0.0;
 		} else {
-			awake_population <- min([(perception_C / C_wanted), 1]);
+			awake_population <- min([(assimilated_C / requested_C()), 1]);
 		}
 		
-		awake_population <- max([awake_population,wakeup_factor]);
+		awake_population <- max([awake_population,minimum_awake_rate]);
 	
-		cytosol_C <- cytosol_C + perception_C;
-		cytosol_N <- cytosol_N + perception_N;
-		cytosol_P <- cytosol_P + perception_P;
+		cytosol_C <- cytosol_C + assimilated_C;
+		cytosol_N <- cytosol_N + assimilated_N;
+		cytosol_P <- cytosol_P + assimilated_P;
 		
 		// Breathed carbon quantity from cytosol, rejected as CO2
-		float cytosol_respiration <- respiration_rate * cytosol_C ;
+		float cytosol_respiration <- (1-carbon_use_efficiency) * cytosol_C ;
 		// Part of the left cytosol C dedicated to cell division
-		float cytosol_division <- (cytosol_C-cytosol_respiration) * division_enzyme_rate;
-		// Left cytosol C is used to produce enzymes
-		float cytosol_enzyme <- cytosol_C - cytosol_respiration - cytosol_division;
+		float cytosol_division <- cytosol_C-cytosol_respiration;
 		
 		do respirate(cytosol_respiration);
 		do growth(cytosol_division, total_C_in_pore, pore_carrying_capacity);
-		if(C_actif > 0.0) {
+		if(active_C() > 0.0) {
 			do optimize_enzymes(dam, accessible_organics);	
 		}
-		
-		perception_C <- 0.0;
-		perception_N <- 0.0;
-		perception_P <- 0.0;
 	}
 }
 
