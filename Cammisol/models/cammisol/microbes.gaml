@@ -16,8 +16,8 @@ global {
 	float dividing_time_A <- 24#h;
 	float dividing_time_S <- 368#h;
 	
-	float carbon_use_efficiency_Y <- 3/10;
-	float carbon_use_efficiency_A <- 7/10;
+	float carbon_use_efficiency_Y <- 7/10;
+	float carbon_use_efficiency_A <- 3/10;
 	float carbon_use_efficiency_S <- 5/10;
 	
 	float minimum_awake_rate_Y <- 0.002;
@@ -33,8 +33,6 @@ species Y_Strategist parent:MicrobePopulation {
 		dividing_time <- dividing_time_Y;
 		carbon_use_efficiency <- carbon_use_efficiency_Y;
 		minimum_awake_rate <- minimum_awake_rate_Y;
-		
-		awake_population <- minimum_awake_rate;
 		
 		C <- init_structural_cytosol_rate * total_C_init; // TODO: /3 => car trois différentes espèces de bactéries, hypothèse toutes les bactéries ont le même poids
 		N <- C / C_N;
@@ -74,8 +72,6 @@ species A_Strategist parent:MicrobePopulation {
 		dividing_time <- dividing_time_A;
 		carbon_use_efficiency <- carbon_use_efficiency_A;
 		minimum_awake_rate <- minimum_awake_rate_A;
-		
-		awake_population <- minimum_awake_rate;
 		
 		C <- init_structural_cytosol_rate * total_C_init; //*0.2;//0.000001#gram;
 		N <- C/ C_N;
@@ -118,8 +114,6 @@ species S_Strategist parent:MicrobePopulation {
 		carbon_use_efficiency <- carbon_use_efficiency_S;
 		minimum_awake_rate <- minimum_awake_rate_S;
 		
-		awake_population <- minimum_awake_rate;
-		
 		C <- init_structural_cytosol_rate * total_C_init;   //*0.7;//0.000001#gram;
 		N <- C/ C_N;
 		P <- C/ C_P;
@@ -153,15 +147,85 @@ species S_Strategist parent:MicrobePopulation {
 }
 
 experiment MicrobesTestBase {
+	float init_Y_C <- 1.0;
+	float init_A_C <- 1.0;
+	float init_S_C <- 1.0;
+	float nutrient_rate <- 1.0;
+	
+	parameter "Y C init" var:init_Y_C category:"Y strategist";
+	parameter "Y dividing time" var:dividing_time_Y category:"Y strategist";
+	parameter "Y CUE" var:carbon_use_efficiency_Y category:"Y strategist";
+	
+	parameter "A C init" var:init_A_C category:"A strategist";
+	parameter "A dividing time" var:dividing_time_A category:"A strategist";
+	parameter "A CUE" var:carbon_use_efficiency_A category:"A strategist";
+	
+	parameter "S C init" var:init_S_C category:"S strategist";
+	parameter "S dividing time" var:dividing_time_S category:"S strategist";
+	parameter "S CUE" var:carbon_use_efficiency_S category:"S strategist";
+	
+	parameter "Rate of requested nutrients in the DAM" var:nutrient_rate;
+	
+	list<species<MicrobePopulation>> microbe_species <- [Y_Strategist, A_Strategist, S_Strategist];
 	map<species<MicrobePopulation>, MicrobePopulation> populations;
-	map<species<MicrobePopulation>, Dam> dams;
+		
+	float C_N <- 10.0;
+	float C_P <- 17.0;
+	
+	map<species<MicrobePopulation>, float> C <- [Y_Strategist::init_Y_C#gram, A_Strategist::init_A_C#gram, S_Strategist::init_S_C#gram];
+	map<species<MicrobePopulation>, float> N <- [Y_Strategist::init_Y_C#gram/C_N, A_Strategist::init_A_C#gram/C_N, S_Strategist::init_S_C#gram/C_N];
+	map<species<MicrobePopulation>, float> P <- [Y_Strategist::init_Y_C#gram/C_P, A_Strategist::init_A_C#gram/C_P, S_Strategist::init_S_C#gram/C_P];
 	
 	action init_populations {
-		loop s over: [Y_Strategist, A_Strategist, S_Strategist] {
-			create s with: [C::1#gram] {
-				myself.populations[s] <- self;
+		create Y_Strategist with: [C::init_Y_C#gram, C_N::C_N, C_P::C_P] {
+			myself.populations[Y_Strategist] <- self;
+		}
+		create A_Strategist with: [C::init_A_C#gram, C_N::C_N, C_P::C_P] {
+			myself.populations[A_Strategist] <- self;
+		}
+		create S_Strategist with: [C::init_S_C#gram, C_N::C_N, C_P::C_P] {
+			myself.populations[S_Strategist] <- self;
+		}
+	}
+	
+	reflex {
+		loop s over:microbe_species {
+			C[s] <- populations[s].C;
+			N[s] <- populations[s].N;
+			P[s] <- populations[s].P;
+		}
+	}
+	
+	output {
+		display "C" {
+			chart "Microbes populations" {
+				data "Y strategists (g)" value:C[Y_Strategist]/#gram marker: false;
+				data "A strategists (g)" value:C[A_Strategist]/#gram marker: false;
+				data "S strategists (g)" value:C[S_Strategist]/#gram marker: false;
 			}
-			
+		}
+		display "C/N" {
+			chart "C/N" {
+				data "Y strategists (g)" value:C[Y_Strategist]/N[Y_Strategist] marker: false;
+				data "A strategists (g)" value:C[A_Strategist]/N[A_Strategist] marker: false;
+				data "S strategists (g)" value:C[S_Strategist]/N[S_Strategist] marker: false;
+			}
+		}
+		display "C/P" {
+			chart "C/P" {
+				data "Y strategists (g)" value:C[Y_Strategist]/P[Y_Strategist] marker: false;
+				data "A strategists (g)" value:C[A_Strategist]/P[A_Strategist] marker: false;
+				data "S strategists (g)" value:C[S_Strategist]/P[S_Strategist] marker: false;
+			}
+		}
+	}
+}
+
+experiment IndividualMicrobesGrowth parent:MicrobesTestBase {
+	map<species<MicrobePopulation>, Dam> dams;
+	init {
+		do init_populations;
+		loop s over: microbe_species {
 			create Dam {
 				myself.dams[s] <- self;
 			}
@@ -170,71 +234,50 @@ experiment MicrobesTestBase {
 				dam: dams[s],
 				carrying_capacity: 10#gram
 			] {
+				// Each population is associated to its own PoreParticle and Dam
 				add myself.populations[s] to: populations;
 			}
 		}
 	}
-	
-	action feed_dams {
-		loop s over: [Y_Strategist, A_Strategist, S_Strategist] {
+	reflex {
+		loop s over: microbe_species {
 			ask dams[s] {
-				dom[2] <- myself.populations[s].requested_C();
-				dom[0] <- myself.populations[s].requested_N();
-				dom[1] <- myself.populations[s].requested_P();
+				// Each dam is fed with the nutrients requested by the population
+				dom[2] <- myself.nutrient_rate * myself.populations[s].requested_C;
+				dom[0] <- myself.nutrient_rate * myself.populations[s].requested_N;
+				dom[1] <- myself.nutrient_rate * myself.populations[s].requested_P;
 			}
 		}
 	}
 }
 
-experiment IdealMicrobesGrowth parent:MicrobesTestBase {
-	float C_N <- 10.0;
-	float C_P <- 17.0;
-	
+
+experiment CollectiveMicrobesGrowth parent:MicrobesTestBase {
+	Dam dam;
 	init {
 		do init_populations;
-		loop s over: [Y_Strategist, A_Strategist, S_Strategist] {
-			populations[s].C_N <- C_N;
-			populations[s].C_P <- C_P;
-		}
+			create Dam {
+				myself.dam <- self;
+			}
+			
+			create PoreParticle with: [
+				dam: dam,
+				carrying_capacity: 10#gram
+			] {
+				// The three populations are added to the same PoreParticle
+				loop s over:myself.microbe_species {
+					add myself.populations[s] to: populations;
+				}
+			}
 	}
 	reflex {
-		do feed_dams;
-		ask PoreParticle {
-			do microbe_life;
-		}
-	}
-	
-	output {
-		display "C" {
-			chart "Microbes populations" {
-				data "Y strategists (g)" value:sum(Y_Strategist collect each.C)/#gram marker: false;
-				data "A strategists (g)" value:sum(A_Strategist collect each.C)/#gram marker: false;
-				data "S strategists (g)" value:sum(S_Strategist collect each.C)/#gram marker: false;
+		loop s over: microbe_species {
+			ask Dam {
+				// The dam is fed with the nutrients requested by all populations
+				dom[2] <- myself.nutrient_rate * sum(myself.microbe_species collect myself.populations[each].requested_C);
+				dom[0] <- myself.nutrient_rate * sum(myself.microbe_species collect myself.populations[each].requested_N);
+				dom[1] <- myself.nutrient_rate * sum(myself.microbe_species collect myself.populations[each].requested_P);
 			}
 		}
 	}
 }
-
-//experiment MicrobesTest parent:MicrobesTestBase type: test autorun: true {
-//	test "Assimilation" {
-//		bool valid_growth <- true;
-//		bool valid_CN <- true;
-//		bool valid_CP <- true;
-//		
-//		loop times: 100 {
-//			float current_C <- population.C;
-//			float requested_C <- population.requested_C();
-//			
-//			ask PoreParticle {
-//				do microbe_life;
-//			}
-//			
-//			valid_growth <- valid_growth and ((population.C-current_C) = requested_C);
-//			valid_CN <- valid_CN and population.C / population.N = population.C_N;
-//			valid_CP <- valid_CP and population.C / population.P = population.C_P;
-//		}
-//		assert valid_growth;
-//		assert valid_CN;
-//		assert valid_CP;
-//	}
-//}

@@ -35,10 +35,10 @@ species PoreParticle {
 		
 		WeightedEnzymes total_enzymes;
 		create WeightedEnzymes with: [
-			T_cellulolytic: sum(populations collect (each.active_C() * each.enzymes.T_cellulolytic)),
-			T_amino: sum(populations collect (each.active_C() * each.enzymes.T_amino)),
-			T_P: sum(populations collect (each.active_C() * each.enzymes.T_P)),
-			T_recal: sum(populations collect (each.active_C() * each.enzymes.T_recal))
+			T_cellulolytic: sum(populations collect (each.active_C * each.enzymes.T_cellulolytic)),
+			T_amino: sum(populations collect (each.active_C * each.enzymes.T_amino)),
+			T_P: sum(populations collect (each.active_C * each.enzymes.T_P)),
+			T_recal: sum(populations collect (each.active_C * each.enzymes.T_recal))
 		] {
 			total_enzymes <- self;
 		}
@@ -122,26 +122,27 @@ species PoreParticle {
 	}
 	
 	action microbe_life {
-		float logistic_factor <- max(0.0, 1 - sum(populations collect each.C) / carrying_capacity);
-		
-		float total_C_wanted <- sum(populations collect(each.requested_C())) * logistic_factor;
-		float total_N_wanted <- sum(populations collect(each.requested_N())) * logistic_factor;
-		float total_P_wanted <- sum(populations collect(each.requested_P())) * logistic_factor;
+		float total_microbes_C <- sum(populations collect each.C);
+		ask populations {
+			do update(total_microbes_C, myself.carrying_capacity);
+		}
+		float total_C_wanted <- sum(populations collect each.requested_C);
+		float total_N_wanted <- sum(populations collect each.requested_N);
+		float total_P_wanted <- sum(populations collect each.requested_P);
 		
 		float total_C_consumed <- min([dam.dom[2], total_C_wanted]);
 		float total_N_consumed <- min([dam.dom[0], total_N_wanted]);
 		float total_P_consumed <- min([dam.dom[1], total_P_wanted]);
 		
-		float total_bacteria_C <- sum(populations collect (each.C + each.cytosol_C));
 		
 		ask shuffle(populations) 
 		{
 			// TODO: optimise calls to resquested_X()
 			
 			// Proportion of the total_*_consumed that will be consumed by the current microbe population
-			float C_rate  <- total_C_wanted > 0 ? (requested_C() / total_C_wanted) : 0;
-			float N_rate  <- total_N_wanted > 0 ? (requested_N() / total_N_wanted) : 0;
-			float P_rate  <- total_P_wanted > 0 ? (requested_P() / total_P_wanted) : 0;
+			float C_rate  <- total_C_wanted > 0 ? (requested_C / total_C_wanted) : 0;
+			float N_rate  <- total_N_wanted > 0 ? (requested_N / total_N_wanted) : 0;
+			float P_rate  <- total_P_wanted > 0 ? (requested_P / total_P_wanted) : 0;
 			
 			// If total_X_consumed = total_X_wanted, X_consum = X_wanted for all microbe population
 			float assimilated_C <- total_C_consumed * C_rate;
@@ -159,8 +160,7 @@ species PoreParticle {
 
 			do life(
 				myself.dam, myself.accessible_organics,
-				assimilated_C, assimilated_N, assimilated_P,
-				total_bacteria_C, myself.carrying_capacity
+				assimilated_C, assimilated_N, assimilated_P
 			);
 		}	
 	}
