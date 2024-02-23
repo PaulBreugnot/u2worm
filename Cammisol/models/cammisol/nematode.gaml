@@ -10,7 +10,9 @@ model nematode
 
 import "microbes.gaml"
 
-/* Insert your model definition here */
+global {
+	float nematode_CO2_emissions <- 0.0;
+}
 
 species Nematode
 {
@@ -30,7 +32,6 @@ species Nematode
 	float stomack_N;
 	float stomack_P;
 	
-	float CO2_production <- 0.0 ;
 	PoreParticle current_pore;
 	
 	bool awake <- true;
@@ -91,8 +92,7 @@ species Nematode
 		float carbone_respiration <- CO2_efficiency * stomack_C;
 		stomack_C <- stomack_C  - carbone_respiration; 
 		
-		CO2_production <- CO2_production + carbone_respiration;
-		total_CO2_produced <- total_CO2_produced + carbone_respiration;
+		nematode_CO2_emissions <- nematode_CO2_emissions + carbone_respiration;
 	}
 	
 	action anabolize

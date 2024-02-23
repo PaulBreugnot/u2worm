@@ -11,7 +11,7 @@ model pore_particle
 import "microbe_population.gaml"
 
 
-species PoreParticle {
+species PoreParticle schedules:[] {
 	int grid_x;
 	int grid_y;
 	float carrying_capacity;
@@ -116,33 +116,28 @@ species PoreParticle {
 			do die;
 		}
 	}
-
-	reflex {
-		do microbe_life;
-	}
 	
 	action microbe_life {
 		float total_microbes_C <- sum(populations collect each.C);
 		ask populations {
 			do update(total_microbes_C, myself.carrying_capacity);
 		}
-		float total_C_wanted <- sum(populations collect each.requested_C);
-		float total_N_wanted <- sum(populations collect each.requested_N);
-		float total_P_wanted <- sum(populations collect each.requested_P);
+		float total_requested_C <- sum(populations collect each.requested_C);
+		float total_requested_N <- sum(populations collect each.requested_N);
+		float total_requested_P <- sum(populations collect each.requested_P);
 		
-		float total_C_consumed <- min([dam.dom[2], total_C_wanted]);
-		float total_N_consumed <- min([dam.dom[0], total_N_wanted]);
-		float total_P_consumed <- min([dam.dom[1], total_P_wanted]);
+		float total_C_consumed <- min(dam.dom[2], total_requested_C);
+		float total_N_consumed <- min(dam.dom[0], total_requested_N);
+		float total_P_consumed <- min(dam.dom[1], total_requested_P);
 		
-		
-		ask shuffle(populations) 
+		ask populations
 		{
 			// TODO: optimise calls to resquested_X()
 			
 			// Proportion of the total_*_consumed that will be consumed by the current microbe population
-			float C_rate  <- total_C_wanted > 0 ? (requested_C / total_C_wanted) : 0;
-			float N_rate  <- total_N_wanted > 0 ? (requested_N / total_N_wanted) : 0;
-			float P_rate  <- total_P_wanted > 0 ? (requested_P / total_P_wanted) : 0;
+			float C_rate  <- total_requested_C > 0.0 ? (requested_C / total_requested_C) : 0.0;
+			float N_rate  <- total_requested_N > 0.0 ? (requested_N / total_requested_N) : 0.0;
+			float P_rate  <- total_requested_P > 0.0 ? (requested_P / total_requested_P) : 0.0;
 			
 			// If total_X_consumed = total_X_wanted, X_consum = X_wanted for all microbe population
 			float assimilated_C <- total_C_consumed * C_rate;
@@ -154,9 +149,9 @@ species PoreParticle {
 //			write "N: " + (requested_N() > 0 ? 100*assimilated_N / requested_N() : -1);
 //			write "P: " + (requested_P() > 0 ? 100*assimilated_P / requested_P() : -1);
 
-			myself.dam.dom[0] <- max([0.0, myself.dam.dom[0] - assimilated_N]);
-			myself.dam.dom[1] <- max([0.0, myself.dam.dom[1] - assimilated_P]);
-			myself.dam.dom[2] <- max([0.0, myself.dam.dom[2] - assimilated_C]);
+			myself.dam.dom[0] <- myself.dam.dom[0] - assimilated_N;
+			myself.dam.dom[1] <- myself.dam.dom[1] - assimilated_P;
+			myself.dam.dom[2] <- myself.dam.dom[2] - assimilated_C;
 
 			do life(
 				myself.dam, myself.accessible_organics,

@@ -10,8 +10,7 @@ model microbe_population
 import "dam.gaml"
 
 global {
-	
-	float total_CO2_produced <- 0.0;
+	float microbe_CO2_emissions <- 0.0;
 	float enzymes_optimization_period <- 1#d;
 	
 	// Enzyme objectives
@@ -44,7 +43,7 @@ global {
 	}
 }
 
-species MicrobePopulation
+species MicrobePopulation schedules:[]
 {
 	float carbon_use_efficiency;
 	
@@ -84,8 +83,6 @@ species MicrobePopulation
 	 */
 	// Quantité de carbone voulue par la colonie
 	//float C_assimilation_speed -> {C_actif * (exp(local_step / dividing_time)-1) / (division_enzyme_rate * (1 - respiration_rate))};
-	
-	float CO2_produced <- 0.0;
 	
 	// TODO: check active_C update
 	float active_C;
@@ -135,22 +132,19 @@ species MicrobePopulation
 //		return (C + carbon_use_efficiency * requested_C()) / C_P - (P+cytosol_P);
 //	}
 	
-	action respirate
+	action respirate(float C_respiration)
 	{
-		float C_respiration <- (1-carbon_use_efficiency) * cytosol_C;
-		cytosol_C <- cytosol_C  - C_respiration; 
+		cytosol_C <- cytosol_C - C_respiration; 
 		
-		CO2_produced <- CO2_produced + C_respiration;
-		total_CO2_produced <- total_CO2_produced + C_respiration;
+		microbe_CO2_emissions <- microbe_CO2_emissions + C_respiration;
 	}
 	
-	action growth
+	action growth(float C_growth)
 	{
 		// quantity de carbone cytosol -> structurel.
 		// Unconsumed C/N/P stays in the cytosol
 		// float new_individual <- C * (local_step/dividing_time) * (1 - total_C_in_pore / pore_carrying_capacity);
 		
-		float C_growth <- min(carbon_use_efficiency * cytosol_C, cytosol_N*C_N, cytosol_P*C_P);
 		float N_growth <- C_growth / C_N;
 		float P_growth <- C_growth / C_P;
 		
@@ -247,22 +241,21 @@ species MicrobePopulation
 		float assimilated_C, float assimilated_N, float assimilated_P
 	)
 	{
-		CO2_produced <- 0.0;
-		
-//		if(requested_C = 0) {
-//			awake_population <- 0.0;
-//		} else {
-//			awake_population <- min([assimilated_C / requested_C, 1]);
-//		}
-//		
-//		awake_population <- max([awake_population,minimum_awake_rate]);
+		if(requested_C = 0) {
+			awake_population <- 1.0;
+		} else {
+			awake_population <- assimilated_C / requested_C;
+		}
+		awake_population <- max(awake_population, minimum_awake_rate);
 	
 		cytosol_C <- cytosol_C + assimilated_C;
 		cytosol_N <- cytosol_N + assimilated_N;
 		cytosol_P <- cytosol_P + assimilated_P;
 		
-		do respirate;
-		do growth;
+		float C_respiration <- (1-carbon_use_efficiency) * cytosol_C;
+		float C_growth <- min(carbon_use_efficiency * cytosol_C, cytosol_N*C_N, cytosol_P*C_P);
+		do respirate(C_respiration);
+		do growth(C_growth);
 //		if(active_C > 0.0) {
 //			do optimize_enzymes(dam, accessible_organics);	
 //		}

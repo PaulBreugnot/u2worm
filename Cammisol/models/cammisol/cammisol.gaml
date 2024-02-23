@@ -222,6 +222,11 @@ global {
 //			}
 //		}
 //	}
+	reflex {
+		ask PoreParticle {
+			do microbe_life;
+		}
+	}
 }
 
 grid Particle width: grid_size height: grid_size neighbors: 4 {
