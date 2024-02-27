@@ -6,7 +6,7 @@
 
 model enzymatic_activity_exploration
 
-import "../microbes.gaml"
+import "../microbes/microbes.gaml"
 
 global {
 	/* 

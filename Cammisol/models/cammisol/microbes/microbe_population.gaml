@@ -7,7 +7,7 @@
 
 model microbe_population
 
-import "dam.gaml"
+import "../dam.gaml"
 
 global {
 	float microbe_CO2_emissions <- 0.0;

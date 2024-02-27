@@ -8,7 +8,7 @@
 
 model nematode
 
-import "microbes.gaml"
+import "microbes/microbes.gaml"
 
 global {
 	float nematode_CO2_emissions <- 0.0;
