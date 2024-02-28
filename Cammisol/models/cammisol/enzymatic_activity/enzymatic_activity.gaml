@@ -1187,6 +1187,7 @@ experiment EnzymaticActivityWorkbench type: gui {
 	float C_N_microbes;
 	float C_P_microbes;
 	
+	float dt;
 	float amino_CN;
 	float alpha_P_e_r;
 	float alpha_C_e_P;
@@ -1240,7 +1241,8 @@ experiment EnzymaticActivityWorkbench type: gui {
 	parameter "C microbes (g)" category: "Microbe population" var: C_microbes init: 1.0;
 	parameter "Microbe population's C/N" category: "Microbe population" var:C_N_microbes init:10.0;
 	parameter "Microbe population's C/P" category: "Microbe population" var:C_P_microbes init:17.0;
-		
+	
+	parameter "dt" category: "Constants" var:dt init: 1#d;
 	parameter "Amino CN" category: "Constants" var: amino_CN init: 4.0;
 	parameter "Alpha P eR" category: "Constants" var: alpha_P_e_r init: 0.001;
 	parameter "Alpha C eP" category: "Constants" var: alpha_C_e_P init: 0.1;
@@ -1410,7 +1412,7 @@ experiment EnzymaticActivityWorkbench type: gui {
 		}
 		
 		create DecompositionProblem with: [
-			dt::1#d,
+			dt::dt,
 			amino_CN::amino_CN,
 			alpha_P_e_r::alpha_P_e_r,
 			alpha_C_e_P::alpha_C_e_P,

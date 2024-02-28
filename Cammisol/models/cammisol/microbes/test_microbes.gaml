@@ -10,32 +10,32 @@ model test_microbes
 import "microbes.gaml"
 
 experiment MicrobesTestBase {
-	float init_Y_C <- 1.0;
-	float init_A_C <- 1.0;
-	float init_S_C <- 1.0;
-	float nutrient_rate <- 1.0;
+	float init_Y_C <- 1.0 on_change: change_species;
+	float init_A_C <- 1.0 on_change: change_species;
+	float init_S_C <- 1.0 on_change: change_species;
 	float carrying_capacity <- 10#gram;
 	
 	bool enable_Y_Strategist <- true on_change: change_species;
 	bool enable_A_Strategist <- true on_change: change_species;
 	bool enable_S_Strategist <- true on_change: change_species;
 	
+	bool only_one_population <- false;
+	
 	parameter "Enable Y Strategist" var:enable_Y_Strategist category: "Y strategist";
-	parameter "Y C init" var:init_Y_C category:"Y strategist";
+	parameter "Y C init (g)" var:init_Y_C category:"Y strategist";
 	parameter "Y dividing time" var:dividing_time_Y category:"Y strategist";
 	parameter "Y CUE" var:carbon_use_efficiency_Y category:"Y strategist";
 	
 	parameter "Enable A Strategist" var:enable_A_Strategist category: "A strategist";
-	parameter "A C init" var:init_A_C category:"A strategist";
+	parameter "A C init (g)" var:init_A_C category:"A strategist";
 	parameter "A dividing time" var:dividing_time_A category:"A strategist";
 	parameter "A CUE" var:carbon_use_efficiency_A category:"A strategist";
 	
 	parameter "Enable S Strategist" var:enable_S_Strategist category: "S strategist";
-	parameter "S C init" var:init_S_C category:"S strategist";
+	parameter "S C init (g)" var:init_S_C category:"S strategist";
 	parameter "S dividing time" var:dividing_time_S category:"S strategist";
 	parameter "S CUE" var:carbon_use_efficiency_S category:"S strategist";
 	
-	parameter "Rate of requested nutrients in the DAM" var:nutrient_rate;
 	parameter "Carrying capacity" var:carrying_capacity;
 	
 	
@@ -45,6 +45,8 @@ experiment MicrobesTestBase {
 	float C_N <- 10.0;
 	float C_P <- 17.0;
 	float total_C_dom <- 0.0;
+	float total_C_labile <- 0.0;
+	float total_C_recal <- 0.0;
 	
 	map<species<MicrobePopulation>, float> init_C;
 	map<species<MicrobePopulation>, float> C;
@@ -84,6 +86,7 @@ experiment MicrobesTestBase {
 			P[s] <- init_C[s]/C_P;
 			awake[s] <- 1.0;
 		}
+		only_one_population <- int(enable_Y_Strategist) + int(enable_A_Strategist) + int(enable_S_Strategist) = 1;
 		return _microbe_species;
 	}
 	
@@ -120,6 +123,12 @@ experiment MicrobesTestBase {
 			}
 		}
 		
+		display "CO2" {
+			chart "CO2" {
+				data "CO2" value: microbe_CO2_emissions/#gram marker:false;
+			}
+		}
+		
 		display "C cytosol" {
 			chart "Microbes populations cytosol" {
 				if enable_Y_Strategist {
@@ -131,7 +140,6 @@ experiment MicrobesTestBase {
 				if enable_S_Strategist {
 					data "S strategists (g)" value:C_cytosol[S_Strategist]/#gram marker: false;
 				}
-				data "CO2" value: microbe_CO2_emissions marker:false;
 			}
 			
 		}
@@ -153,8 +161,13 @@ experiment MicrobesTestBase {
 		display "C conservation" {
 			chart "C conservation" {
 				data "Conservation"
-					value:(total_C_dom + sum(init_C.values))
-					/ (sum(Dam collect each.dom[2]) + sum(C_cytosol.values) + sum(C.values) + microbe_CO2_emissions)
+					value:(total_C_dom + total_C_labile + total_C_recal + sum(init_C.values))
+					/ (
+						sum(Dam collect each.dom[2]) +
+						sum(OrganicParticle collect each.C_labile) +
+						sum(OrganicParticle collect each.C_recalcitrant) +
+						sum(C_cytosol.values) + sum(C.values) + microbe_CO2_emissions
+					)
 					marker: false;
 			}
 		}
@@ -188,6 +201,7 @@ experiment MicrobesTestBase {
 }
 
 experiment IndividualMicrobesGrowth parent:MicrobesTestBase {
+	map<species<MicrobePopulation>, PoreParticle> pores;
 	map<species<MicrobePopulation>, Dam> dams;
 	
 	init {
@@ -200,6 +214,7 @@ experiment IndividualMicrobesGrowth parent:MicrobesTestBase {
 				dam: dams[s],
 				carrying_capacity: carrying_capacity
 			] {
+				myself.pores[s] <- self;
 				// Each population is associated to its own PoreParticle and Dam
 				add myself.populations[s] to: populations;
 			}
@@ -208,6 +223,9 @@ experiment IndividualMicrobesGrowth parent:MicrobesTestBase {
 }
 
 experiment IndividualMicrobesGrowth_InfiniteNutrients parent:IndividualMicrobesGrowth {
+	float nutrient_rate <- 1.0;
+	parameter "Rate of requested nutrients in the DAM" var:nutrient_rate;
+	
 	reflex {
 		ask populations.values {
 			do update(C, myself.carrying_capacity);
@@ -302,6 +320,12 @@ experiment CollectiveMicrobesGrowth parent:MicrobesTestBase {
 			}
 		}
 	}
+}
+
+experiment CollectiveMicrobesGrowth_InfiniteNutrients parent:CollectiveMicrobesGrowth {
+	float nutrient_rate <- 1.0;
+	parameter "Rate of requested nutrients in the DAM" var:nutrient_rate;
+	
 	reflex {
 		ask populations.values {
 			do update(sum(myself.populations collect each.C), myself.carrying_capacity);
@@ -322,6 +346,170 @@ experiment CollectiveMicrobesGrowth parent:MicrobesTestBase {
 			dom[2] <- myself.nutrient_rate * sum(myself.microbe_species collect myself.populations[each].requested_C);
 			dom[0] <- myself.nutrient_rate * sum(myself.microbe_species collect myself.populations[each].requested_N);
 			dom[1] <- myself.nutrient_rate * sum(myself.microbe_species collect myself.populations[each].requested_P);
+		}
+	}
+}
+
+experiment CollectiveMicrobesGrowth_FixedNutrients parent:CollectiveMicrobesGrowth {
+	float C_dom <- 15#gram;
+	map<species<MicrobePopulation>, float> C_dom_output <- [Y_Strategist::C_dom, A_Strategist::C_dom, S_Strategist::C_dom];
+	
+	parameter "C dom" var:C_dom;
+	
+	init {
+		do feed_dam;
+	}
+	
+	reflex {
+		ask populations.values {
+			do update(sum(myself.populations collect each.C), myself.carrying_capacity);
+		}
+		
+		ask PoreParticle {
+			do microbe_life;
+		}
+		
+		do update_output_data;
+	}
+	
+	action feed_dam {
+		ask Dam {
+			myself.total_C_dom <- myself.total_C_dom + myself.C_dom;
+			// The dam is fed with the nutrients requested by all populations
+			dom[2] <- dom[2] + myself.C_dom;
+			dom[0] <- dom[0] + myself.C_dom / (min(myself.populations collect each.C_N));
+			dom[1] <- dom[1] + myself.C_dom / (min(myself.populations collect each.C_P));
+		}
+	}
+}
+
+experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
+	
+	float init_C_labile <- 1.0;
+	float C_N_labile <- 20.0;
+	float C_P_labile <- 34.0;
+	
+	float init_C_recal <- 10.0;
+	float C_N_recal <- 20.0;
+	float C_P_recal <- 34.0;
+	
+	parameter "C labile (g)" var:init_C_labile;
+	parameter "C recal (g)" var:init_C_recal;
+	
+	map<species<MicrobePopulation>, float> C_dom_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
+	map<species<MicrobePopulation>, float> N_dom_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
+	map<species<MicrobePopulation>, float> P_dom_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
+	
+	map<species<MicrobePopulation>, float> C_labile_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
+	map<species<MicrobePopulation>, float> N_labile_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
+	map<species<MicrobePopulation>, float> P_labile_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
+	
+	map<species<MicrobePopulation>, list<float>> enzymes_output <- [
+		Y_Strategist::[0.0, 0.0, 0.0, 0.0],
+		A_Strategist::[0.0, 0.0, 0.0, 0.0],
+		S_Strategist::[0.0, 0.0, 0.0, 0.0]
+	];
+	
+	init {
+		loop s over: microbe_species {
+			create OrganicParticle with: [
+				C_labile: init_C_labile#gram,
+				N_labile: init_C_labile#gram/C_N_labile,
+				P_labile: init_C_labile#gram/C_P_labile,
+				C_recalcitrant: init_C_recal#gram,
+				N_recalcitrant: init_C_recal#gram/C_N_recal,
+				P_recalcitrant: init_C_recal#gram/C_P_recal
+			] {
+				myself.total_C_labile <- myself.total_C_labile + C_labile;
+				myself.total_C_recal <- myself.total_C_recal + C_recalcitrant;
+				ask myself.pores[s] {
+					add myself to: self.accessible_organics;
+				}
+			}
+		}
+		ask populations.values {
+			do update(C, myself.carrying_capacity);
+			write "Enzyme optimization (" + species(self) +"):";
+			write "  DOM: " + myself.dams[species(self)].dom[2] + ", " + myself.dams[species(self)].dom[0] + ", " + myself.dams[species(self)].dom[1];
+			write "  Labile: " + sum(myself.pores[species(self)].accessible_organics collect each.C_labile)/#gram + ", "
+				+ sum(myself.pores[species(self)].accessible_organics collect each.N_labile)/#gram + ", "
+				+ sum(myself.pores[species(self)].accessible_organics collect each.P_labile)/#gram;
+			do optimize_enzymes(myself.dams[species(self)], myself.pores[species(self)].accessible_organics);
+		}
+	}
+	
+	reflex {
+		ask PoreParticle {
+			do decompose;
+			do microbe_life;
+		}
+		do update_output_data;
+		loop s over:microbe_species {
+			C_dom_output[s] <- dams[s].dom[2];
+			N_dom_output[s] <- dams[s].dom[0];
+			P_dom_output[s] <- dams[s].dom[1];
+			C_labile_output[s] <- sum(pores[s].accessible_organics collect each.C_labile);
+			N_labile_output[s] <- sum(pores[s].accessible_organics collect each.N_labile);
+			P_labile_output[s] <- sum(pores[s].accessible_organics collect each.P_labile);
+			enzymes_output[s] <- [
+				populations[s].enzymes.T_cellulolytic,
+				populations[s].enzymes.T_amino,
+				populations[s].enzymes.T_P,
+				populations[s].enzymes.T_recal
+				];
+		}
+	}
+		
+	output {
+		display "C dom" {
+			chart "C dom" {
+				if enable_Y_Strategist {
+					data "C dom Y strategists (g)" value:C_dom_output[Y_Strategist]/#gram marker: false;
+					if only_one_population {
+						data "N dom Y strategists (g)" value:N_dom_output[Y_Strategist]/#gram marker: false;
+						data "P dom Y strategists (g)" value:P_dom_output[Y_Strategist]/#gram marker: false;
+					}
+					data "C labile Y strategists (g)" value:C_labile_output[Y_Strategist]/#gram marker: false;
+					if only_one_population {
+						data "N labile Y strategists (g)" value:N_labile_output[Y_Strategist]/#gram marker: false;
+						data "P labile Y strategists (g)" value:P_labile_output[Y_Strategist]/#gram marker: false;
+					}
+				}
+				if enable_A_Strategist {
+					data "C dom A strategists (g)" value:C_dom_output[A_Strategist]/#gram marker: false;
+					if only_one_population {
+						data "N dom A strategists (g)" value:N_dom_output[A_Strategist]/#gram marker: false;
+						data "P dom A strategists (g)" value:P_dom_output[A_Strategist]/#gram marker: false;
+					}
+					data "C labile A strategists (g)" value:C_labile_output[A_Strategist]/#gram marker: false;
+					if only_one_population {
+						data "N labile A strategists (g)" value:N_labile_output[A_Strategist]/#gram marker: false;
+						data "P labile A strategists (g)" value:P_labile_output[A_Strategist]/#gram marker: false;
+					}
+				}
+				if enable_S_Strategist {
+					data "C dom S strategists (g)" value:C_dom_output[S_Strategist]/#gram marker: false;
+					if only_one_population {
+						data "N dom S strategists (g)" value:N_dom_output[S_Strategist]/#gram marker: false;
+						data "P dom S strategists (g)" value:P_dom_output[S_Strategist]/#gram marker: false;
+					}
+					data "C labile S strategists (g)" value:C_labile_output[S_Strategist]/#gram marker: false;
+					if only_one_population {
+						data "N labile S strategists (g)" value:N_labile_output[S_Strategist]/#gram marker: false;
+						data "P labile S strategists (g)" value:P_labile_output[S_Strategist]/#gram marker: false;
+					}
+				}
+			}
+		}
+		display "Enzymes" {
+			chart "Enzymes (Y Strategists)" {
+				if enable_Y_Strategist {
+					data "T C (gS/gM/h)" value:enzymes_output[Y_Strategist][0]/(#gram/#gram/#h) marker: false;
+					data "T N (gS/gM/h)" value:enzymes_output[Y_Strategist][1]/(#gram/#gram/#h) marker: false;
+					data "T P (gS/gM/h)" value:enzymes_output[Y_Strategist][2]/(#gram/#gram/#h) marker: false;
+					data "T r (gS/gM/h)" value:enzymes_output[Y_Strategist][3]/(#gram/#gram/#h) marker: false;
+				}
+			}
 		}
 	}
 }

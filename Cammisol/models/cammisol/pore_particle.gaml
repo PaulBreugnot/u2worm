@@ -29,7 +29,7 @@ species PoreParticle schedules:[] {
 	list<OrganicParticle> accessible_organics;
 
 
-	reflex decompose {
+	action decompose {
 		float total_C_labile <- sum(accessible_organics collect each.C_labile);
 		float total_C_recal <- sum(accessible_organics collect each.C_recalcitrant);
 		
