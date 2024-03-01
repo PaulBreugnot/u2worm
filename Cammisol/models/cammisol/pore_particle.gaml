@@ -139,10 +139,14 @@ species PoreParticle schedules:[] {
 			float N_rate  <- total_requested_N > 0.0 ? (requested_N / total_requested_N) : 0.0;
 			float P_rate  <- total_requested_P > 0.0 ? (requested_P / total_requested_P) : 0.0;
 			
-			// If total_X_consumed = total_X_wanted, X_consum = X_wanted for all microbe population
+			// If total_X_consumed = total_X_requested, X_consum = X_requested for all microbe population
 			float assimilated_C <- total_C_consumed * C_rate;
 			float assimilated_N <- total_N_consumed * N_rate;
 			float assimilated_P <- total_P_consumed * P_rate;
+			
+			assimilated_C <- min(assimilated_C, assimilated_N * requested_C_N, assimilated_P * requested_C_P);
+			assimilated_N <- assimilated_C / requested_C_N;
+			assimilated_P <- assimilated_C / requested_C_P;
 			
 //			write "";
 //			write "C: " + (requested_C() > 0 ? 100*assimilated_C / requested_C() : -1);

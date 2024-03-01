@@ -89,6 +89,8 @@ species MicrobePopulation schedules:[]
 	float requested_C;
 	float requested_N;
 	float requested_P;
+	float requested_C_N;
+	float requested_C_P;
 	
 	init {
 		create Enzymes {
@@ -201,8 +203,8 @@ species MicrobePopulation schedules:[]
 		}
 		ask enzymatic_activity_problem {
 			// Update required C/N and C/P rate, and microbe biomass
-			C_N <- myself.C_N;
-			C_P <- myself.C_P;
+			C_N <- myself.requested_C_N;
+			C_P <- myself.requested_C_P;
 			C_microbes <- myself.active_C;
 		}
 		create SimulatedAnnealing with:[
@@ -232,8 +234,10 @@ species MicrobePopulation schedules:[]
 	action update(float total_C_in_pore, float pore_carrying_capacity) {
 		active_C <- C * awake_population;
 		requested_C <- max(0.0, active_C * local_step / (carbon_use_efficiency * dividing_time) * (1.0 - total_C_in_pore/pore_carrying_capacity) - cytosol_C);
-		requested_N <- (C + carbon_use_efficiency * requested_C) / C_N - (N+cytosol_N);
-		requested_P <- (C + carbon_use_efficiency * requested_C) / C_P - (P+cytosol_P);
+		requested_N <- carbon_use_efficiency * requested_C / C_N - cytosol_N;
+		requested_P <- carbon_use_efficiency * requested_C / C_P - cytosol_P;
+		requested_C_N <- C_N / carbon_use_efficiency;
+		requested_C_P <- C_P / carbon_use_efficiency;
 	}
 	
 	action life(
@@ -241,12 +245,12 @@ species MicrobePopulation schedules:[]
 		float assimilated_C, float assimilated_N, float assimilated_P
 	)
 	{
-		if(requested_C = 0) {
-			awake_population <- 1.0;
-		} else {
-			awake_population <- assimilated_C / requested_C;
-		}
-		awake_population <- max(awake_population, minimum_awake_rate);
+//		if(requested_C = 0) {
+//			awake_population <- 1.0;
+//		} else {
+//			awake_population <- assimilated_C / requested_C;
+//		}
+//		awake_population <- max(awake_population, minimum_awake_rate);
 	
 		cytosol_C <- cytosol_C + assimilated_C;
 		cytosol_N <- cytosol_N + assimilated_N;

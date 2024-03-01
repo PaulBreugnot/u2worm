@@ -45,14 +45,22 @@ experiment MicrobesTestBase {
 	float C_N <- 10.0;
 	float C_P <- 17.0;
 	float total_C_dom <- 0.0;
+	float total_N_dom <- 0.0;
+	float total_P_dom <- 0.0;
 	float total_C_labile <- 0.0;
+	float total_N_labile <- 0.0;
+	float total_P_labile <- 0.0;
 	float total_C_recal <- 0.0;
+	float total_N_recal <- 0.0;
+	float total_P_recal <- 0.0;
 	
 	map<species<MicrobePopulation>, float> init_C;
 	map<species<MicrobePopulation>, float> C;
-	map<species<MicrobePopulation>, float> C_cytosol;
 	map<species<MicrobePopulation>, float> N;
 	map<species<MicrobePopulation>, float> P;
+	map<species<MicrobePopulation>, float> C_cytosol;
+	map<species<MicrobePopulation>, float> N_cytosol;
+	map<species<MicrobePopulation>, float> P_cytosol;
 	map<species<MicrobePopulation>, float> awake;
 	
 	action change_species {
@@ -76,12 +84,16 @@ experiment MicrobesTestBase {
 		}
 		C <- [];
 		C_cytosol <- [];
+		N_cytosol <- [];
+		P_cytosol <- [];
 		N <- [];
 		P <- [];
 		awake <- [];
 		loop s over: _microbe_species {
 			C[s] <- init_C[s];
 			C_cytosol[s] <- 0.0;
+			N_cytosol[s] <- 0.0;
+			P_cytosol[s] <- 0.0;
 			N[s] <- init_C[s]/C_N;
 			P[s] <- init_C[s]/C_P;
 			awake[s] <- 1.0;
@@ -102,23 +114,52 @@ experiment MicrobesTestBase {
 		loop s over:microbe_species {
 			C[s] <- populations[s].C;
 			C_cytosol[s] <- populations[s].cytosol_C;
+			N_cytosol[s] <- populations[s].cytosol_N;
+			P_cytosol[s] <- populations[s].cytosol_P;
 			N[s] <- populations[s].N;
 			P[s] <- populations[s].P;
 			awake[s] <- populations[s].awake_population;
 		}
 	}
 	
+	action update_dams {
+		float prev_C <- sum(Dam collect each.dom[2]);
+		float prev_N <- sum(Dam collect each.dom[2]);
+		float prev_P <- sum(Dam collect each.dom[2]);
+		do feed_dams;
+		float current_C <- sum(Dam collect each.dom[2]);
+		float current_N <- sum(Dam collect each.dom[0]);
+		float current_P <- sum(Dam collect each.dom[1]);
+		total_C_dom <- total_C_dom + (current_C - prev_C);
+		total_N_dom <- total_N_dom + (current_N - prev_N);
+		total_P_dom <- total_P_dom + (current_P - prev_P);
+	}
+	
+	action feed_dams virtual:true;
+	
 	output {
 		display "C" {
 			chart "Microbes populations" {
 				if enable_Y_Strategist {
 					data "Y strategists (g)" value:C[Y_Strategist]/#gram marker: false;
+					if only_one_population {
+						data "N dom Y strategists (g)" value:N[Y_Strategist]/#gram marker: false;
+						data "P dom Y strategists (g)" value:P[Y_Strategist]/#gram marker: false;
+					}
 				}
 				if enable_A_Strategist {
 					data "A strategists (g)" value:C[A_Strategist]/#gram marker: false;
+					if only_one_population {
+						data "N dom A strategists (g)" value:N[A_Strategist]/#gram marker: false;
+						data "P dom A strategists (g)" value:P[A_Strategist]/#gram marker: false;
+					}
 				}
 				if enable_S_Strategist {
 					data "S strategists (g)" value:C[S_Strategist]/#gram marker: false;
+					if only_one_population {
+						data "N dom S strategists (g)" value:N[S_Strategist]/#gram marker: false;
+						data "P dom S strategists (g)" value:P[S_Strategist]/#gram marker: false;
+					}
 				}
 			}
 		}
@@ -158,15 +199,33 @@ experiment MicrobesTestBase {
 			}
 		}
 		
-		display "C conservation" {
-			chart "C conservation" {
-				data "Conservation"
+		display "Mass conservation" {
+			chart "Mass conservation" {
+				data "C"
 					value:(total_C_dom + total_C_labile + total_C_recal + sum(init_C.values))
 					/ (
 						sum(Dam collect each.dom[2]) +
 						sum(OrganicParticle collect each.C_labile) +
 						sum(OrganicParticle collect each.C_recalcitrant) +
 						sum(C_cytosol.values) + sum(C.values) + microbe_CO2_emissions
+					)
+					marker: false;
+				data "N"
+					value:(total_N_dom + total_N_labile + total_N_recal + sum(init_C.values collect (each/C_N)))
+					/ (
+						sum(Dam collect (each.dom[0] + each.dim[0])) +
+						sum(OrganicParticle collect each.N_labile) +
+						sum(OrganicParticle collect each.N_recalcitrant) +
+						sum(N_cytosol.values) + sum(N.values)
+					)
+					marker: false;
+				data "P"
+					value:(total_P_dom + total_P_labile + total_P_recal + sum(init_C.values collect (each/C_P)))
+					/ (
+						sum(Dam collect (each.dom[1] + each.dim[1])) +
+						sum(OrganicParticle collect each.P_labile) +
+						sum(OrganicParticle collect each.P_recalcitrant) +
+						sum(P_cytosol.values) + sum(P.values)
 					)
 					marker: false;
 			}
@@ -220,6 +279,25 @@ experiment IndividualMicrobesGrowth parent:MicrobesTestBase {
 			}
 		}
 	}
+	
+	action feed_dams {
+		loop s over:microbe_species {
+			Dam dam <- dams[s];
+			MicrobePopulation population <- populations[s];
+			write "" + dam + " " + (dam = nil);
+			write "s arg: " + s;
+			do feed_dam(population, dam);
+		}
+	}
+	
+	
+	action update_populations {
+		ask populations.values {
+			do update(C, myself.carrying_capacity);
+		}
+	}
+	
+	action feed_dam(MicrobePopulation population, Dam dam) virtual:true;
 }
 
 experiment IndividualMicrobesGrowth_InfiniteNutrients parent:IndividualMicrobesGrowth {
@@ -227,10 +305,8 @@ experiment IndividualMicrobesGrowth_InfiniteNutrients parent:IndividualMicrobesG
 	parameter "Rate of requested nutrients in the DAM" var:nutrient_rate;
 	
 	reflex {
-		ask populations.values {
-			do update(C, myself.carrying_capacity);
-		}
-		do feed_dams;
+		do update_populations;
+		do update_dams;
 		
 		ask PoreParticle {
 			do microbe_life;
@@ -238,15 +314,13 @@ experiment IndividualMicrobesGrowth_InfiniteNutrients parent:IndividualMicrobesG
 		do update_output_data;
 	}
 	
-	action feed_dams {
-		loop s over: microbe_species {
-			ask dams[s] {
-				myself.total_C_dom <- myself.total_C_dom + myself.nutrient_rate * myself.populations[s].requested_C;
-				// Each dam is fed with the nutrients requested by the population
-				dom[2] <- dom[2] + myself.nutrient_rate * myself.populations[s].requested_C;
-				dom[0] <- dom[0] + myself.nutrient_rate * myself.populations[s].requested_N;
-				dom[1] <- dom[1] + myself.nutrient_rate * myself.populations[s].requested_P;
-			}
+	action feed_dam(MicrobePopulation population, Dam dam) {
+		write "" + dam + " " + (dam = nil);
+		// Each dam is fed with the nutrients requested by the population
+		ask dam {
+			dom[2] <- dom[2] + myself.nutrient_rate * population.requested_C;
+			dom[0] <- dom[0] + myself.nutrient_rate * population.requested_N;
+			dom[1] <- dom[1] + myself.nutrient_rate * population.requested_P;			
 		}
 	}
 }
@@ -258,13 +332,12 @@ experiment IndividualMicrobesGrowth_FixedNutrients parent:IndividualMicrobesGrow
 	parameter "C dom" var:C_dom;
 	
 	init {
-		do feed_dams;
+		do update_populations;
+		do update_dams;
 	}
 	
 	reflex {
-		ask populations.values {
-			do update(C, myself.carrying_capacity);
-		}
+		do update_populations;
 		ask PoreParticle {
 			do microbe_life;
 		}
@@ -274,15 +347,12 @@ experiment IndividualMicrobesGrowth_FixedNutrients parent:IndividualMicrobesGrow
 		}
 	}
 	
-	action feed_dams {
-		loop s over: microbe_species {
-			ask dams[s] {
-				myself.total_C_dom <- myself.total_C_dom + myself.C_dom;
-				// Each dam is fed with the nutrients requested by the population
-				dom[2] <- dom[2] + myself.C_dom;
-				dom[0] <- dom[0] + myself.C_dom / myself.populations[s].C_N;
-				dom[1] <- dom[1] + myself.C_dom / myself.populations[s].C_P;
-			}
+	action feed_dam(MicrobePopulation population, Dam dam) {
+		ask dam {
+			// Each dam is fed with the nutrients requested by the population
+			dom[2] <- dom[2] + myself.C_dom;
+			dom[0] <- dom[0] + myself.C_dom / population.requested_C_N;
+			dom[1] <- dom[1] + myself.C_dom / population.requested_C_P;
 		}
 	}
 	
@@ -305,6 +375,7 @@ experiment IndividualMicrobesGrowth_FixedNutrients parent:IndividualMicrobesGrow
 
 experiment CollectiveMicrobesGrowth parent:MicrobesTestBase {
 	Dam dam;
+	
 	init {
 		create Dam {
 			myself.dam <- self;
@@ -320,6 +391,18 @@ experiment CollectiveMicrobesGrowth parent:MicrobesTestBase {
 			}
 		}
 	}
+	
+	action update_populations {
+		ask populations.values {
+			do update(sum(myself.populations collect each.C), myself.carrying_capacity);
+		}
+	}
+	
+	action feed_dams {
+		do feed_dam;
+	}
+	
+	action feed_dam virtual:true;
 }
 
 experiment CollectiveMicrobesGrowth_InfiniteNutrients parent:CollectiveMicrobesGrowth {
@@ -327,10 +410,8 @@ experiment CollectiveMicrobesGrowth_InfiniteNutrients parent:CollectiveMicrobesG
 	parameter "Rate of requested nutrients in the DAM" var:nutrient_rate;
 	
 	reflex {
-		ask populations.values {
-			do update(sum(myself.populations collect each.C), myself.carrying_capacity);
-		}
-		do feed_dam;
+		do update_populations;
+		do update_dams;
 		
 		ask PoreParticle {
 			do microbe_life;
@@ -341,7 +422,6 @@ experiment CollectiveMicrobesGrowth_InfiniteNutrients parent:CollectiveMicrobesG
 	
 	action feed_dam {
 		ask Dam {
-			myself.total_C_dom <- myself.total_C_dom + myself.nutrient_rate * sum(myself.microbe_species collect myself.populations[each].requested_C);
 			// The dam is fed with the nutrients requested by all populations
 			dom[2] <- myself.nutrient_rate * sum(myself.microbe_species collect myself.populations[each].requested_C);
 			dom[0] <- myself.nutrient_rate * sum(myself.microbe_species collect myself.populations[each].requested_N);
@@ -357,13 +437,12 @@ experiment CollectiveMicrobesGrowth_FixedNutrients parent:CollectiveMicrobesGrow
 	parameter "C dom" var:C_dom;
 	
 	init {
-		do feed_dam;
+		do update_populations;
+		do update_dams;
 	}
 	
 	reflex {
-		ask populations.values {
-			do update(sum(myself.populations collect each.C), myself.carrying_capacity);
-		}
+		do update_populations;
 		
 		ask PoreParticle {
 			do microbe_life;
@@ -374,17 +453,15 @@ experiment CollectiveMicrobesGrowth_FixedNutrients parent:CollectiveMicrobesGrow
 	
 	action feed_dam {
 		ask Dam {
-			myself.total_C_dom <- myself.total_C_dom + myself.C_dom;
 			// The dam is fed with the nutrients requested by all populations
 			dom[2] <- dom[2] + myself.C_dom;
-			dom[0] <- dom[0] + myself.C_dom / (min(myself.populations collect each.C_N));
-			dom[1] <- dom[1] + myself.C_dom / (min(myself.populations collect each.C_P));
+			dom[0] <- dom[0] + myself.C_dom / (min(myself.populations collect each.requested_C_N));
+			dom[1] <- dom[1] + myself.C_dom / (min(myself.populations collect each.requested_C_P));
 		}
 	}
 }
 
 experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
-	
 	float init_C_labile <- 1.0;
 	float C_N_labile <- 20.0;
 	float C_P_labile <- 34.0;
@@ -394,7 +471,11 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 	float C_P_recal <- 34.0;
 	
 	parameter "C labile (g)" var:init_C_labile;
+	parameter "C/N labile (g)" var:C_N_labile;
+	parameter "C/P labile (g)" var:C_P_labile;
 	parameter "C recal (g)" var:init_C_recal;
+	parameter "C/N recal (g)" var:C_N_recal;
+	parameter "C/P recal (g)" var:C_P_recal;
 	
 	map<species<MicrobePopulation>, float> C_dom_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
 	map<species<MicrobePopulation>, float> N_dom_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
@@ -410,6 +491,10 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 		S_Strategist::[0.0, 0.0, 0.0, 0.0]
 	];
 	
+	action feed_dam(MicrobePopulation population, Dam dam) {
+		// Nothing to do
+	}
+	
 	init {
 		loop s over: microbe_species {
 			create OrganicParticle with: [
@@ -421,7 +506,11 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 				P_recalcitrant: init_C_recal#gram/C_P_recal
 			] {
 				myself.total_C_labile <- myself.total_C_labile + C_labile;
+				myself.total_N_labile <- myself.total_N_labile + N_labile;
+				myself.total_P_labile <- myself.total_P_labile + P_labile;
 				myself.total_C_recal <- myself.total_C_recal + C_recalcitrant;
+				myself.total_N_recal <- myself.total_N_recal + N_recalcitrant;
+				myself.total_P_recal <- myself.total_P_recal + P_recalcitrant;
 				ask myself.pores[s] {
 					add myself to: self.accessible_organics;
 				}
