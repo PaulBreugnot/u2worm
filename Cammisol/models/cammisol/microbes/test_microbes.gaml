@@ -143,22 +143,22 @@ experiment MicrobesTestBase {
 				if enable_Y_Strategist {
 					data "Y strategists (g)" value:C[Y_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N dom Y strategists (g)" value:N[Y_Strategist]/#gram marker: false;
-						data "P dom Y strategists (g)" value:P[Y_Strategist]/#gram marker: false;
+						data "N Y strategists (g)" value:N[Y_Strategist]/#gram marker: false;
+						data "P Y strategists (g)" value:P[Y_Strategist]/#gram marker: false;
 					}
 				}
 				if enable_A_Strategist {
 					data "A strategists (g)" value:C[A_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N dom A strategists (g)" value:N[A_Strategist]/#gram marker: false;
-						data "P dom A strategists (g)" value:P[A_Strategist]/#gram marker: false;
+						data "N A strategists (g)" value:N[A_Strategist]/#gram marker: false;
+						data "P A strategists (g)" value:P[A_Strategist]/#gram marker: false;
 					}
 				}
 				if enable_S_Strategist {
 					data "S strategists (g)" value:C[S_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N dom S strategists (g)" value:N[S_Strategist]/#gram marker: false;
-						data "P dom S strategists (g)" value:P[S_Strategist]/#gram marker: false;
+						data "N S strategists (g)" value:N[S_Strategist]/#gram marker: false;
+						data "P S strategists (g)" value:P[S_Strategist]/#gram marker: false;
 					}
 				}
 			}
@@ -480,6 +480,8 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 	map<species<MicrobePopulation>, float> C_dom_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
 	map<species<MicrobePopulation>, float> N_dom_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
 	map<species<MicrobePopulation>, float> P_dom_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
+	map<species<MicrobePopulation>, float> N_dim_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
+	map<species<MicrobePopulation>, float> P_dim_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
 	
 	map<species<MicrobePopulation>, float> C_labile_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
 	map<species<MicrobePopulation>, float> N_labile_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
@@ -537,6 +539,8 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 			C_dom_output[s] <- dams[s].dom[2];
 			N_dom_output[s] <- dams[s].dom[0];
 			P_dom_output[s] <- dams[s].dom[1];
+			N_dim_output[s] <- dams[s].dim[0];
+			P_dim_output[s] <- dams[s].dim[1];
 			C_labile_output[s] <- sum(pores[s].accessible_organics collect each.C_labile);
 			N_labile_output[s] <- sum(pores[s].accessible_organics collect each.N_labile);
 			P_labile_output[s] <- sum(pores[s].accessible_organics collect each.P_labile);
@@ -550,13 +554,15 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 	}
 		
 	output {
-		display "C dom" {
-			chart "C dom" {
+		display "C/N/P compartments" {
+			chart "C/N/P compartments" {
 				if enable_Y_Strategist {
 					data "C dom Y strategists (g)" value:C_dom_output[Y_Strategist]/#gram marker: false;
 					if only_one_population {
 						data "N dom Y strategists (g)" value:N_dom_output[Y_Strategist]/#gram marker: false;
 						data "P dom Y strategists (g)" value:P_dom_output[Y_Strategist]/#gram marker: false;
+						data "N dim Y strategists (g)" value:N_dim_output[Y_Strategist]/#gram marker: false;
+						data "P dim Y strategists (g)" value:P_dim_output[Y_Strategist]/#gram marker: false;
 					}
 					data "C labile Y strategists (g)" value:C_labile_output[Y_Strategist]/#gram marker: false;
 					if only_one_population {
@@ -569,6 +575,8 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 					if only_one_population {
 						data "N dom A strategists (g)" value:N_dom_output[A_Strategist]/#gram marker: false;
 						data "P dom A strategists (g)" value:P_dom_output[A_Strategist]/#gram marker: false;
+						data "N dim Y strategists (g)" value:N_dim_output[Y_Strategist]/#gram marker: false;
+						data "P dim Y strategists (g)" value:P_dim_output[Y_Strategist]/#gram marker: false;
 					}
 					data "C labile A strategists (g)" value:C_labile_output[A_Strategist]/#gram marker: false;
 					if only_one_population {
@@ -581,6 +589,8 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 					if only_one_population {
 						data "N dom S strategists (g)" value:N_dom_output[S_Strategist]/#gram marker: false;
 						data "P dom S strategists (g)" value:P_dom_output[S_Strategist]/#gram marker: false;
+						data "N dim Y strategists (g)" value:N_dim_output[Y_Strategist]/#gram marker: false;
+						data "P dim Y strategists (g)" value:P_dim_output[Y_Strategist]/#gram marker: false;
 					}
 					data "C labile S strategists (g)" value:C_labile_output[S_Strategist]/#gram marker: false;
 					if only_one_population {
