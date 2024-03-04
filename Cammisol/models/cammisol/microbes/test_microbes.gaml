@@ -141,21 +141,21 @@ experiment MicrobesTestBase {
 		display "C" {
 			chart "Microbes populations" {
 				if enable_Y_Strategist {
-					data "Y strategists (g)" value:C[Y_Strategist]/#gram marker: false;
+					data "C Y strategists (g)" value:C[Y_Strategist]/#gram marker: false;
 					if only_one_population {
 						data "N Y strategists (g)" value:N[Y_Strategist]/#gram marker: false;
 						data "P Y strategists (g)" value:P[Y_Strategist]/#gram marker: false;
 					}
 				}
 				if enable_A_Strategist {
-					data "A strategists (g)" value:C[A_Strategist]/#gram marker: false;
+					data "C A strategists (g)" value:C[A_Strategist]/#gram marker: false;
 					if only_one_population {
 						data "N A strategists (g)" value:N[A_Strategist]/#gram marker: false;
 						data "P A strategists (g)" value:P[A_Strategist]/#gram marker: false;
 					}
 				}
 				if enable_S_Strategist {
-					data "S strategists (g)" value:C[S_Strategist]/#gram marker: false;
+					data "C S strategists (g)" value:C[S_Strategist]/#gram marker: false;
 					if only_one_population {
 						data "N S strategists (g)" value:N[S_Strategist]/#gram marker: false;
 						data "P S strategists (g)" value:P[S_Strategist]/#gram marker: false;

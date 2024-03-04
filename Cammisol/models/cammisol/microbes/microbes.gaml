@@ -41,7 +41,8 @@ species Y_Strategist parent:MicrobePopulation {
 		cytosol_C <- total_C_init - C; // TODO: cytosol = C?
 		cytosol_N <- cytosol_C / C_N;
 		cytosol_P <- cytosol_C / C_P;
-
+		
+		cytosol_mineralization_rate <- 1.0;
 		
 		Enzymes _min_enzymes;
 		create Enzymes with: [
@@ -81,7 +82,7 @@ species A_Strategist parent:MicrobePopulation {
 		cytosol_N <- cytosol_C / C_N;
 		cytosol_P <- cytosol_C / C_P;
 		
-
+		cytosol_mineralization_rate <- 0.0;
 
 		Enzymes _min_enzymes;
 		create Enzymes with: [
@@ -121,6 +122,8 @@ species S_Strategist parent:MicrobePopulation {
 		cytosol_C <- total_C_init - C;
 		cytosol_N <- cytosol_C / C_N;
 		cytosol_P <- cytosol_C / C_P;
+		
+		cytosol_mineralization_rate <- 0.0;
 		
 		Enzymes _min_enzymes;
 		create Enzymes with: [

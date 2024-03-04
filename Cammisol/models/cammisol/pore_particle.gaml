@@ -122,13 +122,13 @@ species PoreParticle schedules:[] {
 		ask populations {
 			do update(total_microbes_C, myself.carrying_capacity);
 		}
-		float total_requested_C <- sum(populations collect each.requested_C);
-		float total_requested_N <- sum(populations collect each.requested_N);
-		float total_requested_P <- sum(populations collect each.requested_P);
+		float total_requested_C <- sum(populations collect max(0.0, each.requested_C-each.cytosol_C));
+		float total_requested_N_from_dom <- sum(populations collect max(0.0, each.requested_N-each.cytosol_N));
+		float total_requested_P_from_dom <- sum(populations collect max(0.0, each.requested_P-each.cytosol_P));
 		
 		float total_C_consumed <- min(dam.dom[2], total_requested_C);
-		float total_N_consumed <- min(dam.dom[0], total_requested_N);
-		float total_P_consumed <- min(dam.dom[1], total_requested_P);
+		float total_N_consumed_from_dom <- min(dam.dom[0], total_requested_N_from_dom);
+		float total_P_consumed_from_dom <- min(dam.dom[1], total_requested_P_from_dom);
 		
 		ask populations
 		{
@@ -136,17 +136,17 @@ species PoreParticle schedules:[] {
 			
 			// Proportion of the total_*_consumed that will be consumed by the current microbe population
 			float C_rate  <- total_requested_C > 0.0 ? (requested_C / total_requested_C) : 0.0;
-			float N_rate  <- total_requested_N > 0.0 ? (requested_N / total_requested_N) : 0.0;
-			float P_rate  <- total_requested_P > 0.0 ? (requested_P / total_requested_P) : 0.0;
+			float N_rate  <- total_requested_N_from_dom > 0.0 ? (requested_N / total_requested_N_from_dom) : 0.0;
+			float P_rate  <- total_requested_P_from_dom > 0.0 ? (requested_P / total_requested_P_from_dom) : 0.0;
 			
 			// If total_X_consumed = total_X_requested, X_consum = X_requested for all microbe population
 			float assimilated_C <- total_C_consumed * C_rate;
-			float assimilated_N <- total_N_consumed * N_rate;
-			float assimilated_P <- total_P_consumed * P_rate;
+			float assimilated_N <- total_N_consumed_from_dom * N_rate;
+			float assimilated_P <- total_P_consumed_from_dom * P_rate;
 			
-			assimilated_C <- min(assimilated_C, assimilated_N * requested_C_N, assimilated_P * requested_C_P);
-			assimilated_N <- assimilated_C / requested_C_N;
-			assimilated_P <- assimilated_C / requested_C_P;
+			cytosol_C <- cytosol_C + assimilated_C;
+			cytosol_N <- cytosol_N + assimilated_N;
+			cytosol_P <- cytosol_P + assimilated_P;
 			
 //			write "";
 //			write "C: " + (requested_C() > 0 ? 100*assimilated_C / requested_C() : -1);
@@ -156,10 +156,31 @@ species PoreParticle schedules:[] {
 			myself.dam.dom[0] <- myself.dam.dom[0] - assimilated_N;
 			myself.dam.dom[1] <- myself.dam.dom[1] - assimilated_P;
 			myself.dam.dom[2] <- myself.dam.dom[2] - assimilated_C;
-
+		}
+		
+		float total_requested_N_from_dim <- sum(populations collect max(0.0, each.requested_N-each.cytosol_N));
+		float total_requested_P_from_dim <- sum(populations collect max(0.0, each.requested_P-each.cytosol_P));
+	
+		float total_N_consumed_from_dim <- min(dam.dim[0], total_requested_N_from_dim);
+		float total_P_consumed_from_dim <- min(dam.dim[1], total_requested_P_from_dim);
+		
+		ask populations {
+			float N_rate  <- total_requested_N_from_dim > 0.0 ? (requested_N / total_requested_N_from_dim) : 0.0;
+			float P_rate  <- total_requested_P_from_dim > 0.0 ? (requested_P / total_requested_P_from_dim) : 0.0;
+		
+			float assimilated_N <- total_N_consumed_from_dim * N_rate;
+			float assimilated_P <- total_P_consumed_from_dim * P_rate;
+			
+			cytosol_N <- cytosol_N + assimilated_N;
+			cytosol_P <- cytosol_P + assimilated_P;
+			
+			myself.dam.dim[0] <- myself.dam.dim[0] - assimilated_N;
+			myself.dam.dim[1] <- myself.dam.dim[1] - assimilated_P;
+		}
+		
+		ask populations {
 			do life(
-				myself.dam, myself.accessible_organics,
-				assimilated_C, assimilated_N, assimilated_P
+				myself.dam, myself.accessible_organics
 			);
 		}	
 	}

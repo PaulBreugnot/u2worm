@@ -66,6 +66,8 @@ species MicrobePopulation schedules:[]
 	float cytosol_N <- 0#gram; 
 	float cytosol_P <- 0#gram;
 	
+	float cytosol_mineralization_rate <- 0.0;
+	
 	Enzymes enzymes;
 	Enzymes min_enzymes;
 	Enzymes max_enzymes;
@@ -233,16 +235,15 @@ species MicrobePopulation schedules:[]
 	
 	action update(float total_C_in_pore, float pore_carrying_capacity) {
 		active_C <- C * awake_population;
-		requested_C <- max(0.0, active_C * local_step / (carbon_use_efficiency * dividing_time) * (1.0 - total_C_in_pore/pore_carrying_capacity) - cytosol_C);
-		requested_N <- carbon_use_efficiency * requested_C / C_N - cytosol_N;
-		requested_P <- carbon_use_efficiency * requested_C / C_P - cytosol_P;
+		requested_C <- active_C * local_step / (carbon_use_efficiency * dividing_time) * (1.0 - total_C_in_pore/pore_carrying_capacity);
+		requested_N <- carbon_use_efficiency * requested_C / C_N;
+		requested_P <- carbon_use_efficiency * requested_C / C_P;
 		requested_C_N <- C_N / carbon_use_efficiency;
 		requested_C_P <- C_P / carbon_use_efficiency;
 	}
 	
 	action life(
-		Dam dam, list<OrganicParticle> accessible_organics,
-		float assimilated_C, float assimilated_N, float assimilated_P
+		Dam dam, list<OrganicParticle> accessible_organics
 	)
 	{
 //		if(requested_C = 0) {
@@ -251,15 +252,26 @@ species MicrobePopulation schedules:[]
 //			awake_population <- assimilated_C / requested_C;
 //		}
 //		awake_population <- max(awake_population, minimum_awake_rate);
-	
-		cytosol_C <- cytosol_C + assimilated_C;
-		cytosol_N <- cytosol_N + assimilated_N;
-		cytosol_P <- cytosol_P + assimilated_P;
 		
 		float C_respiration <- (1-carbon_use_efficiency) * cytosol_C;
 		float C_growth <- min(carbon_use_efficiency * cytosol_C, cytosol_N*C_N, cytosol_P*C_P);
 		do respirate(C_respiration);
 		do growth(C_growth);
+		
+		float left_C_in_cytosol <- cytosol_mineralization_rate * cytosol_C;
+		float left_N_in_cytosol <- cytosol_mineralization_rate * cytosol_N;
+		float left_P_in_cytosol <- cytosol_mineralization_rate * cytosol_P;
+		
+		ask dam {
+			dim[0] <- dim[0] + myself.cytosol_N - left_N_in_cytosol;
+			dim[1] <- dim[1] + myself.cytosol_P - left_P_in_cytosol;
+		}
+		microbe_CO2_emissions <- microbe_CO2_emissions + cytosol_C - left_C_in_cytosol;
+		
+		cytosol_C <- left_C_in_cytosol;
+		cytosol_N <- left_N_in_cytosol;
+		cytosol_P <- left_P_in_cytosol;
+		
 //		if(active_C > 0.0) {
 //			do optimize_enzymes(dam, accessible_organics);	
 //		}
