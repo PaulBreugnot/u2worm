@@ -59,10 +59,10 @@ species PoreParticle schedules:[] {
 			
 			WeightedEnzymes local_enzymes;
 			create WeightedEnzymes with: [
-				T_cellulolytic: total_enzymes.T_cellulolytic * C_labile / total_C_labile,
-				T_amino: total_enzymes.T_amino * C_labile / total_C_labile,
-				T_P: total_enzymes.T_P * C_labile / total_C_labile,
-				T_recal: total_enzymes.T_recal * C_recalcitrant / total_C_recal
+				T_cellulolytic: total_C_labile > 0.0 ? total_enzymes.T_cellulolytic * C_labile / total_C_labile : 0.0,
+				T_amino: total_C_labile > 0.0 ? total_enzymes.T_amino * C_labile / total_C_labile : 0.0,
+				T_P: total_C_labile > 0.0 ? total_enzymes.T_P * C_labile / total_C_labile : 0.0,
+				T_recal: total_C_recal > 0.0 ? total_enzymes.T_recal * C_recalcitrant / total_C_recal : 0.0
 			] {
 				local_enzymes <- self;
 			}
@@ -118,9 +118,8 @@ species PoreParticle schedules:[] {
 	}
 	
 	action microbe_life {
-		float total_microbes_C <- sum(populations collect each.C);
 		ask populations {
-			do update(total_microbes_C, myself.carrying_capacity);
+			do update;
 		}
 		float total_requested_C <- sum(populations collect max(0.0, each.requested_C-each.cytosol_C));
 		float total_requested_N_from_dom <- sum(populations collect max(0.0, each.requested_N-each.cytosol_N));
@@ -178,9 +177,9 @@ species PoreParticle schedules:[] {
 			myself.dam.dim[1] <- myself.dam.dim[1] - assimilated_P;
 		}
 		
-		ask populations {
+		ask shuffle(populations) {
 			do life(
-				myself.dam, myself.accessible_organics
+				myself.dam, myself.accessible_organics, sum(myself.populations collect each.C), myself.carrying_capacity
 			);
 		}	
 	}

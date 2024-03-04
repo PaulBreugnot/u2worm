@@ -124,8 +124,8 @@ experiment MicrobesTestBase {
 	
 	action update_dams {
 		float prev_C <- sum(Dam collect each.dom[2]);
-		float prev_N <- sum(Dam collect each.dom[2]);
-		float prev_P <- sum(Dam collect each.dom[2]);
+		float prev_N <- sum(Dam collect each.dom[0]);
+		float prev_P <- sum(Dam collect each.dom[1]);
 		do feed_dams;
 		float current_C <- sum(Dam collect each.dom[2]);
 		float current_N <- sum(Dam collect each.dom[0]);
@@ -293,7 +293,7 @@ experiment IndividualMicrobesGrowth parent:MicrobesTestBase {
 	
 	action update_populations {
 		ask populations.values {
-			do update(C, myself.carrying_capacity);
+			do update;
 		}
 	}
 	
@@ -394,7 +394,7 @@ experiment CollectiveMicrobesGrowth parent:MicrobesTestBase {
 	
 	action update_populations {
 		ask populations.values {
-			do update(sum(myself.populations collect each.C), myself.carrying_capacity);
+			do update;
 		}
 	}
 	
@@ -519,7 +519,7 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 			}
 		}
 		ask populations.values {
-			do update(C, myself.carrying_capacity);
+			do update;
 			write "Enzyme optimization (" + species(self) +"):";
 			write "  DOM: " + myself.dams[species(self)].dom[2] + ", " + myself.dams[species(self)].dom[0] + ", " + myself.dams[species(self)].dom[1];
 			write "  Labile: " + sum(myself.pores[species(self)].accessible_organics collect each.C_labile)/#gram + ", "
