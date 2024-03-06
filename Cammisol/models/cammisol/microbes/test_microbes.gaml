@@ -63,6 +63,22 @@ experiment MicrobesTestBase {
 	map<species<MicrobePopulation>, float> P_cytosol;
 	map<species<MicrobePopulation>, float> awake;
 	
+	string enzymes_display <- "Budget" among:["Budget", "Absolute"] on_change:update_enzyme_unit;
+	string enzyme_unit <- "gS/gM/h";
+	map<species<MicrobePopulation>, list<float>> enzymes_output <- [
+		Y_Strategist::[0.0, 0.0, 0.0, 0.0],
+		A_Strategist::[0.0, 0.0, 0.0, 0.0],
+		S_Strategist::[0.0, 0.0, 0.0, 0.0]
+	];
+	
+	action update_enzyme_unit {
+		if enzymes_display = "Budget" {
+			enzyme_unit <- "gS/gM/h";
+		} else if enzymes_display = "Absolute" {
+			enzyme_unit <- "gS/h";
+		}
+	}
+	
 	action change_species {
 		microbe_species <- init_species();
 	}
@@ -119,6 +135,22 @@ experiment MicrobesTestBase {
 			N[s] <- populations[s].N;
 			P[s] <- populations[s].P;
 			awake[s] <- populations[s].awake_population;
+			
+			if enzymes_display = "Budget" {
+				enzymes_output[s] <- [
+					populations[s].enzymes.T_cellulolytic/(#gram/#gram/#h),
+					populations[s].enzymes.T_amino/(#gram/#gram/#h),
+					populations[s].enzymes.T_P/(#gram/#gram/#h),
+					populations[s].enzymes.T_recal/(#gram/#gram/#h)
+					];
+			} else if enzymes_display = "Absolute" {
+				enzymes_output[s] <- [
+					populations[s].enzymes.T_cellulolytic * C[s] * awake[s] / (#gram/#h),
+					populations[s].enzymes.T_amino * C[s] * awake[s] / (#gram/#h),
+					populations[s].enzymes.T_P * C[s] * awake[s] / (#gram/#h),
+					populations[s].enzymes.T_recal * C[s] * awake[s] / (#gram/#h)
+					];
+			}
 		}
 	}
 	
@@ -385,6 +417,7 @@ experiment IndividualMicrobesGrowth_FixedNutrients parent:IndividualMicrobesGrow
 
 experiment CollectiveMicrobesGrowth parent:MicrobesTestBase {
 	Dam dam;
+	PoreParticle pore;
 	
 	init {
 		create Dam {
@@ -399,6 +432,7 @@ experiment CollectiveMicrobesGrowth parent:MicrobesTestBase {
 			loop s over:myself.microbe_species {
 				add myself.populations[s] to: populations;
 			}
+			myself.pore <- self;
 		}
 	}
 	
@@ -479,8 +513,6 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 	float init_C_recal <- 10.0;
 	float C_N_recal <- 20.0;
 	float C_P_recal <- 34.0;
-	string enzymes_display <- "Budget" among:["Budget", "Absolute"] on_change:update_enzyme_unit;
-	string enzyme_unit <- "gS/gM/h";
 	
 	parameter "C labile (g)" var:init_C_labile;
 	parameter "C/N labile (g)" var:C_N_labile;
@@ -503,13 +535,6 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 	map<species<MicrobePopulation>, float> C_recal_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
 	map<species<MicrobePopulation>, float> N_recal_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
 	map<species<MicrobePopulation>, float> P_recal_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
-	
-	map<species<MicrobePopulation>, list<float>> enzymes_output <- [
-		Y_Strategist::[0.0, 0.0, 0.0, 0.0],
-		A_Strategist::[0.0, 0.0, 0.0, 0.0],
-		S_Strategist::[0.0, 0.0, 0.0, 0.0]
-	];
-	
 	action feed_dam(MicrobePopulation population, Dam dam) {
 		// Nothing to do
 	}
@@ -566,35 +591,6 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 			C_recal_output[s] <- sum(pores[s].accessible_organics collect each.C_recalcitrant);
 			N_recal_output[s] <- sum(pores[s].accessible_organics collect each.N_recalcitrant);
 			P_recal_output[s] <- sum(pores[s].accessible_organics collect each.P_recalcitrant);
-			if enzymes_display = "Budget" {
-				enzymes_output[s] <- [
-					populations[s].enzymes.T_cellulolytic/(#gram/#gram/#h),
-					populations[s].enzymes.T_amino/(#gram/#gram/#h),
-					populations[s].enzymes.T_P/(#gram/#gram/#h),
-					populations[s].enzymes.T_recal/(#gram/#gram/#h)
-					];
-			} else if enzymes_display = "Absolute" {
-				enzymes_output[s] <- [
-					populations[s].enzymes.T_cellulolytic * C[s] * awake[s] / (#gram/#h),
-					populations[s].enzymes.T_amino * C[s] * awake[s] / (#gram/#h),
-					populations[s].enzymes.T_P * C[s] * awake[s] / (#gram/#h),
-					populations[s].enzymes.T_recal * C[s] * awake[s] / (#gram/#h)
-					];
-			}
-		}
-	}
-	
-	reflex when: sum(C_recal_output) = 0.0 {
-		ask simulation {
-			do pause;
-		}
-	}
-	
-	action update_enzyme_unit {
-		if enzymes_display = "Budget" {
-			enzyme_unit <- "gS/gM/h";
-		} else if enzymes_display = "Absolute" {
-			enzyme_unit <- "gS/h";
 		}
 	}
 	
@@ -658,6 +654,133 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 						data "P recal (S, g)" value:P_recal_output[S_Strategist]/#gram marker: false;
 					}
 				}
+			}
+		}
+		
+		display "Enzymes" {
+			chart "Enzymes" {
+				if enable_Y_Strategist {
+					data "T C (Y, " + enzyme_unit + ")" value:enzymes_output[Y_Strategist][0] marker: false;
+					data "T N (Y, " + enzyme_unit + ")" value:enzymes_output[Y_Strategist][1] marker: false;
+					data "T P (Y, " + enzyme_unit + ")" value:enzymes_output[Y_Strategist][2] marker: false;
+					data "T r (Y, " + enzyme_unit + ")" value:enzymes_output[Y_Strategist][3] marker: false;
+				}
+				if enable_A_Strategist {
+					data "T C (A, " + enzyme_unit + ")" value:enzymes_output[A_Strategist][0] marker: false;
+					data "T N (A, " + enzyme_unit + ")" value:enzymes_output[A_Strategist][1] marker: false;
+					data "T P (A, " + enzyme_unit + ")" value:enzymes_output[A_Strategist][2] marker: false;
+					data "T r (A, " + enzyme_unit + ")" value:enzymes_output[A_Strategist][3] marker: false;
+				}
+				if enable_S_Strategist {
+					data "T C (S, " + enzyme_unit + ")" value:enzymes_output[S_Strategist][0] marker: false;
+					data "T N (S, " + enzyme_unit + ")" value:enzymes_output[S_Strategist][1] marker: false;
+					data "T P (S, " + enzyme_unit + ")" value:enzymes_output[S_Strategist][2] marker: false;
+					data "T r (S, " + enzyme_unit + ")" value:enzymes_output[S_Strategist][3] marker: false;
+				}
+			}
+		}
+	}
+}
+
+experiment CollectiveMicrobesMetabolism parent:CollectiveMicrobesGrowth {
+	float init_C_labile <- 1.0;
+	float C_N_labile <- 20.0;
+	float C_P_labile <- 34.0;
+	
+	float init_C_recal <- 10.0;
+	float C_N_recal <- 20.0;
+	float C_P_recal <- 34.0;
+	
+	parameter "C labile (g)" var:init_C_labile;
+	parameter "C/N labile (g)" var:C_N_labile;
+	parameter "C/P labile (g)" var:C_P_labile;
+	parameter "C recal (g)" var:init_C_recal;
+	parameter "C/N recal (g)" var:C_N_recal;
+	parameter "C/P recal (g)" var:C_P_recal;
+	parameter "Enzymes display" var:enzymes_display;
+	
+	float C_dom_output <- 0.0;
+	float N_dom_output <- 0.0;
+	float P_dom_output <- 0.0;
+	float N_dim_output <- 0.0;
+	float P_dim_output <- 0.0;
+	
+	float C_labile_output <- 0.0;
+	float N_labile_output <- 0.0;
+	float P_labile_output <- 0.0;
+	
+	float C_recal_output <- 0.0;
+	float N_recal_output <- 0.0;
+	float P_recal_output <- 0.0;
+	action feed_dam {
+		// Nothing to do
+	}
+	
+	init {
+		create OrganicParticle with: [
+			C_labile: init_C_labile#gram,
+			N_labile: init_C_labile#gram/C_N_labile,
+			P_labile: init_C_labile#gram/C_P_labile,
+			C_recalcitrant: init_C_recal#gram,
+			N_recalcitrant: init_C_recal#gram/C_N_recal,
+			P_recalcitrant: init_C_recal#gram/C_P_recal
+		] {
+			myself.total_C_labile <- myself.total_C_labile + C_labile;
+			myself.total_N_labile <- myself.total_N_labile + N_labile;
+			myself.total_P_labile <- myself.total_P_labile + P_labile;
+			myself.total_C_recal <- myself.total_C_recal + C_recalcitrant;
+			myself.total_N_recal <- myself.total_N_recal + N_recalcitrant;
+			myself.total_P_recal <- myself.total_P_recal + P_recalcitrant;
+			ask PoreParticle {
+				add myself to: self.accessible_organics;
+			}
+		}
+		ask populations.values {
+			do update;
+		}
+	}
+	
+	reflex {
+		ask populations.values {
+			write "Enzyme optimization (" + species(self) +"):";
+			write "  DOM: " + myself.dam.dom[2] + ", " + myself.dam.dom[0] + ", " + myself.dam.dom[1];
+			write "  Labile: " + sum(myself.pore.accessible_organics collect each.C_labile)/#gram + ", "
+				+ sum(myself.pore.accessible_organics collect each.N_labile)/#gram + ", "
+				+ sum(myself.pore.accessible_organics collect each.P_labile)/#gram;
+			do optimize_enzymes(myself.dam, myself.pore.accessible_organics);
+		}
+		ask PoreParticle {
+			do decompose;
+			do microbe_life;
+		}
+		do update_output_data;
+		C_dom_output <- dam.dom[2];
+		N_dom_output <- dam.dom[0];
+		P_dom_output <- dam.dom[1];
+		N_dim_output <- dam.dim[0];
+		P_dim_output <- dam.dim[1];
+		C_labile_output <- sum(pore.accessible_organics collect each.C_labile);
+		N_labile_output <- sum(pore.accessible_organics collect each.N_labile);
+		P_labile_output <- sum(pore.accessible_organics collect each.P_labile);
+		C_recal_output <- sum(pore.accessible_organics collect each.C_recalcitrant);
+		N_recal_output <- sum(pore.accessible_organics collect each.N_recalcitrant);
+		P_recal_output <- sum(pore.accessible_organics collect each.P_recalcitrant);
+	}
+	
+	output {
+		display "C/N/P compartments" {
+			chart "C/N/P compartments" {
+				data "C dom (Y, g)" value:C_dom_output/#gram marker: false;
+				data "N dom (Y, g)" value:N_dom_output/#gram marker: false;
+				data "P dom (Y, g)" value:P_dom_output/#gram marker: false;
+				data "N dim (Y, g)" value:N_dim_output/#gram marker: false;
+				data "P dim (Y, g)" value:P_dim_output/#gram marker: false;
+				data "C labile (Y, g)" value:C_labile_output/#gram marker: false;
+				data "N labile (Y, g)" value:N_labile_output/#gram marker: false;
+				data "P labile (Y, g)" value:P_labile_output/#gram marker: false;
+				data "C recal (Y, g)" value:C_recal_output/#gram marker: false;
+				data "N recal (Y, g)" value:N_recal_output/#gram marker: false;
+				data "P recal (Y, g)" value:P_recal_output/#gram marker: false;
 			}
 		}
 		
