@@ -56,11 +56,14 @@ species Y_Strategist parent:MicrobePopulation {
 		
 		Enzymes _max_enzymes;
 		create Enzymes with: [
-			T_cellulolytic::100*0.5 #gram/ #gram / #d,
-			T_amino::100*0.1 #gram / #gram / #d,
-//			T_P::0.1 #gram / #gram / #d,
-			T_P::100*0.05 #gram / #gram / #d,
-			T_recal::100*0.001 #gram / #gram / #d
+//			T_cellulolytic::0.5 #gram/ #gram / #d,
+//			T_amino::0.1 #gram / #gram / #d,
+//			T_P::0.05 #gram / #gram / #d,
+//			T_recal::0.001 #gram / #gram / #d
+			T_cellulolytic::1.0 #gram/ #gram / #d,
+			T_amino::0.1 #gram / #gram / #d,
+			T_P::0.05 #gram / #gram / #d,
+			T_recal::0.00001 #gram / #gram / #d
 		] {
 			_max_enzymes <- self;
 		}

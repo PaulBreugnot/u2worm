@@ -141,24 +141,24 @@ experiment MicrobesTestBase {
 		display "C" {
 			chart "Microbes populations" {
 				if enable_Y_Strategist {
-					data "C Y strategists (g)" value:C[Y_Strategist]/#gram marker: false;
+					data "C (Y, g)" value:C[Y_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N Y strategists (g)" value:N[Y_Strategist]/#gram marker: false;
-						data "P Y strategists (g)" value:P[Y_Strategist]/#gram marker: false;
+						data "N (Y, g)" value:N[Y_Strategist]/#gram marker: false;
+						data "P (Y, g)" value:P[Y_Strategist]/#gram marker: false;
 					}
 				}
 				if enable_A_Strategist {
-					data "C A strategists (g)" value:C[A_Strategist]/#gram marker: false;
+					data "C (A, g)" value:C[A_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N A strategists (g)" value:N[A_Strategist]/#gram marker: false;
-						data "P A strategists (g)" value:P[A_Strategist]/#gram marker: false;
+						data "N (A, g)" value:N[A_Strategist]/#gram marker: false;
+						data "P (A, g)" value:P[A_Strategist]/#gram marker: false;
 					}
 				}
 				if enable_S_Strategist {
-					data "C S strategists (g)" value:C[S_Strategist]/#gram marker: false;
+					data "C (S, g)" value:C[S_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N S strategists (g)" value:N[S_Strategist]/#gram marker: false;
-						data "P S strategists (g)" value:P[S_Strategist]/#gram marker: false;
+						data "N (S, g)" value:N[S_Strategist]/#gram marker: false;
+						data "P (S, g)" value:P[S_Strategist]/#gram marker: false;
 					}
 				}
 			}
@@ -173,13 +173,25 @@ experiment MicrobesTestBase {
 		display "C cytosol" {
 			chart "Microbes populations cytosol" {
 				if enable_Y_Strategist {
-					data "Y strategists (g)" value:C_cytosol[Y_Strategist]/#gram marker: false;
+					data "C (Y, g)" value:C_cytosol[Y_Strategist]/#gram marker: false;
+					if only_one_population {
+						data "N (Y, g)" value:N_cytosol[Y_Strategist]/#gram marker: false;
+						data "P (Y, g)" value:P_cytosol[Y_Strategist]/#gram marker: false;
+					}
 				}
 				if enable_A_Strategist {
-					data "A strategists (g)" value:C_cytosol[A_Strategist]/#gram marker: false;
+					data "C (A, g)" value:C_cytosol[A_Strategist]/#gram marker: false;
+					if only_one_population {
+						data "N (A, g)" value:N_cytosol[A_Strategist]/#gram marker: false;
+						data "P (A, g)" value:P_cytosol[A_Strategist]/#gram marker: false;
+					}				
 				}
 				if enable_S_Strategist {
-					data "S strategists (g)" value:C_cytosol[S_Strategist]/#gram marker: false;
+					data "C (S, g)" value:C_cytosol[S_Strategist]/#gram marker: false;
+					if only_one_population {
+						data "N (S, g)" value:N_cytosol[S_Strategist]/#gram marker: false;
+						data "P (S, g)" value:P_cytosol[S_Strategist]/#gram marker: false;
+					}
 				}
 			}
 			
@@ -188,13 +200,13 @@ experiment MicrobesTestBase {
 		display "Awake rate" {
 			chart "Awake rate" {
 				if enable_Y_Strategist {
-					data "Y strategist (%)" value:awake[Y_Strategist] marker: false;
+					data "Y (%)" value:awake[Y_Strategist] marker: false;
 				}
 				if enable_A_Strategist {
-					data "A strategist (%)" value:awake[A_Strategist] marker: false;
+					data "A (%)" value:awake[A_Strategist] marker: false;
 				}
 				if enable_S_Strategist {
-					data "S strategist (%)" value:awake[S_Strategist] marker: false;
+					data "S (%)" value:awake[S_Strategist] marker: false;
 				}
 			}
 		}
@@ -233,26 +245,26 @@ experiment MicrobesTestBase {
 		display "C/N" {
 			chart "C/N" {
 				if enable_Y_Strategist {
-					data "Y strategists (g)" value:C[Y_Strategist]/N[Y_Strategist] marker: false;
+					data "Y" value:C[Y_Strategist]/N[Y_Strategist] marker: false;
 				}
 				if enable_A_Strategist {
-					data "A strategists (g)" value:C[A_Strategist]/N[A_Strategist] marker: false;
+					data "A" value:C[A_Strategist]/N[A_Strategist] marker: false;
 				}
 				if enable_S_Strategist {
-					data "S strategists (g)" value:C[S_Strategist]/N[S_Strategist] marker: false;
+					data "S" value:C[S_Strategist]/N[S_Strategist] marker: false;
 				}
 			}
 		}
 		display "C/P" {
 			chart "C/P" {
 				if enable_Y_Strategist {
-					data "Y strategists (g)" value:C[Y_Strategist]/P[Y_Strategist] marker: false;
+					data "Y" value:C[Y_Strategist]/P[Y_Strategist] marker: false;
 				}
 				if enable_A_Strategist {
-					data "A strategists (g)" value:C[A_Strategist]/P[A_Strategist] marker: false;
+					data "A" value:C[A_Strategist]/P[A_Strategist] marker: false;
 				}
 				if enable_S_Strategist {
-					data "S strategists (g)" value:C[S_Strategist]/P[S_Strategist] marker: false;
+					data "S" value:C[S_Strategist]/P[S_Strategist] marker: false;
 				}
 			}
 		}
@@ -284,8 +296,6 @@ experiment IndividualMicrobesGrowth parent:MicrobesTestBase {
 		loop s over:microbe_species {
 			Dam dam <- dams[s];
 			MicrobePopulation population <- populations[s];
-			write "" + dam + " " + (dam = nil);
-			write "s arg: " + s;
 			do feed_dam(population, dam);
 		}
 	}
@@ -360,13 +370,13 @@ experiment IndividualMicrobesGrowth_FixedNutrients parent:IndividualMicrobesGrow
 		display "C dom" {
 			chart "C dom" {
 				if enable_Y_Strategist {
-					data "C dom Y strategists (g)" value:C_dom_output[Y_Strategist]/#gram marker: false;
+					data "C dom (Y, g)" value:C_dom_output[Y_Strategist]/#gram marker: false;
 				}
 				if enable_A_Strategist {
-					data "C dom A strategists (g)" value:C_dom_output[A_Strategist]/#gram marker: false;
+					data "C dom (A, g)" value:C_dom_output[A_Strategist]/#gram marker: false;
 				}
 				if enable_S_Strategist {
-					data "C dom S strategists (g)" value:C_dom_output[S_Strategist]/#gram marker: false;
+					data "C dom (S, g)" value:C_dom_output[S_Strategist]/#gram marker: false;
 				}
 			}
 		}
@@ -469,6 +479,8 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 	float init_C_recal <- 10.0;
 	float C_N_recal <- 20.0;
 	float C_P_recal <- 34.0;
+	string enzymes_display <- "Budget" among:["Budget", "Absolute"] on_change:update_enzyme_unit;
+	string enzyme_unit <- "gS/gM/h";
 	
 	parameter "C labile (g)" var:init_C_labile;
 	parameter "C/N labile (g)" var:C_N_labile;
@@ -476,6 +488,7 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 	parameter "C recal (g)" var:init_C_recal;
 	parameter "C/N recal (g)" var:C_N_recal;
 	parameter "C/P recal (g)" var:C_P_recal;
+	parameter "Enzymes display" var:enzymes_display;
 	
 	map<species<MicrobePopulation>, float> C_dom_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
 	map<species<MicrobePopulation>, float> N_dom_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
@@ -486,6 +499,10 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 	map<species<MicrobePopulation>, float> C_labile_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
 	map<species<MicrobePopulation>, float> N_labile_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
 	map<species<MicrobePopulation>, float> P_labile_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
+	
+	map<species<MicrobePopulation>, float> C_recal_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
+	map<species<MicrobePopulation>, float> N_recal_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
+	map<species<MicrobePopulation>, float> P_recal_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
 	
 	map<species<MicrobePopulation>, list<float>> enzymes_output <- [
 		Y_Strategist::[0.0, 0.0, 0.0, 0.0],
@@ -520,6 +537,11 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 		}
 		ask populations.values {
 			do update;
+		}
+	}
+	
+	reflex {
+		ask populations.values {
 			write "Enzyme optimization (" + species(self) +"):";
 			write "  DOM: " + myself.dams[species(self)].dom[2] + ", " + myself.dams[species(self)].dom[0] + ", " + myself.dams[species(self)].dom[1];
 			write "  Labile: " + sum(myself.pores[species(self)].accessible_organics collect each.C_labile)/#gram + ", "
@@ -527,9 +549,6 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 				+ sum(myself.pores[species(self)].accessible_organics collect each.P_labile)/#gram;
 			do optimize_enzymes(myself.dams[species(self)], myself.pores[species(self)].accessible_organics);
 		}
-	}
-	
-	reflex {
 		ask PoreParticle {
 			do decompose;
 			do microbe_life;
@@ -544,69 +563,123 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 			C_labile_output[s] <- sum(pores[s].accessible_organics collect each.C_labile);
 			N_labile_output[s] <- sum(pores[s].accessible_organics collect each.N_labile);
 			P_labile_output[s] <- sum(pores[s].accessible_organics collect each.P_labile);
-			enzymes_output[s] <- [
-				populations[s].enzymes.T_cellulolytic,
-				populations[s].enzymes.T_amino,
-				populations[s].enzymes.T_P,
-				populations[s].enzymes.T_recal
-				];
+			C_recal_output[s] <- sum(pores[s].accessible_organics collect each.C_recalcitrant);
+			N_recal_output[s] <- sum(pores[s].accessible_organics collect each.N_recalcitrant);
+			P_recal_output[s] <- sum(pores[s].accessible_organics collect each.P_recalcitrant);
+			if enzymes_display = "Budget" {
+				enzymes_output[s] <- [
+					populations[s].enzymes.T_cellulolytic/(#gram/#gram/#h),
+					populations[s].enzymes.T_amino/(#gram/#gram/#h),
+					populations[s].enzymes.T_P/(#gram/#gram/#h),
+					populations[s].enzymes.T_recal/(#gram/#gram/#h)
+					];
+			} else if enzymes_display = "Absolute" {
+				enzymes_output[s] <- [
+					populations[s].enzymes.T_cellulolytic * C[s] * awake[s] / (#gram/#h),
+					populations[s].enzymes.T_amino * C[s] * awake[s] / (#gram/#h),
+					populations[s].enzymes.T_P * C[s] * awake[s] / (#gram/#h),
+					populations[s].enzymes.T_recal * C[s] * awake[s] / (#gram/#h)
+					];
+			}
 		}
 	}
-		
+	
+	reflex when: sum(C_recal_output) = 0.0 {
+		ask simulation {
+			do pause;
+		}
+	}
+	
+	action update_enzyme_unit {
+		if enzymes_display = "Budget" {
+			enzyme_unit <- "gS/gM/h";
+		} else if enzymes_display = "Absolute" {
+			enzyme_unit <- "gS/h";
+		}
+	}
+	
 	output {
 		display "C/N/P compartments" {
 			chart "C/N/P compartments" {
 				if enable_Y_Strategist {
-					data "C dom Y strategists (g)" value:C_dom_output[Y_Strategist]/#gram marker: false;
+					data "C dom (Y, g)" value:C_dom_output[Y_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N dom Y strategists (g)" value:N_dom_output[Y_Strategist]/#gram marker: false;
-						data "P dom Y strategists (g)" value:P_dom_output[Y_Strategist]/#gram marker: false;
-						data "N dim Y strategists (g)" value:N_dim_output[Y_Strategist]/#gram marker: false;
-						data "P dim Y strategists (g)" value:P_dim_output[Y_Strategist]/#gram marker: false;
+						data "N dom (Y, g)" value:N_dom_output[Y_Strategist]/#gram marker: false;
+						data "P dom (Y, g)" value:P_dom_output[Y_Strategist]/#gram marker: false;
+						data "N dim (Y, g)" value:N_dim_output[Y_Strategist]/#gram marker: false;
+						data "P dim (Y, g)" value:P_dim_output[Y_Strategist]/#gram marker: false;
 					}
-					data "C labile Y strategists (g)" value:C_labile_output[Y_Strategist]/#gram marker: false;
+					data "C labile (Y, g)" value:C_labile_output[Y_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N labile Y strategists (g)" value:N_labile_output[Y_Strategist]/#gram marker: false;
-						data "P labile Y strategists (g)" value:P_labile_output[Y_Strategist]/#gram marker: false;
+						data "N labile (Y, g)" value:N_labile_output[Y_Strategist]/#gram marker: false;
+						data "P labile (Y, g)" value:P_labile_output[Y_Strategist]/#gram marker: false;
+					}
+					data "C recal (Y, g)" value:C_recal_output[Y_Strategist]/#gram marker: false;
+					if only_one_population {
+						data "N recal (Y, g)" value:N_recal_output[Y_Strategist]/#gram marker: false;
+						data "P recal (Y, g)" value:P_recal_output[Y_Strategist]/#gram marker: false;
 					}
 				}
 				if enable_A_Strategist {
-					data "C dom A strategists (g)" value:C_dom_output[A_Strategist]/#gram marker: false;
+					data "C dom (A, g)" value:C_dom_output[A_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N dom A strategists (g)" value:N_dom_output[A_Strategist]/#gram marker: false;
-						data "P dom A strategists (g)" value:P_dom_output[A_Strategist]/#gram marker: false;
-						data "N dim Y strategists (g)" value:N_dim_output[Y_Strategist]/#gram marker: false;
-						data "P dim Y strategists (g)" value:P_dim_output[Y_Strategist]/#gram marker: false;
+						data "N dom (A, g)" value:N_dom_output[A_Strategist]/#gram marker: false;
+						data "P dom (A, g)" value:P_dom_output[A_Strategist]/#gram marker: false;
+						data "N dim (A, g)" value:N_dim_output[A_Strategist]/#gram marker: false;
+						data "P dim (A, g)" value:P_dim_output[A_Strategist]/#gram marker: false;
 					}
-					data "C labile A strategists (g)" value:C_labile_output[A_Strategist]/#gram marker: false;
+					data "C labile (A, g)" value:C_labile_output[A_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N labile A strategists (g)" value:N_labile_output[A_Strategist]/#gram marker: false;
-						data "P labile A strategists (g)" value:P_labile_output[A_Strategist]/#gram marker: false;
+						data "N labile (A, g)" value:N_labile_output[A_Strategist]/#gram marker: false;
+						data "P labile (A, g)" value:P_labile_output[A_Strategist]/#gram marker: false;
+					}
+					data "C recal (A, g)" value:C_recal_output[A_Strategist]/#gram marker: false;
+					if only_one_population {
+						data "N recal (A, g)" value:N_recal_output[A_Strategist]/#gram marker: false;
+						data "P recal (A, g)" value:P_recal_output[A_Strategist]/#gram marker: false;
 					}
 				}
 				if enable_S_Strategist {
-					data "C dom S strategists (g)" value:C_dom_output[S_Strategist]/#gram marker: false;
+					data "C dom (S, g)" value:C_dom_output[S_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N dom S strategists (g)" value:N_dom_output[S_Strategist]/#gram marker: false;
-						data "P dom S strategists (g)" value:P_dom_output[S_Strategist]/#gram marker: false;
-						data "N dim Y strategists (g)" value:N_dim_output[Y_Strategist]/#gram marker: false;
-						data "P dim Y strategists (g)" value:P_dim_output[Y_Strategist]/#gram marker: false;
+						data "N dom (S, g)" value:N_dom_output[S_Strategist]/#gram marker: false;
+						data "P dom (S, g)" value:P_dom_output[S_Strategist]/#gram marker: false;
+						data "N dim (S, g)" value:N_dim_output[S_Strategist]/#gram marker: false;
+						data "P dim (S, g)" value:P_dim_output[S_Strategist]/#gram marker: false;
 					}
-					data "C labile S strategists (g)" value:C_labile_output[S_Strategist]/#gram marker: false;
+					data "C labile (S, g)" value:C_labile_output[S_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N labile S strategists (g)" value:N_labile_output[S_Strategist]/#gram marker: false;
-						data "P labile S strategists (g)" value:P_labile_output[S_Strategist]/#gram marker: false;
+						data "N labile (S, g)" value:N_labile_output[S_Strategist]/#gram marker: false;
+						data "P labile (S, g)" value:P_labile_output[S_Strategist]/#gram marker: false;
+					}
+					data "C recal (S, g)" value:C_recal_output[S_Strategist]/#gram marker: false;
+					if only_one_population {
+						data "N recal (S, g)" value:N_recal_output[S_Strategist]/#gram marker: false;
+						data "P recal (S, g)" value:P_recal_output[S_Strategist]/#gram marker: false;
 					}
 				}
 			}
 		}
+		
 		display "Enzymes" {
-			chart "Enzymes (Y Strategists)" {
+			chart "Enzymes" {
 				if enable_Y_Strategist {
-					data "T C (gS/gM/h)" value:enzymes_output[Y_Strategist][0]/(#gram/#gram/#h) marker: false;
-					data "T N (gS/gM/h)" value:enzymes_output[Y_Strategist][1]/(#gram/#gram/#h) marker: false;
-					data "T P (gS/gM/h)" value:enzymes_output[Y_Strategist][2]/(#gram/#gram/#h) marker: false;
-					data "T r (gS/gM/h)" value:enzymes_output[Y_Strategist][3]/(#gram/#gram/#h) marker: false;
+					data "T C (Y, " + enzyme_unit + ")" value:enzymes_output[Y_Strategist][0] marker: false;
+					data "T N (Y, " + enzyme_unit + ")" value:enzymes_output[Y_Strategist][1] marker: false;
+					data "T P (Y, " + enzyme_unit + ")" value:enzymes_output[Y_Strategist][2] marker: false;
+					data "T r (Y, " + enzyme_unit + ")" value:enzymes_output[Y_Strategist][3] marker: false;
+				}
+				if enable_A_Strategist {
+					data "T C (A, " + enzyme_unit + ")" value:enzymes_output[A_Strategist][0] marker: false;
+					data "T N (A, " + enzyme_unit + ")" value:enzymes_output[A_Strategist][1] marker: false;
+					data "T P (A, " + enzyme_unit + ")" value:enzymes_output[A_Strategist][2] marker: false;
+					data "T r (A, " + enzyme_unit + ")" value:enzymes_output[A_Strategist][3] marker: false;
+				}
+				if enable_S_Strategist {
+					data "T C (S, " + enzyme_unit + ")" value:enzymes_output[S_Strategist][0] marker: false;
+					data "T N (S, " + enzyme_unit + ")" value:enzymes_output[S_Strategist][1] marker: false;
+					data "T P (S, " + enzyme_unit + ")" value:enzymes_output[S_Strategist][2] marker: false;
+					data "T r (S, " + enzyme_unit + ")" value:enzymes_output[S_Strategist][3] marker: false;
 				}
 			}
 		}

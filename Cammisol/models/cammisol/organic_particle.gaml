@@ -29,4 +29,14 @@ species OrganicParticle {
 	bool in_pore <- false;
 	
 	list<OrganicParticle> organic_neighbors;
+	
+	string state {
+		return name + " [recal:("
+			+ C_recalcitrant + ", "
+			+ N_recalcitrant + ", "
+			+ P_recalcitrant + "), labile:("
+			+ C_labile + ", "
+			+ N_labile + ", "
+			+ P_labile + ")]";
+	}
 }

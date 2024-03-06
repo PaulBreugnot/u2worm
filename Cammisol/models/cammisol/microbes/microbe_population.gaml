@@ -246,6 +246,8 @@ species MicrobePopulation schedules:[]
 		Dam dam, list<OrganicParticle> accessible_organics, float total_C_in_pore, float pore_carrying_capacity
 	)
 	{
+		write "Life: ";
+		write "  i. " + dam.state();
 //		if(requested_C = 0) {
 //			awake_population <- 1.0;
 //		} else {
@@ -274,7 +276,7 @@ species MicrobePopulation schedules:[]
 			dom[1] <- dom[1] + P_not_used;
 		}
 		
-		C_growth <- C_growth * (1.0 - total_C_in_pore/pore_carrying_capacity);
+		C_growth <- max(0.0, C_growth * (1.0 - total_C_in_pore/pore_carrying_capacity));
 		do respirate(C_respiration);
 		do growth(C_growth);
 
@@ -282,21 +284,21 @@ species MicrobePopulation schedules:[]
 		float left_C_in_cytosol <- cytosol_mineralization_rate * cytosol_C;
 		float left_N_in_cytosol <- cytosol_mineralization_rate * cytosol_N;
 		float left_P_in_cytosol <- cytosol_mineralization_rate * cytosol_P;
-				
-		cytosol_C <- left_C_in_cytosol;
-		cytosol_N <- left_N_in_cytosol;
-		cytosol_P <- left_P_in_cytosol;
 		
 		ask dam {
 			dim[0] <- dim[0] + myself.cytosol_N - left_N_in_cytosol;
 			dim[1] <- dim[1] + myself.cytosol_P - left_P_in_cytosol;
 		}
 		microbe_CO2_emissions <- microbe_CO2_emissions + cytosol_C - left_C_in_cytosol;
-
+				
+		cytosol_C <- left_C_in_cytosol;
+		cytosol_N <- left_N_in_cytosol;
+		cytosol_P <- left_P_in_cytosol;
 		
 //		if(active_C > 0.0) {
 //			do optimize_enzymes(dam, accessible_organics);	
 //		}
+		write "  f. " + dam.state();
 	}
 }
 

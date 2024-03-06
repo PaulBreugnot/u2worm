@@ -63,4 +63,10 @@ species Dam
 	float available_C {
 		return dom[2];
 	}
+	
+	string state {
+		return name + " [dom:("
+			+ dom[2] + ", " + dom[0] + ", " + dom[1]
+			+ "), dim:(" + dim[0] + ", " + dim[1] + ")]";
+	}
 }
