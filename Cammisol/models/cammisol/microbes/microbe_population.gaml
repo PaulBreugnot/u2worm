@@ -245,40 +245,35 @@ species MicrobePopulation schedules:[]
 	action life(
 		Dam dam, list<OrganicParticle> accessible_organics, float total_C_in_pore, float pore_carrying_capacity
 	)
-	{
-		write "Life: ";
-		write "  i. " + dam.state();
-//		if(requested_C = 0) {
-//			awake_population <- 1.0;
-//		} else {
-//			awake_population <- assimilated_C / requested_C;
-//		}
-//		awake_population <- max(awake_population, minimum_awake_rate);
-		
+	{	
 		float C_respiration <- (1-carbon_use_efficiency) * cytosol_C;
-		float C_growth <- min(
+		float C_usable_for_growth <- min(
 			carbon_use_efficiency * cytosol_C,
 			cytosol_N*C_N,
 			cytosol_P*C_P
 		);
-		// C/N/P assimilated for growth but finally not used due to carrying capacity
-		float C_not_used <- C_growth * total_C_in_pore/pore_carrying_capacity;
-		float N_not_used <- C_not_used / C_N;
-		float P_not_used <- C_not_used / C_P;
 		
-		cytosol_C <- cytosol_C - C_not_used;
-		cytosol_N <- cytosol_N - N_not_used;
-		cytosol_P <- cytosol_P - P_not_used;
+		awake_population <- (C_respiration + C_usable_for_growth) / (C * local_step / (carbon_use_efficiency * dividing_time));
+		
+		float C_used_for_growth <- max(0.0, C_usable_for_growth * (1.0 - total_C_in_pore/pore_carrying_capacity));
+		
+		// C/N/P assimilated for growth but finally not used due to carrying capacity
+		float C_not_used_for_growth <- C_usable_for_growth - C_used_for_growth;
+		float N_not_used_for_growth <- C_not_used_for_growth / C_N;
+		float P_not_used_for_growth <- C_not_used_for_growth / C_P;
+		
+		cytosol_C <- cytosol_C - C_not_used_for_growth;
+		cytosol_N <- cytosol_N - N_not_used_for_growth;
+		cytosol_P <- cytosol_P - P_not_used_for_growth;
 				
 		ask dam {
-			dom[2] <- dom[2] + C_not_used;
-			dom[0] <- dom[0] + N_not_used;
-			dom[1] <- dom[1] + P_not_used;
+			dom[2] <- dom[2] + C_not_used_for_growth;
+			dom[0] <- dom[0] + N_not_used_for_growth;
+			dom[1] <- dom[1] + P_not_used_for_growth;
 		}
 		
-		C_growth <- max(0.0, C_growth * (1.0 - total_C_in_pore/pore_carrying_capacity));
 		do respirate(C_respiration);
-		do growth(C_growth);
+		do growth(C_used_for_growth);
 
 		
 		float left_C_in_cytosol <- cytosol_mineralization_rate * cytosol_C;
@@ -298,7 +293,6 @@ species MicrobePopulation schedules:[]
 //		if(active_C > 0.0) {
 //			do optimize_enzymes(dam, accessible_organics);	
 //		}
-		write "  f. " + dam.state();
 	}
 }
 
