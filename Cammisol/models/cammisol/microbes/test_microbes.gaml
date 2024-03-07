@@ -505,6 +505,32 @@ experiment CollectiveMicrobesGrowth_FixedNutrients parent:CollectiveMicrobesGrow
 	}
 }
 
+experiment MicrobesDormancy parent:IndividualMicrobesGrowth {
+	float phase_1_duration <- 24#h;
+	float phase_2_duration <- 100#h;
+	
+	reflex {
+		do update_populations;
+		do update_dams;
+		
+		ask PoreParticle {
+			do microbe_life;
+		}
+		do update_output_data;
+	}
+	action feed_dam(MicrobePopulation population, Dam dam) {
+		if local_time < phase_1_duration {
+			dam.dom[2] <- population.requested_C;
+			dam.dom[0] <- population.requested_N;
+			dam.dom[1] <- population.requested_P;
+		} else if local_time > (phase_2_duration + phase_1_duration) {
+			dam.dom[2] <- population.requested_C / population.awake_population;
+			dam.dom[0] <- population.requested_N / population.awake_population;
+			dam.dom[1] <- population.requested_P / population.awake_population;
+		}
+	}
+}
+
 experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 	float init_C_labile <- 1.0;
 	float C_N_labile <- 20.0;
@@ -537,6 +563,9 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 	map<species<MicrobePopulation>, float> P_recal_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
 	action feed_dam(MicrobePopulation population, Dam dam) {
 		// Nothing to do
+		dam.dom[2] <- dam.dom[2] + population.requested_C;
+		dam.dom[0] <- dam.dom[2] + population.requested_N;
+		dam.dom[1] <- dam.dom[2] + population.requested_P;
 	}
 	
 	init {
@@ -563,6 +592,7 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 		ask populations.values {
 			do update;
 		}
+		do update_dams;
 	}
 	
 	reflex {

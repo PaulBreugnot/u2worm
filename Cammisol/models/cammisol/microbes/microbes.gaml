@@ -21,7 +21,8 @@ global {
 	float carbon_use_efficiency_S <- 5/10;
 	
 	float minimum_awake_rate_Y <- 0.002;
-	float minimum_awake_rate_A <- 0.018;
+//	float minimum_awake_rate_A <- 0.018;
+	float minimum_awake_rate_A <- 1.0;
 	float minimum_awake_rate_S <- 1.0;
 	
 	float init_structural_cytosol_rate <- 1.0;
@@ -56,13 +57,9 @@ species Y_Strategist parent:MicrobePopulation {
 		
 		Enzymes _max_enzymes;
 		create Enzymes with: [
-//			T_cellulolytic::0.5 #gram/ #gram / #d,
-//			T_amino::0.1 #gram / #gram / #d,
-//			T_P::0.05 #gram / #gram / #d,
-//			T_recal::0.001 #gram / #gram / #d
-			T_cellulolytic::1.0 #gram/ #gram / #d,
-			T_amino::0.1 #gram / #gram / #d,
-			T_P::0.05 #gram / #gram / #d,
+			T_cellulolytic::10 #gram/ #gram / #d,
+			T_amino::1.0 #gram / #gram / #d,
+			T_P::0.5 #gram / #gram / #d,
 			T_recal::0.00001 #gram / #gram / #d
 		] {
 			_max_enzymes <- self;
@@ -99,10 +96,10 @@ species A_Strategist parent:MicrobePopulation {
 		
 		Enzymes _max_enzymes;
 		create Enzymes with: [
-			T_cellulolytic::0.4 #gram/ #gram / #d,
-			T_amino::0.08 #gram / #gram / #d,
-			T_P::0.02 #gram / #gram / #d,
-			T_recal::0.08 #gram / #gram / #d
+			T_cellulolytic::40 #gram/ #gram / #d,
+			T_amino::80 #gram / #gram / #d,
+			T_P::20 #gram / #gram / #d,
+			T_recal::80 #gram / #gram / #d
 		] {
 			_max_enzymes <- self;
 		}
@@ -139,10 +136,10 @@ species S_Strategist parent:MicrobePopulation {
 		
 		Enzymes _max_enzymes;
 		create Enzymes with: [
-			T_cellulolytic::0.2 #gram/ #gram / #d,
-			T_amino::0.05 #gram / #gram / #d,
-			T_P::0.01 #gram / #gram / #d,
-			T_recal::0.02 #gram / #gram / #d
+			T_cellulolytic::2 #gram/ #gram / #d,
+			T_amino::0.5 #gram / #gram / #d,
+			T_P::0.1 #gram / #gram / #d,
+			T_recal::0.2 #gram / #gram / #d
 		] {
 			_max_enzymes <- self;
 		}

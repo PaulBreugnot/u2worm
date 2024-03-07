@@ -59,6 +59,8 @@ species MicrobePopulation schedules:[]
 	
 	float awake_population <- 1.0;
 	float minimum_awake_rate <- 0.5;
+	float sporulation_time <- 10#h;
+	float germination_time <- 1#h;
 	
 	// Mon estomac le cytosol 
 	float cytosol_C <- 0#gram; 
@@ -182,6 +184,44 @@ species MicrobePopulation schedules:[]
 		requested_C_P <- C_P / carbon_use_efficiency;
 	}
 	
+	action dormancy(Dam dam, float perceived_rate) {
+		float perceived_C_respiration <- (1-carbon_use_efficiency) * dam.dom[2];
+		float perceived_C_growth <- min(
+			carbon_use_efficiency * dam.dom[2],
+			(dam.dom[0]+dam.dim[0]) * C_N,
+			(dam.dom[1]+dam.dim[1]) * C_P
+		);		
+		float max_awake_population <- min(1.0, (perceived_C_respiration + perceived_C_growth) / (C * local_step / (carbon_use_efficiency * dividing_time)));
+		float d_awake_population <- 1/(awake_population > max_awake_population ? sporulation_time : germination_time)
+			* awake_population * (1 - awake_population / max(minimum_awake_rate, max_awake_population));
+		awake_population <- min(1.0, max(0.0, awake_population + d_awake_population * local_step));
+	}
+	
+	action assimilate(Dam dam, float perceived_rate) {
+			// If total_X_consumed = total_X_requested, X_consum = X_requested for all microbe population
+			float assimilated_C <- min(dam.dom[2] * perceived_rate, max(0.0, requested_C-cytosol_C));
+			float assimilated_N <- min(dam.dom[0] * perceived_rate, max(0.0, requested_N-cytosol_N));
+			float assimilated_P <- min(dam.dom[1] * perceived_rate, max(0.0, requested_P-cytosol_P));
+			
+			cytosol_C <- cytosol_C + assimilated_C;
+			cytosol_N <- cytosol_N + assimilated_N;
+			cytosol_P <- cytosol_P + assimilated_P;
+			
+			dam.dom[0] <- dam.dom[0] - assimilated_N;
+			dam.dom[1] <- dam.dom[1] - assimilated_P;
+			dam.dom[2] <- dam.dom[2] - assimilated_C;
+			
+			assimilated_N <- min(dam.dim[0] * perceived_rate, max(0.0, requested_N-cytosol_N));
+			assimilated_P <- min(dam.dim[1] * perceived_rate, max(0.0, requested_P-cytosol_P));
+			
+			cytosol_N <- cytosol_N + assimilated_N;
+			cytosol_P <- cytosol_P + assimilated_P;
+			
+			dam.dim[0] <- dam.dim[0] - assimilated_N;
+			dam.dim[1] <- dam.dim[1] - assimilated_P;
+
+	}
+	
 	action life(
 		Dam dam, list<OrganicParticle> accessible_organics, float total_C_in_pore, float pore_carrying_capacity
 	)
@@ -192,8 +232,6 @@ species MicrobePopulation schedules:[]
 			cytosol_N*C_N,
 			cytosol_P*C_P
 		);
-		
-		awake_population <- (C_respiration + C_usable_for_growth) / (C * local_step / (carbon_use_efficiency * dividing_time));
 		
 		float C_used_for_growth <- max(0.0, C_usable_for_growth * (1.0 - total_C_in_pore/pore_carrying_capacity));
 		
