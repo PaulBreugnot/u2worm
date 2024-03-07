@@ -51,7 +51,6 @@ species MicrobePopulation schedules:[]
 	float C_N <- 10.0;
 	float C_P <- 17.0;
 	
-	// quantity of C N P in the colony
 	// TODO: unit?
 	// TODO: source?
 	float C <- 60.0;
@@ -74,19 +73,6 @@ species MicrobePopulation schedules:[]
 	DecompositionProblem decomposition_problem;
 	EnzymaticActivityProblem enzymatic_activity_problem;
 	
-	// float P_C <- 8;
-	// float P_N <- 12;
-	// float P_P <- 12;
-	
-	/* 
-	 R : C * (step/1)  /  (1-0.2)
-	 K : C * (step/24)  / (1-0.4)
-	 O : C * (step/368) / (1-0.7)s
-	 */
-	// Quantité de carbone voulue par la colonie
-	//float C_assimilation_speed -> {C_actif * (exp(local_step / dividing_time)-1) / (division_enzyme_rate * (1 - respiration_rate))};
-	
-	// TODO: check active_C update
 	float active_C;
 	float requested_C;
 	float requested_N;
@@ -119,23 +105,6 @@ species MicrobePopulation schedules:[]
 		}
 	}
 	
-	// TODO: replace following methods with update: variables (https://gama-platform.org/wiki/Statements#variable_regular)
-//	float active_C {
-//		return C * awake_population;
-//	}
-//	
-//	float requested_C {
-//		return active_C() * local_step / (carbon_use_efficiency * dividing_time) - cytosol_C;
-//	}
-//	
-//	float requested_N {
-//		return (C + carbon_use_efficiency * requested_C()) / C_N - (N+cytosol_N);
-//	}
-//	
-//	float requested_P {
-//		return (C + carbon_use_efficiency * requested_C()) / C_P - (P+cytosol_P);
-//	}
-	
 	action respirate(float C_respiration)
 	{
 		cytosol_C <- cytosol_C - C_respiration; 
@@ -145,10 +114,6 @@ species MicrobePopulation schedules:[]
 	
 	action growth(float C_growth)
 	{
-		// quantity de carbone cytosol -> structurel.
-		// Unconsumed C/N/P stays in the cytosol
-		// float new_individual <- C * (local_step/dividing_time) * (1 - total_C_in_pore / pore_carrying_capacity);
-		
 		float N_growth <- C_growth / C_N;
 		float P_growth <- C_growth / C_P;
 		
@@ -159,31 +124,6 @@ species MicrobePopulation schedules:[]
 		C <- C + C_growth;
 		N <- N + N_growth;
 		P <- P + P_growth;
-		
-//		//new_individual <- min([new_individual , cytosol_C]);
-//		new_individual <- min([new_individual , cytosol_division]);
-//		
-//		
-//		float assi_C_N <- cytosol_N * C_N;  //(assimilated_N=0) ? 0:(assimilated_C/assimilated_N);
-//		float assi_C_P <- cytosol_P * C_P; //(assimilated_P=0) ? 0:(assimilated_C/assimilated_P);
-//		
-//		new_individual <- min([new_individual, (assi_C_N) ]);
-//		new_individual <- min([new_individual, (assi_C_P) ]);
-//		
-//		// write bacteria_name + ": " + new_individual;
-//		
-//		float transfert_C <- new_individual;
-//		float transfert_N <- transfert_C / C_N;
-//		float transfert_P <- transfert_C / C_P;
-//		
-//		cytosol_C <- cytosol_C - transfert_C;
-//		cytosol_N <- cytosol_N - transfert_N;
-//		cytosol_P <- cytosol_P - transfert_P;
-//		
-//		
-//		C <- C + transfert_C;
-//		N <- N + transfert_N;
-//		P <- P + transfert_P;
 	}
 	
 	action optimize_enzymes(Dam dam, list<OrganicParticle> particles_to_decompose) {
@@ -289,192 +229,5 @@ species MicrobePopulation schedules:[]
 		cytosol_C <- left_C_in_cytosol;
 		cytosol_N <- left_N_in_cytosol;
 		cytosol_P <- left_P_in_cytosol;
-		
-//		if(active_C > 0.0) {
-//			do optimize_enzymes(dam, accessible_organics);	
-//		}
-	}
-}
-
-
-
-experiment PopulationDecompose type: gui {
-	float T_cellulolytic;
-	float T_amino;
-	float T_P;
-	float T_recal;
-	float C_microbes;
-	float C_dom;
-	float C_N_microbes;
-	float C_P_microbes;
-	
-	float C_labile_init;
-	float C_labile_final;
-	float C_N_labile_init;
-	float C_N_labile_final;
-	float C_P_labile_init;
-	float C_P_labile_final;
-	
-	float C_N_dom_init;
-	float C_N_dom_final;
-	float C_P_dom_init;
-	float C_P_dom_final;
-	
-	float C_recal_init;
-	float C_recal_final;
-	float CP_recal <- 15.0;
-	float CN_recal <- 20.0;
-	
-	int steps;
-	
-	parameter "Max cellulolytic (g/h)" category: "Constants" var: T_cellulolytic init: 1.0;
-	parameter "Max amino (g/h)" category: "Constants" var: T_amino init: 1.0;
-	parameter "Max P (g/h)" category: "Constants" var: T_P init: 1.0;
-	parameter "Max recalcitrant (g/h)" category: "Constants" var: T_recal init: 0.0;
-	parameter "C microbes" category: "Constants" var: C_microbes init: 200#gram;
-	parameter "C dom" category: "Constants" var: C_dom init: 1#gram;
-	parameter "Microbe population's C/N" category: "Constants" var:C_N_microbes init:15.0;
-	parameter "Microbe population's C/P" category: "Constants" var:C_P_microbes init:20.0;
-	
-	parameter "Initial C (labile)" category: "Labile OM" var: C_labile_init init: 10#gram;
-	parameter "Final C (labile)" category: "Labile OM" var: C_labile_final init: 10#gram;
-	parameter "Initial C/N (labile)" category: "Labile OM" var: C_N_labile_init init: 20.0 ;
-	parameter "Final C/N (labile)" category: "Labile OM" var:C_N_labile_final init:20.0;
-	parameter "Initial C/P (labile)" category: "Labile OM" var:C_P_labile_init init:20.0;
-	parameter "Final C/P (labile)" category: "Labile OM" var:C_P_labile_final init:20.0;
-	
-	parameter "Initial C/N (DOM)" category: "DOM" var: C_N_dom_init init: 5.0;
-	parameter "Final C/N (DOM)" category: "DOM" var:C_N_dom_final init:20.0;
-	parameter "Initial C/P (DOM)" category: "DOM" var:C_P_dom_init init:20.0;
-	parameter "Final C/P (DOM)" category: "DOM" var:C_P_dom_final init:20.0;
-	
-	parameter "Initial C (recalcitrant)" category: "Recalcitrant OM" var: C_recal_init init: 100#gram;
-	parameter "Final C (recalcitrant)" category: "Recalcitrant OM" var: C_recal_final init: 100#gram;
-	
-	parameter "Count of steps" category: "Experiment" var: steps init: 1000;
-	
-	PopulationDecompose exp_output <- self;
-	OrganicParticle organic_particle;
-	Dam dam;
-	MicrobePopulation microbe_population;
-	
-	init {
-		create OrganicParticle with: (
-			C_labile: init_C_labile(),
-			N_labile: init_N_labile(),
-			P_labile: init_P_labile(),
-			C_recalcitrant: init_C_recal(),
-			N_recalcitrant: init_C_recal() / CN_recal,
-			P_recalcitrant: init_C_recal() / CP_recal
-		) {
-			myself.organic_particle <- self;
-		}
-		
-		float N_dom <- C_dom/(C_N_dom_init + cycle * (C_N_dom_final - C_N_dom_init)/steps);
-		float P_dom <- C_dom/(C_P_dom_init + cycle * (C_P_dom_final - C_P_dom_init)/steps);
-		
-		create Dam with: (
-			dom: [N_dom, P_dom, C_dom],
-			dim: [0.0, 0.0]
-		) {
-			myself.dam <- self;
-		}
-		
-		PopulationDecompose exp <- self;
-		create MicrobePopulation with: (
-			C: C_microbes,
-			C_N: C_N_microbes,
-			C_P: C_P_microbes,
-			awake_population: 1.0
-			) {
-				ask max_enzymes {
-					T_cellulolytic <- exp.T_cellulolytic #gram/#h;
-					T_amino <- exp.T_amino #gram/#h;
-					T_P <- exp.T_P #gram/#h;
-					T_recal <- exp.T_recal #gram/#h;
-				}
-				exp.microbe_population <- self;
-		}
-	}
-	
-	float init_C_labile {
-		return C_labile_init + cycle * (C_labile_final - C_labile_init)/steps;
-	}
-	
-	float init_N_labile {
-		return init_C_labile()/(C_N_labile_init + cycle * (C_N_labile_final - C_N_labile_init)/steps);
-	}
-		
-	float init_P_labile {
-		return init_C_labile()/(C_P_labile_init + cycle * (C_P_labile_final - C_P_labile_init)/steps);
-	}
-	
-	float init_C_recal {
-		return C_recal_init + cycle * (C_recal_final - C_recal_init)/steps;
-	}
-	
-	float init_N_dom {
-		return C_dom/(C_N_dom_init + cycle * (C_N_dom_final - C_N_dom_init)/steps);
-	}
-	
-	float init_P_dom {
-		return C_dom/(C_P_dom_init + cycle * (C_P_dom_final - C_P_dom_init)/steps);
-	}
-	
-	reflex {
-		ask organic_particle {
-			C_labile <- myself.init_C_labile();
-			N_labile <- myself.init_N_labile();
-			P_labile <- myself.init_P_labile();
-			C_recalcitrant <- myself.init_C_recal();
-			N_recalcitrant <- myself.init_C_recal() / myself.CN_recal;
-			P_recalcitrant <- myself.init_C_recal() / myself.CP_recal;
-		}
-		
-		ask dam {
-			dom[0] <- myself.init_N_dom();
-			dom[1] <- myself.init_P_dom();
-			dom[2] <- myself.C_dom;
-			dim[0] <- 0.0;
-			dim[1] <- 0.0;
-		}
-		
-		PopulationDecompose exp <- self;
-		
-		write "Recal: " + (init_C_recal() - organic_particle.C_recalcitrant);
-	}
-	
-	output {
-		display "OM" type:2d {
-			chart "OM" type:series style:line {
-				data "C (labile)" value: cycle = 0 ? 0.0 : (exp_output.init_C_labile() - exp_output.organic_particle.C_labile)/#gram marker:false;
-				data "N (labile)" value: cycle = 0 ? 0.0 : (exp_output.init_N_labile() - exp_output.organic_particle.N_labile)/#gram marker:false;
-				data "P (labile)" value: cycle = 0 ? 0.0 : (exp_output.init_P_labile() - exp_output.organic_particle.P_labile)/#gram marker:false;
-				data "C (recal)" value: cycle = 0 ? 0.0 : (exp_output.init_C_recal() - exp_output.organic_particle.C_recalcitrant)/#gram marker:false;
-				data "N (recal)" value: cycle = 0 ? 0.0 : (exp_output.init_C_recal() / CN_recal - exp_output.organic_particle.N_recalcitrant)/#gram marker:false;
-				data "P (recal)" value: cycle = 0 ? 0.0 : (exp_output.init_C_recal() / CP_recal - exp_output.organic_particle.P_recalcitrant)/#gram marker:false;
-			}
-		}
-		display "C/N" type:2d {
-			chart "C/N" type:series style:line {
-				data "dom C/N" value: exp_output.C_dom / exp_output.init_N_dom() marker:false;
-				data "available C/N" value:
-				cycle = 0 ? 0.0 : 
-				(exp_output.dam.available_N() > 0 ?
-					exp_output.dam.available_C()/exp_output.dam.available_N() : 0.0)
-				marker:false;
-				data "C/N" value: exp_output.C_N_microbes marker:false;
-			}
-		}
-		display "C/P" type:2d {
-			chart "C/P" type:series style:line {
-				data "dom C/P" value: exp_output.C_dom / exp_output.init_P_dom() marker:false;
-				data "available C/P" value: cycle = 0 ? 0.0 :
-					(exp_output.dam.available_P() > 0 ?
-					exp_output.dam.available_C() / exp_output.dam.available_P() : 0.0)
-				marker:false;
-				data "C/P" value: exp_output.C_P_microbes marker:false;
-			}
-		}
 	}
 }

@@ -34,11 +34,11 @@ species Y_Strategist parent:MicrobePopulation {
 		carbon_use_efficiency <- carbon_use_efficiency_Y;
 		minimum_awake_rate <- minimum_awake_rate_Y;
 		
-		C <- init_structural_cytosol_rate * total_C_init; // TODO: /3 => car trois différentes espèces de bactéries, hypothèse toutes les bactéries ont le même poids
+		C <- init_structural_cytosol_rate * total_C_init;
 		N <- C / C_N;
 		P <- C / C_P;
 		
-		cytosol_C <- total_C_init - C; // TODO: cytosol = C?
+		cytosol_C <- total_C_init - C;
 		cytosol_N <- cytosol_C / C_N;
 		cytosol_P <- cytosol_C / C_P;
 		
@@ -77,7 +77,7 @@ species A_Strategist parent:MicrobePopulation {
 		carbon_use_efficiency <- carbon_use_efficiency_A;
 		minimum_awake_rate <- minimum_awake_rate_A;
 		
-		C <- init_structural_cytosol_rate * total_C_init; //*0.2;//0.000001#gram;
+		C <- init_structural_cytosol_rate * total_C_init;
 		N <- C/ C_N;
 		P <- C/ C_P;
 		
@@ -101,7 +101,6 @@ species A_Strategist parent:MicrobePopulation {
 		create Enzymes with: [
 			T_cellulolytic::0.4 #gram/ #gram / #d,
 			T_amino::0.08 #gram / #gram / #d,
-//			T_P::0.08 #gram / #gram / #d,
 			T_P::0.02 #gram / #gram / #d,
 			T_recal::0.08 #gram / #gram / #d
 		] {
@@ -118,7 +117,7 @@ species S_Strategist parent:MicrobePopulation {
 		carbon_use_efficiency <- carbon_use_efficiency_S;
 		minimum_awake_rate <- minimum_awake_rate_S;
 		
-		C <- init_structural_cytosol_rate * total_C_init;   //*0.7;//0.000001#gram;
+		C <- init_structural_cytosol_rate * total_C_init;
 		N <- C/ C_N;
 		P <- C/ C_P;
 		
@@ -142,7 +141,6 @@ species S_Strategist parent:MicrobePopulation {
 		create Enzymes with: [
 			T_cellulolytic::0.2 #gram/ #gram / #d,
 			T_amino::0.05 #gram / #gram / #d,
-//			T_P::0.05 #gram / #gram / #d,
 			T_P::0.01 #gram / #gram / #d,
 			T_recal::0.02 #gram / #gram / #d
 		] {
