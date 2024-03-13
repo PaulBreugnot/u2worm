@@ -86,6 +86,7 @@ global {
 				add self to:myself.populations;
 			}
 		}
+		
 		create Nematode number: nematodes_count
 		{
 			current_pore <- one_of(PoreParticle); 

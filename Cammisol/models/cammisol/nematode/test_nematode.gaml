@@ -28,13 +28,11 @@ global {
 		}
 		
 		ask PoreParticle {
-			create MicrobePopulation {
-				C <- 10 * sum(Nematode collect each.predation_rate) * local_step;
-				N <- C / C_N;
-				P <- C / C_P;
-				cytosol_C <- C / 10;
-				cytosol_N <- N / 10;
-				cytosol_P <- P / 10;
+			float microbe_C <- 10 * sum(Nematode collect each.predation_rate) * local_step;
+			create MicrobePopulation with:[
+				C: microbe_C,
+				cytosol_C: microbe_C / 5
+			] {
 				add self to: myself.populations;
 				
 				total_C <- total_C + C + cytosol_C;
@@ -67,6 +65,9 @@ experiment TestNematodeMetabolism type: gui {
 				data "C (g)" value:sum(PoreParticle collect sum(each.populations collect each.C))/#gram marker:false;
 				data "N (g)" value:sum(PoreParticle collect sum(each.populations collect each.N))/#gram marker:false;
 				data "P (g)" value:sum(PoreParticle collect sum(each.populations collect each.P))/#gram marker:false;
+				data "C (cytosol, g)" value:sum(PoreParticle collect sum(each.populations collect each.cytosol_C))/#gram marker:false;
+				data "N (cytosol, g)" value:sum(PoreParticle collect sum(each.populations collect each.cytosol_N))/#gram marker:false;
+				data "P (cytosol, g)" value:sum(PoreParticle collect sum(each.populations collect each.cytosol_P))/#gram marker:false;
 			}
 		}
 		display "C/N/P organic/mineral" {

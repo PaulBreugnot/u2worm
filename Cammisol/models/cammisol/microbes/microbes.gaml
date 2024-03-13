@@ -24,24 +24,13 @@ global {
 //	float minimum_awake_rate_A <- 0.018;
 	float minimum_awake_rate_A <- 1.0;
 	float minimum_awake_rate_S <- 1.0;
-	
-	float init_structural_cytosol_rate <- 1.0;
 }
 
 species Y_Strategist parent:MicrobePopulation {
 	init {
-		float total_C_init <- C;
 		dividing_time <- dividing_time_Y;
 		carbon_use_efficiency <- carbon_use_efficiency_Y;
 		minimum_awake_rate <- minimum_awake_rate_Y;
-		
-		C <- init_structural_cytosol_rate * total_C_init;
-		N <- C / C_N;
-		P <- C / C_P;
-		
-		cytosol_C <- total_C_init - C;
-		cytosol_N <- cytosol_C / C_N;
-		cytosol_P <- cytosol_C / C_P;
 		
 		cytosol_mineralization_rate <- 1.0;
 		
@@ -69,18 +58,9 @@ species Y_Strategist parent:MicrobePopulation {
 }
 species A_Strategist parent:MicrobePopulation {
 	init {
-		float total_C_init <- C;
 		dividing_time <- dividing_time_A;
 		carbon_use_efficiency <- carbon_use_efficiency_A;
 		minimum_awake_rate <- minimum_awake_rate_A;
-		
-		C <- init_structural_cytosol_rate * total_C_init;
-		N <- C/ C_N;
-		P <- C/ C_P;
-		
-		cytosol_C <- total_C_init - C;
-		cytosol_N <- cytosol_C / C_N;
-		cytosol_P <- cytosol_C / C_P;
 		
 		cytosol_mineralization_rate <- 0.0;
 
@@ -109,19 +89,10 @@ species A_Strategist parent:MicrobePopulation {
 
 species S_Strategist parent:MicrobePopulation {
 	init {
-		float total_C_init <- C;
 		dividing_time <- dividing_time_S;
 		carbon_use_efficiency <- carbon_use_efficiency_S;
 		minimum_awake_rate <- minimum_awake_rate_S;
-		
-		C <- init_structural_cytosol_rate * total_C_init;
-		N <- C/ C_N;
-		P <- C/ C_P;
-		
-		cytosol_C <- total_C_init - C;
-		cytosol_N <- cytosol_C / C_N;
-		cytosol_P <- cytosol_C / C_P;
-		
+
 		cytosol_mineralization_rate <- 0.0;
 		
 		Enzymes _min_enzymes;

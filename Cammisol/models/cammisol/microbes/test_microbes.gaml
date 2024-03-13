@@ -121,6 +121,8 @@ experiment MicrobesTestBase {
 	init {
 		loop s over: microbe_species {
 			create s with: [C::init_C[s], C_N::C_N, C_P::C_P] {
+				write N/#gram;
+				write P/#gram;
 				myself.populations[s] <- self;
 			}
 		}

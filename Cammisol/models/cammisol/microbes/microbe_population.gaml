@@ -53,7 +53,7 @@ species MicrobePopulation schedules:[]
 	
 	// TODO: unit?
 	// TODO: source?
-	float C;
+	float C <- 0#gram;
 	float N;
 	float P;
 	
@@ -64,8 +64,8 @@ species MicrobePopulation schedules:[]
 	
 	// Mon estomac le cytosol 
 	float cytosol_C <- 0#gram; 
-	float cytosol_N <- 0#gram; 
-	float cytosol_P <- 0#gram;
+	float cytosol_N; 
+	float cytosol_P;
 	
 	float cytosol_mineralization_rate <- 0.0;
 	
@@ -96,6 +96,12 @@ species MicrobePopulation schedules:[]
 		] {
 			myself.enzymatic_activity_problem <- self;
 		}
+		
+		N <- C / C_N;
+		P <- C / C_P;
+
+		cytosol_N <- cytosol_C / C_N;
+		cytosol_P <- cytosol_C / C_P;
 	}
 	
 	action set_min_max_enzymes(Enzymes _min_enzymes, Enzymes _max_enzymes) {
