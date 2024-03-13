@@ -10,7 +10,7 @@ model microbe_population
 import "../dam.gaml"
 
 global {
-	float microbe_CO2_emissions <- 0.0;
+	float microbe_CO2_emissions <- 0.0#gram;
 	float enzymes_optimization_period <- 1#d;
 	
 	// Enzyme objectives
@@ -53,9 +53,9 @@ species MicrobePopulation schedules:[]
 	
 	// TODO: unit?
 	// TODO: source?
-	float C <- 60.0;
-	float N <- 7.0;
-	float P <- 1.0;
+	float C;
+	float N;
+	float P;
 	
 	float awake_population <- 1.0;
 	float minimum_awake_rate <- 0.5;
