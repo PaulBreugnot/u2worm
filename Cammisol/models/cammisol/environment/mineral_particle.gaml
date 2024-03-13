@@ -12,7 +12,7 @@ global {
 	
 }
 
-species MineralParticle {
+species MineralParticle schedules: [] {
 	int grid_x;
 	int grid_y;
 	float N;

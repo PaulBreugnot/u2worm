@@ -31,7 +31,7 @@ global {
  * 
  * Represents the solution of accessible matter in a pore.
  */
-species Dam 
+species Dam schedules: []
 {	
 	//solution organique du sol
 	//					N	P	C

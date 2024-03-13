@@ -184,13 +184,14 @@ global {
 //		}
 //	}
 	reflex {
-		ask PoreParticle {
+		ask shuffle(Nematode) {
+			do life;
+		}
+		ask shuffle(PoreParticle) {
 			do microbe_life;
 		}
 	}
 }
-
-
 
 experiment base_cammisol_output {
 	reflex update_particle_color {

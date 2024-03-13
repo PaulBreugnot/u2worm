@@ -16,7 +16,7 @@ global {
 	
 }
 
-species OrganicParticle {
+species OrganicParticle schedules:[] {
 	int grid_x;
 	int grid_y;
 	float C_labile;

@@ -26,7 +26,7 @@ global {
 	float minimum_awake_rate_S <- 1.0;
 }
 
-species Y_Strategist parent:MicrobePopulation {
+species Y_Strategist parent:MicrobePopulation schedules:[] {
 	init {
 		dividing_time <- dividing_time_Y;
 		carbon_use_efficiency <- carbon_use_efficiency_Y;
@@ -56,7 +56,7 @@ species Y_Strategist parent:MicrobePopulation {
 		do set_min_max_enzymes(_min_enzymes, _max_enzymes);
 	}
 }
-species A_Strategist parent:MicrobePopulation {
+species A_Strategist parent:MicrobePopulation schedules:[] {
 	init {
 		dividing_time <- dividing_time_A;
 		carbon_use_efficiency <- carbon_use_efficiency_A;
@@ -87,7 +87,7 @@ species A_Strategist parent:MicrobePopulation {
 	}
 }
 
-species S_Strategist parent:MicrobePopulation {
+species S_Strategist parent:MicrobePopulation schedules:[] {
 	init {
 		dividing_time <- dividing_time_S;
 		carbon_use_efficiency <- carbon_use_efficiency_S;
