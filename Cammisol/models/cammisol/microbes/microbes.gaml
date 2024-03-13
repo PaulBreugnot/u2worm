@@ -7,7 +7,7 @@
 
 model microbes
 
-import "../pore_particle.gaml"
+import "../environment/pore_particle.gaml"
 
 global {
 	list<species<MicrobePopulation>> bacteria_types <- [Y_Strategist, A_Strategist, S_Strategist];

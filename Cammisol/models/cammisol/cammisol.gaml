@@ -6,7 +6,7 @@
 */
 
 
-model camisol
+model cammisol
 
 import "cammisol_grid.gaml"
 

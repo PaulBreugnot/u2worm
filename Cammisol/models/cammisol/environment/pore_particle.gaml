@@ -8,7 +8,7 @@
 
 model pore_particle
 
-import "microbes/microbe_population.gaml"
+import "../microbes/microbe_population.gaml"
 
 
 species PoreParticle schedules:[] {

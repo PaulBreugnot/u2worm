@@ -8,7 +8,7 @@
 model cammisol_grid
 
 import "nematode/nematode.gaml"
-import "mineral_particle.gaml"
+import "environment/mineral_particle.gaml"
 
 global {
 	string ORGANIC <- "organic";

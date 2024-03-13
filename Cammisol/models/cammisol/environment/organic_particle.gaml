@@ -8,7 +8,7 @@
 
 model organic_particle
 
-import "local_time.gaml"
+import "../local_time.gaml"
 
 /* Insert your model definition here */
 
