@@ -20,8 +20,8 @@ global {
 	MaxP max_P;
 	MaxCN max_CN;
 	MaxCP max_CP;
-
-	init {
+	
+	action init_microbes_objectives {
 		create MaxLabileC with: (weight: 5.0) {
 			max_labile_C <- self;
 		}
@@ -43,11 +43,12 @@ global {
 	}
 }
 
+
 species MicrobePopulation schedules:[]
 {
 	float carbon_use_efficiency;
 	
-	float dividing_time <- 0.0;
+	float dividing_time;
 	float C_N <- 10.0;
 	float C_P <- 17.0;
 	
@@ -58,7 +59,7 @@ species MicrobePopulation schedules:[]
 	float P;
 	
 	float awake_population <- 1.0;
-	float minimum_awake_rate <- 0.5;
+	float minimum_awake_rate;
 	float sporulation_time <- 10#h;
 	float germination_time <- 1#h;
 	
@@ -191,11 +192,11 @@ species MicrobePopulation schedules:[]
 	}
 	
 	action dormancy(Dam dam, float perceived_rate) {
-		float perceived_C_respiration <- (1-carbon_use_efficiency) * dam.dom[2];
+		float perceived_C_respiration <- (1-carbon_use_efficiency) * perceived_rate * (dam.dom[2]+cytosol_C);
 		float perceived_C_growth <- min(
-			carbon_use_efficiency * dam.dom[2],
-			(dam.dom[0]+dam.dim[0]) * C_N,
-			(dam.dom[1]+dam.dim[1]) * C_P
+			carbon_use_efficiency * perceived_rate * (dam.dom[2]+cytosol_C),
+			perceived_rate * (dam.dom[0]+dam.dim[0]+cytosol_N) * C_N,
+			perceived_rate * (dam.dom[1]+dam.dim[1]+cytosol_P) * C_P
 		);		
 		float max_awake_population <- min(1.0, (perceived_C_respiration + perceived_C_growth) / (C * local_step / (carbon_use_efficiency * dividing_time)));
 		float d_awake_population <- 1/(awake_population > max_awake_population ? sporulation_time : germination_time)

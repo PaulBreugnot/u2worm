@@ -66,10 +66,6 @@ species PoreParticle schedules:[] {
 			] {
 				local_enzymes <- self;
 			}
-			write "D eC: " + local_enzymes.T_cellulolytic * local_step / #gram;
-			write "D eN: " + local_enzymes.T_amino * local_step / #gram;
-			write "D eP: " + local_enzymes.T_P * local_step / #gram;
-			write "D er: " + local_enzymes.T_recal * local_step / #gram;
 			
 			ask decomposition_problem {
 				C_recal_init <- organic.C_recalcitrant;

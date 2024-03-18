@@ -22,11 +22,14 @@ global {
 	 */
 	float total_model_weight <- bulk_density * world.shape.area * 1#cm;
 	
-	float carbone_concentration_in_dam <- (729.0#gram * 10^-6)/#gram;
-	float azote_concentration_in_dam <- (60.0#gram * 10^-6)/#gram;
-	float azote_concentration_in_dim <- (4.74#gram * 10^-6)/#gram;
-	float phosphore_concentration_in_dam <- (400.0#gram * 10^-6)/#gram;
-	float phosphore_concentration_in_dim <- (1.43#gram * 10^-6)/#gram;
+	/*Jean*/
+	float carbone_concentration_in_dam <- (729.0 * 10^-6) #gram/#gram;
+	float azote_concentration_in_dam <- (60.0 * 10^-6) #gram/#gram;
+	float phosphore_concentration_in_dam <- (400.0 * 10^-6) #gram/#gram;
+	
+	/*Bernard Et Al 2021 -> Bouzac 2015*/
+	float azote_concentration_in_dim <- (4.74 * 10^-6) #gram/#gram;
+	float phosphore_concentration_in_dim <- (1.43 * 10^-6) #gram/#gram;
 		
 	// 5E8 -> 5E9 bacterie / gramme de sol
 	/*
@@ -46,6 +49,8 @@ global {
 	float rain_period <- 7#days;
 	
 	init {
+		do init_grid;
+		do init_microbes_objectives;
 		// Counts the number of PORES after the initialization of the grid
 		int pores_count <- length(PoreParticle);
 		ask PoreParticle {
@@ -53,7 +58,6 @@ global {
 			carrying_capacity <- 10 * total_initial_bacteria_weight / pores_count;
 			
 			ask dam {
-				/*Jean*/
 				float carbon_in_all_pore <- total_model_weight * carbone_concentration_in_dam; 
 				float carbon_in_pore <- carbon_in_all_pore / pores_count;
 				
@@ -62,15 +66,13 @@ global {
 				
 				float phosphore_in_all_pore <- total_model_weight * phosphore_concentration_in_dam;
 				float phosphore_in_pore <- phosphore_in_all_pore / pores_count;
-				/*Jean*/
 		
-				/*Bernard Et Al 2021 -> Bouzac 2015*/
+
 				float phosphore_in_dim <- phosphore_concentration_in_dim * total_model_weight;
 				float phosphore_in_dim_in_pore <- phosphore_in_dim / pores_count;
 				
 				float azote_in_dim <- azote_concentration_in_dim * total_model_weight;
 				float azote_in_dim_in_pore <- phosphore_in_dim / pores_count;
-				/*Bernard Et Al 2021 -> Bouzac 2015*/
 				
 				dom <- [azote_in_pore, phosphore_in_pore, carbon_in_pore];
 				dim <- [azote_in_dim_in_pore, phosphore_in_dim_in_pore];
@@ -98,6 +100,13 @@ global {
 			N: 0.00132#gram/(#cm*#cm),
 			P: 0.00077#gram/(#cm*#cm)
 		);
+		
+		ask PoreParticle {
+			ask populations {
+				do update;
+				do optimize_enzymes(myself.dam, myself.accessible_organics);
+			}
+		}
 	}
 	
 	action init_soil(float C, float N, float P) {
@@ -188,12 +197,22 @@ global {
 			do life;
 		}
 		ask shuffle(PoreParticle) {
+			ask populations {
+				if flip(local_step / enzymes_optimization_period) {
+					do update;
+					do optimize_enzymes(myself.dam, myself.accessible_organics);
+				}
+			}
+			do decompose;
 			do microbe_life;
 		}
 	}
 }
 
 experiment base_cammisol_output {
+	parameter "Grid size" category: "Environment" var:grid_size;
+	parameter "Nematodes count" category: "Nematode" var:nematodes_count;
+	
 	reflex update_particle_color {
 		float max_population <- 0.0;
 		ask PoreParticle {
@@ -219,9 +238,11 @@ experiment base_cammisol_output {
 		
 		display "Awoken population" type: java2D {
 			chart "Awoken population" type: series {
-				data "Y awake (%)" value: (sum(Y_Strategist collect (each.awake_population)) / length(Y_Strategist)) * 100 style:spline color: #red marker:false thickness:3;
-				data "A awake (%)" value: (sum(A_Strategist collect (each.awake_population)) / length(A_Strategist)) * 100 style:spline color: #green marker:false thickness:3;
-				data "S awake (%)" value: (sum(S_Strategist collect (each.awake_population)) / length(S_Strategist)) * 100 style:spline color: #blue marker:false thickness:3;
+				if (length(PoreParticle) > 0) {
+					data "Y awake (%)" value: sum(Y_Strategist collect (each.awake_population))/length(Y_Strategist) * 100 style:spline color: #red marker:false thickness:3;
+					data "A awake (%)" value: sum(A_Strategist collect (each.awake_population))/length(A_Strategist) * 100 style:spline color: #green marker:false thickness:3;
+					data "S awake (%)" value: sum(S_Strategist collect (each.awake_population))/length(S_Strategist) * 100 style:spline color: #blue marker:false thickness:3;
+				}
 				if(nematodes_count > 0) {
 					data "Nematode awake (%)" value: (sum(Nematode collect (each.awake as int)) / length(Nematode)) * 100 style:spline color: #yellow marker:false thickness:3;				
 				}
@@ -306,7 +327,7 @@ experiment display_grid {
 	}
 }
 
-experiment camisol_no_output {
+experiment cammisol_no_output {
 
 	reflex state when: local_cycle mod 100 = 0 {
 		ask simulation {
@@ -325,7 +346,7 @@ experiment camisol_no_output {
 	}
 }
 
-experiment camisol parent:base_cammisol_output {
+experiment cammisol parent:base_cammisol_output {
 	// Test to reactivate bacterias
 	reflex add_N_P when: local_cycle mod 300 = 0 {
 		ask simulation {

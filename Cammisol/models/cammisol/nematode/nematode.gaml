@@ -134,24 +134,28 @@ species Nematode schedules:[]
 			
 			if (total_C_predated_from_this_population > 0.0) {
 				float C_predated_from_structural <- C/(C+cytosol_C) * total_C_predated_from_this_population;
-				float C_predated_from_cytosol <- total_C_predated_from_this_population - C_predated_from_structural;
-				
 				float N_predated_from_structural <- C_predated_from_structural * N/C;
-				float N_predated_from_cytosol <- C_predated_from_cytosol * cytosol_N / cytosol_C;
-				
 				float P_predated_from_structural <- C_predated_from_structural * P/C;
-				float P_predated_from_cytosol <- C_predated_from_cytosol * cytosol_P / cytosol_C;
-				
+							
 				C <- C - C_predated_from_structural;
 				N <- N - N_predated_from_structural;
 				P <- P - P_predated_from_structural;
 				
-				cytosol_C <- cytosol_C - C_predated_from_cytosol;
-				cytosol_N <- cytosol_N - N_predated_from_cytosol;
-				cytosol_P <- cytosol_P - P_predated_from_cytosol;
+				total_N_predated <- total_N_predated + N_predated_from_structural;
+				total_P_predated <- total_P_predated + P_predated_from_structural;
 				
-				total_N_predated <- total_N_predated + N_predated_from_structural + N_predated_from_cytosol;
-				total_P_predated <- total_P_predated + P_predated_from_structural + P_predated_from_cytosol;
+				float C_predated_from_cytosol <- total_C_predated_from_this_population - C_predated_from_structural;
+				if(C_predated_from_cytosol > 0.0) {
+					float N_predated_from_cytosol <- C_predated_from_cytosol * cytosol_N / cytosol_C;	
+					float P_predated_from_cytosol <- C_predated_from_cytosol * cytosol_P / cytosol_C;
+						
+					cytosol_C <- cytosol_C - C_predated_from_cytosol;
+					cytosol_N <- cytosol_N - N_predated_from_cytosol;
+					cytosol_P <- cytosol_P - P_predated_from_cytosol;
+					
+					total_N_predated <- total_N_predated + N_predated_from_cytosol;
+					total_P_predated <- total_P_predated + P_predated_from_cytosol;
+				}
 			}
 		}
 		

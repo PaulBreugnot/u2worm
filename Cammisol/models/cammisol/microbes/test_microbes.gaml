@@ -119,6 +119,9 @@ experiment MicrobesTestBase {
 	}
 	
 	init {
+		ask simulation {
+			do init_microbes_objectives;	
+		}
 		loop s over: microbe_species {
 			create s with: [C::init_C[s], C_N::C_N, C_P::C_P] {
 				write N/#gram;
