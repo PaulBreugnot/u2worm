@@ -12,20 +12,20 @@ import "../microbes/microbes.gaml"
 
 global {
 	float nematode_CO2_emissions <- 0.0#gram;
+	float nematode_predation_rate <- 1e5 * 1e-12 #gram/#day; // About 100k bacterias (1e-12#gram) each day
+	float nematode_C_N <- 6.0;
+	float nematode_C_P <- 47.0;
+	float nematode_CUE <- 0.16;
+	float nematode_sleep_threshold <- 0.1;
+	float nematode_rejected_microbe_necromass_rate <- 0.5;
 }
 
 species Nematode schedules:[]
 {
-	
-	float C_N <- 6.0; // TODO: source?
-	float C_P <- 47.0; // TODO: source?
-	float carbon_use_efficiency <- 0.16; // TODO: source?
-	float rejected_microbe_necromass_rate <- 0.5; // TODO: à vérifier
-	
 	// quantity of C N P
-	float C <- (470#gram * 10^-6); // TODO: source?
-	float N <- (470#gram * 10^-6)/C_N;
-	float P <- (470#gram * 10^-6)/C_P;
+//	float C <- (470#gram * 10^-6); // TODO: source?
+//	float N <- (470#gram * 10^-6)/C_N;
+//	float P <- (470#gram * 10^-6)/C_P;
 	
 	float stomack_C;
 	float stomack_N;
@@ -34,8 +34,6 @@ species Nematode schedules:[]
 	PoreParticle current_pore;
 	
 	bool awake <- true;
-	float predation_rate <- 1e5 * 1e-12 #gram/#day; // About 100k bacterias (1e-12#gram) each day
-	float threshold_DOC <- 0.1; // If less than 10% of maximum predation rate, sleep
 //	float predation_rate <- 100*0.5e-9#gram/#mn;
 //	float predation_rate <- 0.00001#gram/#day; // 0.5E-9#gram/#mn;
 	
@@ -43,9 +41,9 @@ species Nematode schedules:[]
 	
 	action life
 	{
-		float requested_C <- predation_rate * local_step;
+		float requested_C <- nematode_predation_rate * local_step;
 		float perceived_C <- perceive();
-		awake <- (perceived_C / requested_C) >= threshold_DOC;
+		awake <- (perceived_C / requested_C) >= nematode_sleep_threshold;
 		
 		if(awake)
 		{
@@ -81,18 +79,18 @@ species Nematode schedules:[]
 	
 	action respirate
 	{
-		float C_respiration <- (1-carbon_use_efficiency) * stomack_C;
+		float C_respiration <- (1-nematode_CUE) * stomack_C;
 		stomack_C <- stomack_C  - C_respiration;
 		nematode_CO2_emissions <- nematode_CO2_emissions + C_respiration;
 	}
 	
 	action anabolize
 	{
-		float C_assimilated <- min(stomack_C, stomack_N * C_N, stomack_P * C_P);
+		float C_assimilated <- min(stomack_C, stomack_N * nematode_C_N, stomack_P * nematode_C_P);
 		stomack_C <- stomack_C  - C_assimilated; 
 		
-		float N_assimilated <- C_assimilated/C_N;
-		float P_assimilated <- C_assimilated/C_P;
+		float N_assimilated <- C_assimilated/nematode_C_N;
+		float P_assimilated <- C_assimilated/nematode_C_P;
 		
 		// Assimilated C/N/P is actually rejected to labile as nematode necromass, to ensure nematode biomass stability
 		do reject_to_labile(C_assimilated, N_assimilated, P_assimilated);
@@ -159,9 +157,9 @@ species Nematode schedules:[]
 			}
 		}
 		
-		float microbe_necromass_C <- total_C_predated*rejected_microbe_necromass_rate;
-		float microbe_necromass_N <- total_N_predated*rejected_microbe_necromass_rate;
-		float microbe_necromass_P <- total_P_predated*rejected_microbe_necromass_rate;
+		float microbe_necromass_C <- total_C_predated*nematode_rejected_microbe_necromass_rate;
+		float microbe_necromass_N <- total_N_predated*nematode_rejected_microbe_necromass_rate;
+		float microbe_necromass_P <- total_P_predated*nematode_rejected_microbe_necromass_rate;
 		
 		do reject_to_labile(microbe_necromass_C, microbe_necromass_N, microbe_necromass_P);
 		

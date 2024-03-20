@@ -104,6 +104,7 @@ global {
 		ask PoreParticle {
 			ask populations {
 				do update;
+				write "Initial enzymes optimization for " + self;
 				do optimize_enzymes(myself.dam, myself.accessible_organics);
 			}
 		}
@@ -192,6 +193,7 @@ global {
 //			}
 //		}
 //	}
+
 	reflex {
 		ask shuffle(Nematode) {
 			do life;
@@ -211,7 +213,26 @@ global {
 
 experiment base_cammisol_output {
 	parameter "Grid size" category: "Environment" var:grid_size;
-	parameter "Nematodes count" category: "Nematode" var:nematodes_count;
+	parameter "Nematodes count" category: "Environment" var:nematodes_count;
+	parameter "Organic particle rate" category: "Environment" var:mineral_rate;
+	parameter "Mineral particle rate" category: "Environment" var:organic_rate;
+	
+	parameter "Nematodes predation rate" category: "Nematode" var:nematode_predation_rate;
+	parameter "Nematodes CUE" category: "Nematode" var:nematode_CUE;
+	parameter "Nematodes C/N" category: "Nematode" var:nematode_C_N;
+	parameter "Nematodes C/P" category: "Nematode" var:nematode_C_P;
+	
+	parameter "Dividing time (Y)" category: "Y Strategists" var:dividing_time_Y;
+	parameter "CUE (Y)" category: "Y Strategists" var:carbon_use_efficiency_Y;
+	parameter "Minimum awake rate (Y)" category: "Y Strategists" var:minimum_awake_rate_Y;
+	
+	parameter "Dividing time (A)" category: "A Strategists" var:dividing_time_A;
+	parameter "CUE (A)" category: "A Strategists" var:carbon_use_efficiency_A;
+	parameter "Minimum awake rate (A)" category: "A Strategists" var:minimum_awake_rate_A;
+	
+	parameter "Dividing time (S)" category: "S Strategists" var:dividing_time_S;
+	parameter "CUE (S)" category: "S Strategists" var:carbon_use_efficiency_S;
+	parameter "Minimum awake rate (S)" category: "S Strategists" var:minimum_awake_rate_S;
 	
 	reflex update_particle_color {
 		float max_population <- 0.0;

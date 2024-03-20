@@ -22,13 +22,10 @@ global {
 		create Nematode number: nematodes_count {
 			current_pore <- one_of(PoreParticle); 
 			location <- any_location_in(current_pore);
-			total_C <- total_C + C;
-			total_N <- total_N + N;
-			total_P <- total_P + P;
 		}
 		
 		ask PoreParticle {
-			float microbe_C <- 10 * sum(Nematode collect each.predation_rate) * local_step;
+			float microbe_C <- 10 * nematode_predation_rate * local_step;
 			create MicrobePopulation with:[
 				C: microbe_C,
 				cytosol_C: microbe_C / 5
@@ -79,13 +76,6 @@ experiment TestNematodeMetabolism type: gui {
 				data "P dim (g)" value:sum(Dam collect each.dim[1])/#gram marker:false;
 			}
 		}
-		display "Nematode biomass" {
-			chart "Nematode biomass" {
-				data "C (g)" value:sum(Nematode collect each.C)/#gram marker:false;
-				data "N (g)" value:sum(Nematode collect each.N)/#gram marker:false;
-				data "P (g)" value:sum(Nematode collect each.P)/#gram marker:false;
-			}
-		}
 		display "Nematode awake" {
 			chart "Nematode awake" {
 				data "Awake (%)" value:100*(Nematode count each.awake)/nematodes_count marker:false;
@@ -100,18 +90,15 @@ experiment TestNematodeMetabolism type: gui {
 		display "C/N/P conservation" {
 			chart "C/N/P conservation" {
 				data "C" value:
-					(sum(Nematode collect each.C) +
-					sum(OrganicParticle collect each.C_labile) +
+					(sum(OrganicParticle collect each.C_labile) +
 					sum(MicrobePopulation collect (each.C + each.cytosol_C)) +
 					nematode_CO2_emissions)/total_C marker:false;
 				data "N" value:
-					(sum(Nematode collect each.N) +
-					sum(OrganicParticle collect each.N_labile) +
+					(sum(OrganicParticle collect each.N_labile) +
 					sum(MicrobePopulation collect (each.N + each.cytosol_N))
 					)/total_N marker:false;
 				data "P" value:
-					(sum(Nematode collect each.P) +
-					sum(OrganicParticle collect each.P_labile) +
+					(sum(OrganicParticle collect each.P_labile) +
 					sum(MicrobePopulation collect (each.P + each.cytosol_P))
 					)/total_P marker:false;
 			}

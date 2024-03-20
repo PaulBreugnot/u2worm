@@ -118,23 +118,12 @@ species PoreParticle schedules:[] {
 			do update;
 		}
 		
-		// TODO: Allocate C/N/P depending on the size of the population, not on the requested nutrients
-//		float total_requested_C <- sum(populations collect max(0.0, each.requested_C-each.cytosol_C));
-//		float total_requested_N_from_dom <- sum(populations collect max(0.0, each.requested_N-each.cytosol_N));
-//		float total_requested_P_from_dom <- sum(populations collect max(0.0, each.requested_P-each.cytosol_P));
-		
-//		float total_C_consumed <- min(dam.dom[2], total_requested_C);
-//		float total_N_consumed_from_dom <- min(dam.dom[0], total_requested_N_from_dom);
-//		float total_P_consumed_from_dom <- min(dam.dom[1], total_requested_P_from_dom);
-		
 		float total_microbes_C <- sum(populations collect each.C);
 		
 		ask shuffle(populations) {
 			float perceived_rate <- C / total_microbes_C;
-			do dormancy(myself.dam, perceived_rate);
-			do assimilate(myself.dam, perceived_rate);
 			do life(
-				myself.dam, myself.accessible_organics, sum(myself.populations collect each.C), myself.carrying_capacity
+				myself.dam, perceived_rate, sum(myself.populations collect each.C), myself.carrying_capacity
 			);
 		}	
 	}

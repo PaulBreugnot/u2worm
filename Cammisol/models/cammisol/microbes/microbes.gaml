@@ -21,8 +21,7 @@ global {
 	float carbon_use_efficiency_S <- 5/10;
 	
 	float minimum_awake_rate_Y <- 0.002;
-//	float minimum_awake_rate_A <- 0.018;
-	float minimum_awake_rate_A <- 1.0;
+	float minimum_awake_rate_A <- 0.018;
 	float minimum_awake_rate_S <- 1.0;
 }
 
