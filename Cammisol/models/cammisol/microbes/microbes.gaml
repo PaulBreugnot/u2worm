@@ -23,6 +23,90 @@ global {
 	float minimum_awake_rate_Y <- 0.002;
 	float minimum_awake_rate_A <- 0.018;
 	float minimum_awake_rate_S <- 1.0;
+	
+	float max_T_cellulolytic_Y <- 10 #gram/ #gram / #d;
+	float max_T_amino_Y <- 1.0 #gram / #gram / #d;
+	float max_T_P_Y <- 0.5 #gram / #gram / #d;
+	float max_T_recal_Y <- 0.00001 #gram / #gram / #d;
+	
+	float max_T_cellulolytic_A <- 40 #gram/ #gram / #d;
+	float max_T_amino_A <- 80 #gram / #gram / #d;
+	float max_T_P_A <- 20 #gram / #gram / #d;
+	float max_T_recal_A <- 80 #gram / #gram / #d;
+
+	float max_T_cellulolytic_S <- 2 #gram/ #gram / #d;
+	float max_T_amino_S <- 0.5 #gram / #gram / #d;
+	float max_T_P_S <- 0.1 #gram / #gram / #d;
+	float max_T_recal_S <- 0.2 #gram / #gram / #d;
+	
+	Enzymes min_enzymes_Y;
+	Enzymes max_enzymes_Y;
+	Enzymes min_enzymes_A;
+	Enzymes max_enzymes_A;
+	Enzymes min_enzymes_S;
+	Enzymes max_enzymes_S;
+	
+	init {
+		create Enzymes with: [
+			name::"Min enzymes (Y)",
+			T_cellulolytic::0.0,
+			T_amino::0.0,
+			T_P::0.0,
+			T_recal::0.0
+		] {
+			myself.min_enzymes_Y <- self;
+		}
+		
+		create Enzymes with: [
+			name::"Max enzymes (Y)",
+			T_cellulolytic::max_T_cellulolytic_Y,
+			T_amino::max_T_amino_Y,
+			T_P::max_T_P_Y,
+			T_recal::max_T_cellulolytic_Y
+		] {
+			myself.max_enzymes_Y <- self;
+		}
+		
+		create Enzymes with: [
+			name::"Min enzymes (A)",
+			T_cellulolytic::0.0,
+			T_amino::0.0,
+			T_P::0.0,
+			T_recal::0.0
+		] {
+			myself.min_enzymes_A <- self;
+		}
+		
+		create Enzymes with: [
+			name::"Max enzymes (A)",
+			T_cellulolytic::max_T_cellulolytic_A,
+			T_amino::max_T_amino_A,
+			T_P::max_T_P_A,
+			T_recal::max_T_cellulolytic_A
+		] {
+			myself.max_enzymes_A <- self;
+		}	
+		
+		create Enzymes with: [
+			name::"Min enzymes (S)",
+			T_cellulolytic::0.0,
+			T_amino::0.0,
+			T_P::0.0,
+			T_recal::0.0
+		] {
+			myself.min_enzymes_S <- self;
+		}
+		
+		create Enzymes with: [
+			name::"Max enzymes (S)",
+			T_cellulolytic::max_T_cellulolytic_S,
+			T_amino::max_T_amino_S,
+			T_P::max_T_P_S,
+			T_recal::max_T_cellulolytic_S
+		] {
+			myself.max_enzymes_S <- self;
+		}	
+	}
 }
 
 species Y_Strategist parent:MicrobePopulation schedules:[] {
@@ -33,26 +117,8 @@ species Y_Strategist parent:MicrobePopulation schedules:[] {
 		
 		cytosol_mineralization_rate <- 1.0;
 		
-		Enzymes _min_enzymes;
-		create Enzymes with: [
-			T_cellulolytic::0.0,
-			T_amino::0.0,
-			T_P::0.0,
-			T_recal::0.0
-		] {
-			_min_enzymes <- self;
-		}
-		
-		Enzymes _max_enzymes;
-		create Enzymes with: [
-			T_cellulolytic::10 #gram/ #gram / #d,
-			T_amino::1.0 #gram / #gram / #d,
-			T_P::0.5 #gram / #gram / #d,
-			T_recal::0.00001 #gram / #gram / #d
-		] {
-			_max_enzymes <- self;
-		}
-		do set_min_max_enzymes(_min_enzymes, _max_enzymes);
+		min_enzymes <- min_enzymes_Y;
+		max_enzymes <- max_enzymes_Y;
 	}
 }
 species A_Strategist parent:MicrobePopulation schedules:[] {
@@ -62,27 +128,9 @@ species A_Strategist parent:MicrobePopulation schedules:[] {
 		minimum_awake_rate <- minimum_awake_rate_A;
 		
 		cytosol_mineralization_rate <- 0.0;
-
-		Enzymes _min_enzymes;
-		create Enzymes with: [
-			T_cellulolytic::0.0,
-			T_amino::0.0,
-			T_P::0.0,
-			T_recal::0.0
-		] {
-			_min_enzymes <- self;
-		}
 		
-		Enzymes _max_enzymes;
-		create Enzymes with: [
-			T_cellulolytic::40 #gram/ #gram / #d,
-			T_amino::80 #gram / #gram / #d,
-			T_P::20 #gram / #gram / #d,
-			T_recal::80 #gram / #gram / #d
-		] {
-			_max_enzymes <- self;
-		}
-		do set_min_max_enzymes(_min_enzymes, _max_enzymes);
+		min_enzymes <- min_enzymes_A;
+		max_enzymes <- max_enzymes_A;
 	}
 }
 
@@ -94,25 +142,7 @@ species S_Strategist parent:MicrobePopulation schedules:[] {
 
 		cytosol_mineralization_rate <- 0.0;
 		
-		Enzymes _min_enzymes;
-		create Enzymes with: [
-			T_cellulolytic::0.0,
-			T_amino::0.0,
-			T_P::0.0,
-			T_recal::0.0
-		] {
-			_min_enzymes <- self;
-		}
-		
-		Enzymes _max_enzymes;
-		create Enzymes with: [
-			T_cellulolytic::2 #gram/ #gram / #d,
-			T_amino::0.5 #gram / #gram / #d,
-			T_P::0.1 #gram / #gram / #d,
-			T_recal::0.2 #gram / #gram / #d
-		] {
-			_max_enzymes <- self;
-		}
-		do set_min_max_enzymes(_min_enzymes, _max_enzymes);
+		min_enzymes <- min_enzymes_S;
+		max_enzymes <- max_enzymes_S;
 	}
 }

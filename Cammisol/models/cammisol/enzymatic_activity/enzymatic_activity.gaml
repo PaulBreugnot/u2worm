@@ -666,7 +666,7 @@ species SimulatedAnnealing schedules: [] {
 	/**
 	 * Problem to solve.
 	 */
-	EnzymaticActivityProblem problem;
+	// EnzymaticActivityProblem problem;
 	
 	/**
 	 * Maximum count of steps.
@@ -709,9 +709,10 @@ species SimulatedAnnealing schedules: [] {
 	 */
 	list<int> budget_indexes;
 	
-	init {
+	action init_state(EnzymaticActivityProblem problem) {
 		T_init <- float(length(objectives));
 		T <- T_init;
+		budget_indexes <- [];
 		if(problem.max_enzymes.T_recal - problem.min_enzymes.T_recal > 0.0) {
 			add T_RECALCITRANT_BUDGET to: budget_indexes;
 		}
@@ -730,8 +731,8 @@ species SimulatedAnnealing schedules: [] {
 			// actions
 			init_budget[i] <- 1.0 / length(budget_indexes);
 		}
-		
-		create SimulatedAnnealingState with:[problem::problem, budget::init_budget] {
+
+		create SimulatedAnnealingState with: [problem::problem, budget::init_budget] {
 			myself.s <- self;
 		}
 		e <- E(s);
@@ -775,7 +776,8 @@ species SimulatedAnnealing schedules: [] {
 		T <- 0.99 * T;
 	}
 	
-	action optimize {
+	action optimize(EnzymaticActivityProblem problem) {
+		do init_state(problem);
 		ask problem {
 			do update_X_C_labile_max;
 			do update_X_C_dam_max;
@@ -814,7 +816,7 @@ species SimulatedAnnealing schedules: [] {
 		}
 		_T[indexes[length(indexes)-1]] <- range;
 		
-		create SimulatedAnnealingState with:[problem::problem, budget::_T] {
+		create SimulatedAnnealingState with:[problem::s.problem, budget::_T] {
 			result <- self;
 		}
 		return result;
@@ -1055,6 +1057,8 @@ experiment DecompositionTest type: test autorun: true {
  * converge to a minimal value as the optimisation step increases.
  */
 experiment TestSimulatedAnnealing type: gui {
+	DecompositionProblem decomposition_problem;
+	EnzymaticActivityProblem enzymatic_activity_problem;
 	SimulatedAnnealing simulated_annealing;
 	
 	init {
@@ -1105,25 +1109,34 @@ experiment TestSimulatedAnnealing type: gui {
 			P_DIM_init::0.0,
 			N_DIM_init::0.0
 		] {
-			create EnzymaticActivityProblem with: [
-				decomposition_problem::self,
-				C_N::C_N_microbes,
-				C_P::C_P_microbes,
-				C_microbes::1#gram,
-				min_enzymes::min_enzymes,
-				max_enzymes::max_enzymes
-			] {
-				create SimulatedAnnealing with:[
-					problem::self,
-					objectives::[objective]
-				] {
-					current_experiment.simulated_annealing <- self;
-				}
-			}
+			myself.decomposition_problem <- self;
+		}
+		
+		create EnzymaticActivityProblem with: [
+			decomposition_problem::decomposition_problem,
+			C_N::C_N_microbes,
+			C_P::C_P_microbes,
+			C_microbes::1#gram,
+			min_enzymes::min_enzymes,
+			max_enzymes::max_enzymes
+		] {
+			myself.enzymatic_activity_problem <- self;
+		}
+		
+		create SimulatedAnnealing with:[
+			objectives::[objective]
+		] {
+			current_experiment.simulated_annealing <- self;
 		}
 		
 		ask simulated_annealing {
-			do step;
+			do init_state(myself.enzymatic_activity_problem);
+			ask myself.enzymatic_activity_problem {
+				do update_X_C_labile_max;
+				do update_X_C_dam_max;
+				do update_X_N_dam_max;
+				do update_X_P_dam_max;
+			}
 		}
 	}
 	
@@ -1269,6 +1282,8 @@ experiment EnzymaticActivityWorkbench type: gui {
 	parameter "Final C (recalcitrant, g)" category: "Recalcitrant OM" var: C_recal_final init: 1.0;
 	
 	SimulatedAnnealing simulated_annealing;
+	DecompositionProblem decomposition_problem;
+	EnzymaticActivityProblem problem;
 	parameter "Count of steps" category: "Experiment" var: steps init: 100;
 	parameter "Show max enzymatic rates" category: "Experiment" var:show_max_rates init: false;
 	
@@ -1335,16 +1350,16 @@ experiment EnzymaticActivityWorkbench type: gui {
 	
 	reflex {
 		ask SimulatedAnnealing {
-			ask problem {
+			ask s.problem {
+				ask decomposition_problem {
+					do die;
+				}
 				ask min_enzymes {
 					do die;
 				}
 				ask max_enzymes {
 					do die;
 				}
-				do die;
-			}
-			ask problem {
 				do die;
 			}
 			ask s {
@@ -1432,49 +1447,51 @@ experiment EnzymaticActivityWorkbench type: gui {
 			P_DIM_init::0.0,
 			N_DIM_init::0.0
 		] {
-			create EnzymaticActivityProblem with: [
-				decomposition_problem::self,
-				C_N::exp.C_N_microbes,
-				C_P::exp.C_P_microbes,
-				C_microbes::exp.C_microbes#gram,
-				min_enzymes::min_enzymes,
-				max_enzymes::max_enzymes
-			] {
-				create SimulatedAnnealing with:[
-					problem::self,
-					objectives::exp.objectives,
-					N::1000,
-					epsilon::1e-3
-				] {
-					do optimize;
-					
-					float C_avail <- s.C_avail();
-					float N_avail <- s.N_avail();
-					float P_avail <- s.P_avail();
-					write "";
-					write "s: " + s;
-					write "T_cellylolytic: " + s.enzymes.T_cellulolytic / (#gram / #gram / #d);
-					write "T_amino: " + s.enzymes.T_amino / (#gram / #gram / #d);
-					write "T_P: " + s.enzymes.T_P / (#gram / #gram / #d);
-					write "C/N: " + (N_avail > 0 ? C_avail / N_avail : 0.0);
-					write "C/P: " + (P_avail > 0 ? C_avail / P_avail : 0.0);
-					write "C_DOM: " + myself.decomposition_problem.C_DOM_init;
-					write "N_DOM: " + myself.decomposition_problem.N_DOM_init;
-					write "e: " + E(s);
-								
-					ask s.decomposition {
-						write "X_C_cellulolytic: " + X_C_cellulolytic / #gram;
-						write "X_C_amino: " + X_C_amino / #gram;
-						write "X_N_amino: " + X_N_amino / #gram;
-						write "X_C_P: " + X_C_P / #gram;
-						write "X_P_labile_to_dom:" + X_P_labile_to_dom / #gram;
-						write "X_P_labile_to_dim: " + X_P_labile_to_dim / #gram;
-						write "X_C_recal: " + X_C_recal / #gram;
-						write "X_P_recal_to_dim:" + X_P_recal_to_dim / #gram;
-					}
-					exp.simulated_annealing <- self;
-				}
+			myself.decomposition_problem <- self;
+		}
+		create EnzymaticActivityProblem with: [
+			decomposition_problem::decomposition_problem,
+			C_N::exp.C_N_microbes,
+			C_P::exp.C_P_microbes,
+			C_microbes::exp.C_microbes#gram,
+			min_enzymes::min_enzymes,
+			max_enzymes::max_enzymes
+		] {
+			myself.problem <- self;
+		}
+		
+		create SimulatedAnnealing with:[
+			objectives::exp.objectives,
+			N::1000,
+			epsilon::1e-3
+		] {
+			do optimize(myself.problem);
+			
+			float C_avail <- s.C_avail();
+			float N_avail <- s.N_avail();
+			float P_avail <- s.P_avail();
+			write "";
+			write "s: " + s;
+			write "T_cellylolytic: " + s.enzymes.T_cellulolytic / (#gram / #gram / #d);
+			write "T_amino: " + s.enzymes.T_amino / (#gram / #gram / #d);
+			write "T_P: " + s.enzymes.T_P / (#gram / #gram / #d);
+			write "C/N: " + (N_avail > 0 ? C_avail / N_avail : 0.0);
+			write "C/P: " + (P_avail > 0 ? C_avail / P_avail : 0.0);
+			write "C_DOM: " + myself.decomposition_problem.C_DOM_init;
+			write "N_DOM: " + myself.decomposition_problem.N_DOM_init;
+			write "e: " + E(s);
+						
+			ask s.decomposition {
+				write "X_C_cellulolytic: " + X_C_cellulolytic / #gram;
+				write "X_C_amino: " + X_C_amino / #gram;
+				write "X_N_amino: " + X_N_amino / #gram;
+				write "X_C_P: " + X_C_P / #gram;
+				write "X_P_labile_to_dom:" + X_P_labile_to_dom / #gram;
+				write "X_P_labile_to_dim: " + X_P_labile_to_dim / #gram;
+				write "X_C_recal: " + X_C_recal / #gram;
+				write "X_P_recal_to_dim:" + X_P_recal_to_dim / #gram;
 			}
+			exp.simulated_annealing <- self;
 		}
 	}
 	
@@ -1506,10 +1523,10 @@ experiment EnzymaticActivityWorkbench type: gui {
 				data "T_P" value: sum(SimulatedAnnealing collect (each.s.enzymes.T_P / (#gram / #gram / #d))) marker:false;
 				data "T_recal" value: sum(SimulatedAnnealing collect (each.s.enzymes.T_recal / (#gram / #gram / #d))) marker:false;
 				if show_max_rates {
-					data "T_cellulolytic (max)" value: sum(SimulatedAnnealing collect (each.problem.max_enzymes.T_cellulolytic / (#gram / #gram / #d))) marker:false;
-					data "T_amino (max)" value: sum(SimulatedAnnealing collect (each.problem.max_enzymes.T_amino / (#gram / #gram / #d))) marker:false;
-					data "T_P (max)" value: sum(SimulatedAnnealing collect (each.problem.max_enzymes.T_P / (#gram / #gram / #d))) marker:false;
-					data "T_recal (max)" value: sum(SimulatedAnnealing collect (each.problem.max_enzymes.T_recal / (#gram / #gram / #d))) marker:false;			
+					data "T_cellulolytic (max)" value: problem != nil ? problem.max_enzymes.T_cellulolytic / (#gram / #gram / #d) : 0.0 marker:false;
+					data "T_amino (max)" value: problem != nil ? problem.max_enzymes.T_amino / (#gram / #gram / #d) : 0.0 marker:false;
+					data "T_P (max)" value: problem != nil ? problem.max_enzymes.T_P / (#gram / #gram / #d) : 0.0 marker:false;
+					data "T_recal (max)" value: problem != nil ? problem.max_enzymes.T_recal / (#gram / #gram / #d) : 0.0 marker:false;			
 				}
 			}
 		}
@@ -1519,7 +1536,7 @@ experiment EnzymaticActivityWorkbench type: gui {
 					each.s.N_avail() > 0 ?
 					each.s.C_avail()/each.s.N_avail() : 0.0
 				)) marker:false;
-				data "C/N" value: sum(SimulatedAnnealing collect each.problem.C_N) marker:false;
+				data "C/N" value: problem != nil ? problem.C_N : 0.0 marker:false;
 			}
 		}
 		display "C/P" type:2d {
@@ -1528,7 +1545,7 @@ experiment EnzymaticActivityWorkbench type: gui {
 					each.s.P_avail() > 0 ?
 					each.s.C_avail() / each.s.P_avail() : 0.0
 				)) marker:false;
-				data "C/P" value: sum(SimulatedAnnealing collect each.problem.C_P) marker:false;
+				data "C/P" value: problem != nil ? problem.C_P : 0.0 marker:false;
 			}
 		}
 	}

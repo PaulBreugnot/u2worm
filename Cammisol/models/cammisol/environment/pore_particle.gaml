@@ -10,6 +10,29 @@ model pore_particle
 
 import "../microbes/microbe_population.gaml"
 
+global {
+	DecompositionProblem pore_decomposition_problem;
+	Decomposition pore_decomposition;
+	WeightedEnzymes total_enzymes_in_pore;
+	WeightedEnzymes local_enzymes_in_pore;
+	
+	init {
+		create DecompositionProblem with: [
+			dt::local_step
+			] {
+			pore_decomposition_problem <- self;
+		}
+		create Decomposition {
+			pore_decomposition <- self;
+		}
+		create WeightedEnzymes {
+			total_enzymes_in_pore <- self;
+		}
+		create WeightedEnzymes {
+			local_enzymes_in_pore <- self;
+		}
+	}
+}
 
 species PoreParticle schedules:[] {
 	int grid_x;
@@ -34,40 +57,26 @@ species PoreParticle schedules:[] {
 		float total_C_recal <- sum(accessible_organics collect each.C_recalcitrant);
 		
 		WeightedEnzymes total_enzymes;
-		create WeightedEnzymes with: [
-			T_cellulolytic: sum(populations collect (each.active_C * each.enzymes.T_cellulolytic)),
-			T_amino: sum(populations collect (each.active_C * each.enzymes.T_amino)),
-			T_P: sum(populations collect (each.active_C * each.enzymes.T_P)),
-			T_recal: sum(populations collect (each.active_C * each.enzymes.T_recal))
-		] {
-			total_enzymes <- self;
+		ask total_enzymes_in_pore {
+			T_cellulolytic <- sum(myself.populations collect (each.active_C * each.enzymes.T_cellulolytic));
+			T_amino <- sum(myself.populations collect (each.active_C * each.enzymes.T_amino));
+			T_P <- sum(myself.populations collect (each.active_C * each.enzymes.T_P));
+			T_recal <- sum(myself.populations collect (each.active_C * each.enzymes.T_recal));
 		}
 		
-		DecompositionProblem decomposition_problem;
-		create DecompositionProblem with: [
-			dt::local_step
-			] {
-			decomposition_problem <- self;
-		}
-		Decomposition decomposition;
-		create Decomposition {
-			decomposition <- self;
-		}
 		ask accessible_organics {
 			OrganicParticle organic <- self;
 			PoreParticle pore <- myself;
 			
 			WeightedEnzymes local_enzymes;
-			create WeightedEnzymes with: [
-				T_cellulolytic: total_C_labile > 0.0 ? total_enzymes.T_cellulolytic * C_labile / total_C_labile : 0.0,
-				T_amino: total_C_labile > 0.0 ? total_enzymes.T_amino * C_labile / total_C_labile : 0.0,
-				T_P: total_C_labile > 0.0 ? total_enzymes.T_P * C_labile / total_C_labile : 0.0,
-				T_recal: total_C_recal > 0.0 ? total_enzymes.T_recal * C_recalcitrant / total_C_recal : 0.0
-			] {
-				local_enzymes <- self;
+			ask local_enzymes_in_pore {
+				T_cellulolytic <- total_C_labile > 0.0 ? total_enzymes.T_cellulolytic * myself.C_labile / total_C_labile : 0.0;
+				T_amino <- total_C_labile > 0.0 ? total_enzymes.T_amino * myself.C_labile / total_C_labile : 0.0;
+				T_P <- total_C_labile > 0.0 ? total_enzymes.T_P * myself.C_labile / total_C_labile : 0.0;
+				T_recal <- total_C_recal > 0.0 ? total_enzymes.T_recal * myself.C_recalcitrant / total_C_recal : 0.0;
 			}
 			
-			ask decomposition_problem {
+			ask pore_decomposition_problem {
 				C_recal_init <- organic.C_recalcitrant;
 				N_recal_init <- organic.N_recalcitrant;
 				P_recal_init <- organic.P_recalcitrant;
@@ -80,36 +89,27 @@ species PoreParticle schedules:[] {
 				N_DIM_init <- pore.dam.dim[0];
 				P_DIM_init <- pore.dam.dim[1];
 				
-				do decomposition(local_enzymes, decomposition);
+				do decomposition(local_enzymes, pore_decomposition);
 				
-				organic.C_recalcitrant <- C_recal_final(decomposition);
-				organic.N_recalcitrant <- N_recal_final(decomposition);
-				organic.P_recalcitrant <- P_recal_final(decomposition);
+				organic.C_recalcitrant <- C_recal_final(pore_decomposition);
+				organic.N_recalcitrant <- N_recal_final(pore_decomposition);
+				organic.P_recalcitrant <- P_recal_final(pore_decomposition);
 				
-				organic.C_labile <- C_labile_final(decomposition);
-				organic.N_labile <- N_labile_final(decomposition);
-				organic.P_labile <- P_labile_final(decomposition);
+				organic.C_labile <- C_labile_final(pore_decomposition);
+				organic.N_labile <- N_labile_final(pore_decomposition);
+				organic.P_labile <- P_labile_final(pore_decomposition);
 				
-				pore.dam.dom[2] <- C_DOM_final(decomposition);
-				pore.dam.dom[0] <- N_DOM_final(decomposition);
-				pore.dam.dom[1] <- P_DOM_final(decomposition);
+				pore.dam.dom[2] <- C_DOM_final(pore_decomposition);
+				pore.dam.dom[0] <- N_DOM_final(pore_decomposition);
+				pore.dam.dom[1] <- P_DOM_final(pore_decomposition);
 				
-				pore.dam.dim[0] <- N_DIM_final(decomposition);
-				pore.dam.dim[1] <- P_DIM_final(decomposition);
+				pore.dam.dim[0] <- N_DIM_final(pore_decomposition);
+				pore.dam.dim[1] <- P_DIM_final(pore_decomposition);
 			}
 			
 			ask local_enzymes {
 				do die;
 			}
-		}
-		ask total_enzymes {
-			do die;
-		}
-		ask decomposition_problem {
-			do die;
-		}
-		ask decomposition {
-			do die;
 		}
 	}
 	

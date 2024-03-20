@@ -38,6 +38,22 @@ global {
 	map<species<MicrobePopulation>, DataOutput> output;
 	
 	init {
+		max_T_cellulolytic_Y <- 0.5 #gram/ #gram / #d;
+		max_T_amino_Y <- 0.1 #gram / #gram / #d;
+		max_T_P_Y <- 0.05 #gram / #gram / #d;
+		max_T_recal_Y <- 0.001 #gram / #gram / #d;
+
+		max_T_cellulolytic_A <- 0.4 #gram/ #gram / #d;
+		max_T_amino_A <- 0.08 #gram / #gram / #d;
+		max_T_P_A <- 0.02 #gram / #gram / #d;
+		max_T_recal_A <- 0.08 #gram / #gram / #d;
+
+		max_T_cellulolytic_S <- 0.2 #gram/ #gram / #d;
+		max_T_amino_S <- 0.05 #gram / #gram / #d;
+		max_T_P_S <- 0.01 #gram / #gram / #d;
+		max_T_recal_S <- 0.02 #gram / #gram / #d;
+
+		do init_enzymatic_optimisation;
 		create OrganicParticle with: [
 			C_labile: world.C_labile,
 			N_labile: world.C_labile / CN_labile,
@@ -60,24 +76,30 @@ global {
 			C: 1#gram,
 			C_N: 10.0,
 			C_P: 17.0,
-			awake_population: 1.0
+			awake_population: 1.0,
+			carbon_use_efficiency: 1.0
 		] {
+			do update;
 		}
 		
 		create A_Strategist with: [
 			C: 1#gram,
 			C_N: 10.0,
 			C_P: 17.0,
-			awake_population: 1.0
+			awake_population: 1.0,
+			carbon_use_efficiency: 1.0
 		] {
+			do update;
 		}
 		
 		create S_Strategist with: [
 			C: 1#gram,
 			C_N: 10.0,
 			C_P: 17.0,
-			awake_population: 1.0
+			awake_population: 1.0,
+			carbon_use_efficiency: 1.0
 		] {
+			do update;
 		}
 		
 		loop s over: [Y_Strategist, A_Strategist, S_Strategist] {
@@ -104,7 +126,7 @@ global {
 					weighted_enzymes <- self;
 				}
 				
-				ask myself.decomposition_problem {
+				ask decomposition_problem {
 					do decomposition(weighted_enzymes, myself);
 				}
 				
@@ -119,7 +141,7 @@ global {
 				output[species(myself)].X_recal <- X_C_recal/#gram;
 				
 				float C_avail; float N_avail; float P_avail;
-				ask myself.decomposition_problem {
+				ask decomposition_problem {
 					C_avail <- C_avail_final(myself);
 					N_avail <- N_avail_final(myself);
 					P_avail <- P_avail_final(myself);

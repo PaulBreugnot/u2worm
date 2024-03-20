@@ -50,7 +50,7 @@ global {
 	
 	init {
 		do init_grid;
-		do init_microbes_objectives;
+		do init_enzymatic_optimisation;
 		// Counts the number of PORES after the initialization of the grid
 		int pores_count <- length(PoreParticle);
 		ask PoreParticle {

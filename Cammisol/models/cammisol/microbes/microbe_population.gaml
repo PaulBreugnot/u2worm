@@ -21,7 +21,11 @@ global {
 	MaxCN max_CN;
 	MaxCP max_CP;
 	
-	action init_microbes_objectives {
+	DecompositionProblem decomposition_problem;
+	EnzymaticActivityProblem enzymatic_activity_problem;
+	SimulatedAnnealing simulated_annealing;
+	
+	action init_enzymatic_optimisation {
 		create MaxLabileC with: (weight: 5.0) {
 			max_labile_C <- self;
 		}
@@ -39,6 +43,24 @@ global {
 		}
 		create MaxCP with: (weight: 10.0) {
 			max_CP <- self;
+		}
+		
+		create DecompositionProblem with: [
+			dt::enzymes_optimization_period
+		] {
+			decomposition_problem <- self;
+		}
+		create EnzymaticActivityProblem with: [
+			decomposition_problem: decomposition_problem
+		] {
+			enzymatic_activity_problem <- self;
+		}
+		create SimulatedAnnealing with:[
+			objectives::[max_labile_C, max_recal_C, max_N, max_P, max_CN, max_CP],
+			N::1000,
+			epsilon::0.0
+		] {
+			simulated_annealing <- self;	
 		}
 	}
 }
@@ -73,8 +95,6 @@ species MicrobePopulation schedules:[]
 	Enzymes enzymes;
 	Enzymes min_enzymes;
 	Enzymes max_enzymes;
-	DecompositionProblem decomposition_problem;
-	EnzymaticActivityProblem enzymatic_activity_problem;
 	
 	float active_C;
 	float requested_C;
@@ -87,16 +107,6 @@ species MicrobePopulation schedules:[]
 		create Enzymes {
 			myself.enzymes <- self;
 		}
-		create DecompositionProblem with: [
-			dt::enzymes_optimization_period
-		] {
-			myself.decomposition_problem <- self;
-		}
-		create EnzymaticActivityProblem with: [
-			decomposition_problem: decomposition_problem
-		] {
-			myself.enzymatic_activity_problem <- self;
-		}
 		
 		N <- C / C_N;
 		P <- C / C_P;
@@ -104,16 +114,6 @@ species MicrobePopulation schedules:[]
 		cytosol_N <- cytosol_C / C_N;
 		cytosol_P <- cytosol_C / C_P;
 	}
-	
-	action set_min_max_enzymes(Enzymes _min_enzymes, Enzymes _max_enzymes) {
-		self.min_enzymes <- _min_enzymes;
-		self.max_enzymes <- _max_enzymes;
-		ask enzymatic_activity_problem {
-			min_enzymes <- _min_enzymes;
-			max_enzymes <- _max_enzymes;
-		}
-	}
-	
 	
 	action update {
 		active_C <- C * awake_population;
@@ -257,14 +257,14 @@ species MicrobePopulation schedules:[]
 			C_N <- myself.requested_C_N;
 			C_P <- myself.requested_C_P;
 			C_microbes <- myself.active_C;
+			min_enzymes <- myself.min_enzymes;
+			max_enzymes <- myself.max_enzymes;
 		}
 		create SimulatedAnnealing with:[
-				problem::self.enzymatic_activity_problem,
-				objectives::(max_enzymes.T_recal > 0 ? [max_labile_C, max_recal_C, max_N, max_P, max_CN, max_CP] : [max_labile_C, max_N, max_P, max_CN, max_CP]),
-				N::1000,
-				epsilon::0.0
-			] {
-			do optimize;
+			objectives::[max_labile_C, max_recal_C, max_N, max_P, max_CN, max_CP],
+			N::1000,
+			epsilon::0.0] {
+			do optimize(enzymatic_activity_problem);
 			ask population.enzymes {
 				do die;
 			}
