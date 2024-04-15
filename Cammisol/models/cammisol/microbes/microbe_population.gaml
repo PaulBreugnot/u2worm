@@ -157,9 +157,12 @@ species MicrobePopulation schedules:[]
 			(perceived_rate * (dam.dom[1]+dam.dim[1])+cytosol_P) * C_P
 		);		
 		float max_awake_population <- min(1.0, (perceived_C_respiration + perceived_C_growth) / (C * local_step / (carbon_use_efficiency * dividing_time)));
+		
 		float d_awake_population <- 1/(awake_population > max_awake_population ? sporulation_time : germination_time)
 			* awake_population * (1 - awake_population / max(minimum_awake_rate, max_awake_population));
-		awake_population <- min(1.0, max(0.0, awake_population + d_awake_population * local_step));
+
+		// The minimum awake rate prevents awake_population to be set to 0.0, what would prevent it to awake (see d_awake_population equation above)
+		awake_population <- min(1.0, max(minimum_awake_rate, awake_population + d_awake_population * local_step));
 	}
 	
 	action respirate
