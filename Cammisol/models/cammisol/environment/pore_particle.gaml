@@ -56,7 +56,6 @@ species PoreParticle schedules:[] {
 		float total_C_labile <- sum(accessible_organics collect each.C_labile);
 		float total_C_recal <- sum(accessible_organics collect each.C_recalcitrant);
 		
-		WeightedEnzymes total_enzymes;
 		ask total_enzymes_in_pore {
 			T_cellulolytic <- sum(myself.populations collect (each.active_C * each.enzymes.T_cellulolytic));
 			T_amino <- sum(myself.populations collect (each.active_C * each.enzymes.T_amino));
@@ -68,12 +67,11 @@ species PoreParticle schedules:[] {
 			OrganicParticle organic <- self;
 			PoreParticle pore <- myself;
 			
-			WeightedEnzymes local_enzymes;
 			ask local_enzymes_in_pore {
-				T_cellulolytic <- total_C_labile > 0.0 ? total_enzymes.T_cellulolytic * myself.C_labile / total_C_labile : 0.0;
-				T_amino <- total_C_labile > 0.0 ? total_enzymes.T_amino * myself.C_labile / total_C_labile : 0.0;
-				T_P <- total_C_labile > 0.0 ? total_enzymes.T_P * myself.C_labile / total_C_labile : 0.0;
-				T_recal <- total_C_recal > 0.0 ? total_enzymes.T_recal * myself.C_recalcitrant / total_C_recal : 0.0;
+				T_cellulolytic <- total_C_labile > 0.0 ? total_enzymes_in_pore.T_cellulolytic * myself.C_labile / total_C_labile : 0.0;
+				T_amino <- total_C_labile > 0.0 ? total_enzymes_in_pore.T_amino * myself.C_labile / total_C_labile : 0.0;
+				T_P <- total_C_labile > 0.0 ? total_enzymes_in_pore.T_P * myself.C_labile / total_C_labile : 0.0;
+				T_recal <- total_C_recal > 0.0 ? total_enzymes_in_pore.T_recal * myself.C_recalcitrant / total_C_recal : 0.0;
 			}
 			
 			ask pore_decomposition_problem {
@@ -89,7 +87,7 @@ species PoreParticle schedules:[] {
 				N_DIM_init <- pore.dam.dim[0];
 				P_DIM_init <- pore.dam.dim[1];
 				
-				do decomposition(local_enzymes, pore_decomposition);
+				do decomposition(local_enzymes_in_pore, pore_decomposition);
 				
 				organic.C_recalcitrant <- C_recal_final(pore_decomposition);
 				organic.N_recalcitrant <- N_recal_final(pore_decomposition);
@@ -105,10 +103,6 @@ species PoreParticle schedules:[] {
 				
 				pore.dam.dim[0] <- N_DIM_final(pore_decomposition);
 				pore.dam.dim[1] <- P_DIM_final(pore_decomposition);
-			}
-			
-			ask local_enzymes {
-				do die;
 			}
 		}
 	}

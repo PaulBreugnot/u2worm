@@ -45,12 +45,19 @@ global {
 	float init_A_rate <- 0.2;
 	float init_S_rate <- 0.7;
 	
+	
+	float init_C_FOM <- 0.02157#gram/(#cm*#cm);
+	float init_N_FOM <- 0.00132#gram/(#cm*#cm);
+	float init_P_FOM <- 0.00077#gram/(#cm*#cm);
+	float init_labile_rate_FOM <- 0.2;
+	
 	float rain_diffusion_rate <- 0.1;
 	float rain_period <- 7#days;
 	
 	init {
 		do init_grid;
 		do init_enzymatic_optimisation;
+		do init_enzymes;
 		// Counts the number of PORES after the initialization of the grid
 		int pores_count <- length(PoreParticle);
 		ask PoreParticle {
@@ -95,10 +102,10 @@ global {
 			location <- any_location_in(current_pore);
 		}
 	 	// Default soil initialization. Can be safely overriden with subsequent init_soil() calls.
-		do init_soil(
-			C: 0.02157#gram/(#cm*#cm),
-			N: 0.00132#gram/(#cm*#cm),
-			P: 0.00077#gram/(#cm*#cm)
+		do init_FOM(
+			C: init_C_FOM,
+			N: init_N_FOM,
+			P: init_P_FOM
 		);
 		
 		ask PoreParticle {
@@ -110,24 +117,23 @@ global {
 		}
 	}
 	
-	action init_soil(float C, float N, float P) {
-		write "Soil C: " + C/(#kg/#m2) + "kg/m2";
-		write "Soil N: " + N/(#kg/#m2) + "kg/m2";
-		write "Soil P: " + P/(#kg/#m2) + "kg/m2";
-		ask MineralParticle {
-			N <- N*cell_area;
-			P <- P*cell_area;
-		}
-		float labile_recal_factor <- 0.2;
+	action init_FOM(float C, float N, float P) {
+		write "Soil C (FOM): " + C/(#kg/#m2) + "kg/m2";
+		write "Soil N (FOM): " + N/(#kg/#m2) + "kg/m2";
+		write "Soil P (FOM): " + P/(#kg/#m2) + "kg/m2";
+//		ask MineralParticle {
+//			N <- N*cell_area;
+//			P <- P*cell_area;
+//		}
 		ask OrganicParticle {
 			if(!in_pore) {
 				// TODO: variable labile/recal factor
-				C_labile <- labile_recal_factor*C*cell_area; 
-				N_labile <- labile_recal_factor*N*cell_area;
-				P_labile <- labile_recal_factor*P*cell_area;
-				C_recalcitrant <- (1-labile_recal_factor)*C*cell_area;
-				N_recalcitrant <- (1-labile_recal_factor)*N*cell_area;
-				P_recalcitrant <- (1-labile_recal_factor)*P*cell_area;
+				C_labile <- init_labile_rate_FOM*C*cell_area; 
+				N_labile <- init_labile_rate_FOM*N*cell_area;
+				P_labile <- init_labile_rate_FOM*P*cell_area;
+				C_recalcitrant <- (1-init_labile_rate_FOM)*C*cell_area;
+				N_recalcitrant <- (1-init_labile_rate_FOM)*N*cell_area;
+				P_recalcitrant <- (1-init_labile_rate_FOM)*P*cell_area;
 			}
 		}
 	}
@@ -214,8 +220,12 @@ global {
 experiment base_cammisol_output {
 	parameter "Grid size" category: "Environment" var:grid_size;
 	parameter "Nematodes count" category: "Environment" var:nematodes_count;
-	parameter "Organic particle rate" category: "Environment" var:mineral_rate;
-	parameter "Mineral particle rate" category: "Environment" var:organic_rate;
+	parameter "Organic particle rate" category: "Environment" var:organic_rate;
+	parameter "Mineral particle rate" category: "Environment" var:mineral_rate;
+	parameter "Init C (FOM)" category: "Environment" var:init_C_FOM;
+	parameter "Init N (FOM)" category: "Environment" var:init_N_FOM;
+	parameter "Init P (FOM)" category: "Environment" var:init_P_FOM;
+	parameter "Init labile rate (FOM)" category: "Environment" var:init_labile_rate_FOM;
 	
 	parameter "Nematodes predation rate" category: "Nematode" var:nematode_predation_rate;
 	parameter "Nematodes CUE" category: "Nematode" var:nematode_CUE;
@@ -319,7 +329,7 @@ experiment test_microbes parent:base_cammisol_output {
 	
 	init {
 		ask simulation {
-			do init_soil(myself.C_soil, myself.N_soil, myself.P_soil);		
+			do init_FOM(myself.C_soil, myself.N_soil, myself.P_soil);		
 		}
 	}
 }
@@ -327,6 +337,7 @@ experiment test_microbes parent:base_cammisol_output {
 experiment display_grid {
 	bool show_nematodes;
 	parameter "Show nematodes" var: show_nematodes <- false;
+	parameter "Grid size" category: "Environment" var:grid_size;
 	
 	output {
 		display grid type:2d axes:false {

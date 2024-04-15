@@ -46,7 +46,7 @@ global {
 	Enzymes min_enzymes_S;
 	Enzymes max_enzymes_S;
 	
-	init {
+	action init_enzymes {
 		create Enzymes with: [
 			name::"Min enzymes (Y)",
 			T_cellulolytic::0.0,

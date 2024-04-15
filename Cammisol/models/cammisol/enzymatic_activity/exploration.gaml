@@ -38,20 +38,27 @@ global {
 	map<species<MicrobePopulation>, DataOutput> output;
 	
 	init {
-		max_T_cellulolytic_Y <- 0.5 #gram/ #gram / #d;
-		max_T_amino_Y <- 0.1 #gram / #gram / #d;
-		max_T_P_Y <- 0.05 #gram / #gram / #d;
-		max_T_recal_Y <- 0.001 #gram / #gram / #d;
+		do init_enzymes;
+		ask max_enzymes_Y {
+			T_cellulolytic <- 0.5 #gram/ #gram / #d;
+			T_amino <- 0.1 #gram / #gram / #d;
+			T_P <- 0.05 #gram / #gram / #d;
+			T_recal <- 0.001 #gram / #gram / #d;
+		}
 
-		max_T_cellulolytic_A <- 0.4 #gram/ #gram / #d;
-		max_T_amino_A <- 0.08 #gram / #gram / #d;
-		max_T_P_A <- 0.02 #gram / #gram / #d;
-		max_T_recal_A <- 0.08 #gram / #gram / #d;
+		ask max_enzymes_A {
+			T_cellulolytic <- 0.4 #gram/ #gram / #d;
+			T_amino <- 0.08 #gram / #gram / #d;
+			T_P <- 0.02 #gram / #gram / #d;
+			T_recal <- 0.08 #gram / #gram / #d;
+		}
 
-		max_T_cellulolytic_S <- 0.2 #gram/ #gram / #d;
-		max_T_amino_S <- 0.05 #gram / #gram / #d;
-		max_T_P_S <- 0.01 #gram / #gram / #d;
-		max_T_recal_S <- 0.02 #gram / #gram / #d;
+		ask max_enzymes_S {
+			T_cellulolytic <- 0.2 #gram/ #gram / #d;
+			T_amino <- 0.05 #gram / #gram / #d;
+			T_P <- 0.01 #gram / #gram / #d;
+			T_recal <- 0.02 #gram / #gram / #d;
+		}
 
 		do init_enzymatic_optimisation;
 		create OrganicParticle with: [
@@ -113,7 +120,6 @@ global {
 		ask Y_Strategist + A_Strategist + S_Strategist {
 			// Optimization
 			do optimize_enzymes(world.pore_particle.dam, [world.organic_particle]);
-			
 			// Computes output
 			create Decomposition {
 				WeightedEnzymes weighted_enzymes;
