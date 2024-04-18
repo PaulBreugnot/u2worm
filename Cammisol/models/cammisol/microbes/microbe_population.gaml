@@ -13,11 +13,12 @@ global {
 	float microbe_CO2_emissions <- 0.0#gram;
 	float enzymes_optimization_period <- 1#d;
 	
+	float microbes_CN <- 10.0;
+	float microbes_CP <- 17.0;
+	
 	// Enzyme objectives
 	MaxLabileC max_labile_C;
 	MaxRecalC max_recal_C;
-	MaxN max_N;
-	MaxP max_P;
 	MaxCN max_CN;
 	MaxCP max_CP;
 	
@@ -31,12 +32,6 @@ global {
 		}
 		create MaxRecalC with: (weight: 1.0) {
 			max_recal_C <- self;
-		}
-		create MaxN with: (weight: 5.0) {
-			max_N <- self;
-		}
-		create MaxP with: (weight: 5.0) {
-			max_P <- self;
 		}
 		create MaxCN with: (weight: 10.0) {
 			max_CN <- self;
@@ -56,7 +51,7 @@ global {
 			enzymatic_activity_problem <- self;
 		}
 		create SimulatedAnnealing with:[
-			objectives::[max_labile_C, max_recal_C, max_N, max_P, max_CN, max_CP],
+			objectives::[max_labile_C, max_recal_C, max_CN, max_CP],
 			N::1000,
 			epsilon::0.0
 		] {
@@ -71,8 +66,8 @@ species MicrobePopulation schedules:[]
 	float carbon_use_efficiency;
 	
 	float dividing_time;
-	float C_N <- 10.0;
-	float C_P <- 17.0;
+	float C_N <- microbes_CN;
+	float C_P <- microbes_CP;
 	
 	// TODO: unit?
 	// TODO: source?
@@ -263,8 +258,9 @@ species MicrobePopulation schedules:[]
 			min_enzymes <- myself.min_enzymes;
 			max_enzymes <- myself.max_enzymes;
 		}
+		// TODO: Optimize this.
 		create SimulatedAnnealing with:[
-			objectives::[max_labile_C, max_recal_C, max_N, max_P, max_CN, max_CP],
+			objectives::[max_labile_C, max_recal_C, max_CN, max_CP],
 			N::1000,
 			epsilon::0.0] {
 			do optimize(enzymatic_activity_problem);
