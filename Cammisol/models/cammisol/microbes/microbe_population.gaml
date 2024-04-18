@@ -259,10 +259,7 @@ species MicrobePopulation schedules:[]
 			max_enzymes <- myself.max_enzymes;
 		}
 		// TODO: Optimize this.
-		create SimulatedAnnealing with:[
-			objectives::[max_labile_C, max_recal_C, max_CN, max_CP],
-			N::1000,
-			epsilon::0.0] {
+		ask simulated_annealing {
 			do optimize(enzymatic_activity_problem);
 			ask population.enzymes {
 				do die;
@@ -277,7 +274,6 @@ species MicrobePopulation schedules:[]
 				}
 				do die;
 			}
-			do die;
 		}
 	}
 }
