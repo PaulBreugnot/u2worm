@@ -120,7 +120,8 @@ experiment MicrobesTestBase {
 	
 	init {
 		ask simulation {
-			do init_enzymatic_optimisation;	
+			do init_enzymatic_optimisation;
+			do init_enzymes;
 		}
 		loop s over: microbe_species {
 			create s with: [C::init_C[s], C_N::C_N, C_P::C_P] {
@@ -805,17 +806,17 @@ experiment CollectiveMicrobesMetabolism parent:CollectiveMicrobesGrowth {
 	output {
 		display "C/N/P compartments" {
 			chart "C/N/P compartments" {
-				data "C dom (Y, g)" value:C_dom_output/#gram marker: false;
-				data "N dom (Y, g)" value:N_dom_output/#gram marker: false;
-				data "P dom (Y, g)" value:P_dom_output/#gram marker: false;
-				data "N dim (Y, g)" value:N_dim_output/#gram marker: false;
-				data "P dim (Y, g)" value:P_dim_output/#gram marker: false;
-				data "C labile (Y, g)" value:C_labile_output/#gram marker: false;
-				data "N labile (Y, g)" value:N_labile_output/#gram marker: false;
-				data "P labile (Y, g)" value:P_labile_output/#gram marker: false;
-				data "C recal (Y, g)" value:C_recal_output/#gram marker: false;
-				data "N recal (Y, g)" value:N_recal_output/#gram marker: false;
-				data "P recal (Y, g)" value:P_recal_output/#gram marker: false;
+				data "C dom (g)" value:C_dom_output/#gram marker: false;
+				data "N dom (g)" value:N_dom_output/#gram marker: false;
+				data "P dom (g)" value:P_dom_output/#gram marker: false;
+				data "N dim (g)" value:N_dim_output/#gram marker: false;
+				data "P dim (g)" value:P_dim_output/#gram marker: false;
+				data "C labile (g)" value:C_labile_output/#gram marker: false;
+				data "N labile (g)" value:N_labile_output/#gram marker: false;
+				data "P labile (g)" value:P_labile_output/#gram marker: false;
+				data "C recal (g)" value:C_recal_output/#gram marker: false;
+				data "N recal (g)" value:N_recal_output/#gram marker: false;
+				data "P recal (g)" value:P_recal_output/#gram marker: false;
 			}
 		}
 		

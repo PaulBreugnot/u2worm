@@ -16,28 +16,28 @@ global {
 	float dividing_time_A <- 24#h;
 	float dividing_time_S <- 368#h;
 	
-	float carbon_use_efficiency_Y <- 7/10;
-	float carbon_use_efficiency_A <- 3/10;
-	float carbon_use_efficiency_S <- 5/10;
+	float carbon_use_efficiency_Y <- 0.7;
+	float carbon_use_efficiency_A <- 0.3;
+	float carbon_use_efficiency_S <- 0.5;
 	
 	float minimum_awake_rate_Y <- 0.002;
 	float minimum_awake_rate_A <- 0.018;
 	float minimum_awake_rate_S <- 1.0;
 	
-	float max_T_cellulolytic_Y <- 10 #gram/ #gram / #d;
-	float max_T_amino_Y <- 1.0 #gram / #gram / #d;
-	float max_T_P_Y <- 0.5 #gram / #gram / #d;
+	float max_T_cellulolytic_Y <- 1 #gram/ #gram / #d;
+	float max_T_amino_Y <- 0.1 #gram / #gram / #d;
+	float max_T_P_Y <- 0.08 #gram / #gram / #d;
 	float max_T_recal_Y <- 0.00001 #gram / #gram / #d;
 	
-	float max_T_cellulolytic_A <- 40 #gram/ #gram / #d;
-	float max_T_amino_A <- 80 #gram / #gram / #d;
-	float max_T_P_A <- 20 #gram / #gram / #d;
-	float max_T_recal_A <- 80 #gram / #gram / #d;
+	float max_T_cellulolytic_A <- 5 #gram/ #gram / #d;
+	float max_T_amino_A <- 0.5 #gram / #gram / #d;
+	float max_T_P_A <- 0.4 #gram / #gram / #d;
+	float max_T_recal_A <- 1 #gram / #gram / #d;
 
-	float max_T_cellulolytic_S <- 2 #gram/ #gram / #d;
-	float max_T_amino_S <- 0.5 #gram / #gram / #d;
-	float max_T_P_S <- 0.1 #gram / #gram / #d;
-	float max_T_recal_S <- 0.2 #gram / #gram / #d;
+	float max_T_cellulolytic_S <- 0.5 #gram/ #gram / #d;
+	float max_T_amino_S <- 0.05 #gram / #gram / #d;
+	float max_T_P_S <- 0.04 #gram / #gram / #d;
+	float max_T_recal_S <- 0.1 #gram / #gram / #d;
 	
 	Enzymes min_enzymes_Y;
 	Enzymes max_enzymes_Y;
@@ -62,7 +62,7 @@ global {
 			T_cellulolytic::max_T_cellulolytic_Y,
 			T_amino::max_T_amino_Y,
 			T_P::max_T_P_Y,
-			T_recal::max_T_cellulolytic_Y
+			T_recal::max_T_recal_Y
 		] {
 			myself.max_enzymes_Y <- self;
 		}
@@ -82,7 +82,7 @@ global {
 			T_cellulolytic::max_T_cellulolytic_A,
 			T_amino::max_T_amino_A,
 			T_P::max_T_P_A,
-			T_recal::max_T_cellulolytic_A
+			T_recal::max_T_recal_A
 		] {
 			myself.max_enzymes_A <- self;
 		}	
@@ -102,7 +102,7 @@ global {
 			T_cellulolytic::max_T_cellulolytic_S,
 			T_amino::max_T_amino_S,
 			T_P::max_T_P_S,
-			T_recal::max_T_cellulolytic_S
+			T_recal::max_T_recal_S
 		] {
 			myself.max_enzymes_S <- self;
 		}	
