@@ -216,18 +216,40 @@ species DecompositionProblem schedules: [] {
 	 */
 	float beta_amino_P <- 0.5;
 
+	/**
+	 * Quantity of substrate that can be requested by the recalcitrant cleavage
+	 * action.
+	 * 
+	 * It is expressed as a quantity of recalcitrant C.
+	 */
 	float recal_substrate {
 		return C_recal_init;
 	}
 	
+	/**
+	 * Quantity of substrate that can be requested by the cellulolytic action.
+	 * 
+	 * It is expressed as a quantity of labile C.
+	 */
 	float cellulolytic_substrate {
 		return C_labile_init;
 	}
 	
+	/**
+	 * Quantity of substrate that can be requested by the amino acid production
+	 * action.
+	 * 
+	 * It is expressed as a quantity of labile C included in amino acids.
+	 */
 	float amino_substrate {
 		return min(C_labile_init, N_labile_init * amino_CN);
 	}
 	
+	/**
+	 * Quantity of substrate that can be requested by the P mineralisation action.
+	 * 
+	 * It is expressed as a quantity of labile P.
+	 */
 	float P_substrate {
 		return P_labile_init;
 	}
@@ -277,66 +299,113 @@ species DecompositionProblem schedules: [] {
 		return result;
 	}
 	
+	/**
+	 * Computes the quantity of recalcitrant C resulting from the provided
+	 * decomposition.
+	 */
 	float C_recal_final(Decomposition decomposition) {
 		return C_recal_init - decomposition.X_C_recal;
 	}
 	
+	/**
+	 * Computes the quantity of recalcitrant N resulting from the provided
+	 * decomposition.
+	 */
 	float N_recal_final(Decomposition decomposition) {
 		return N_recal_init - decomposition.X_N_recal;
 	}
 	
+	/**
+	 * Computes the quantity of recalcitrant P resulting from the provided
+	 * decomposition.
+	 */
 	float P_recal_final(Decomposition decomposition) {
 		return P_recal_init - decomposition.X_P_recal_to_labile - decomposition.X_P_recal_to_dim;
 	}
 	
+	/**
+	 * Computes the quantity of labile C resulting from the provided
+	 * decomposition.
+	 */
 	float C_labile_final(Decomposition decomposition) {
 		return C_labile_init + decomposition.X_C_recal - decomposition.X_C_cellulolytic - decomposition.X_C_P - decomposition.X_C_amino;
 	}
 	
+	/**
+	 * Computes the quantity of labile N resulting from the provided
+	 * decomposition.
+	 */
 	float N_labile_final(Decomposition decomposition) {
 		return N_labile_init + decomposition.X_N_recal - decomposition.X_N_amino;
 	}
 	
+	/**
+	 * Computes the quantity of labile P resulting from the provided
+	 * decomposition.
+	 */
 	float P_labile_final(Decomposition decomposition) {
 		return P_labile_init + decomposition.X_P_recal_to_labile - decomposition.X_P_labile_to_dom - decomposition.X_P_labile_to_dim;
 	}
 	
+	/**
+	 * Computes the quantity of C in the DOM resulting from the provided
+	 * decomposition.
+	 */
 	float C_DOM_final(Decomposition decomposition) {
 		return C_DOM_init + decomposition.X_C_cellulolytic + decomposition.X_C_amino + decomposition.X_C_P;
 	}
 	
+	/**
+	 * Computes the quantity of N in the DOM resulting from the provided
+	 * decomposition.
+	 */
 	float N_DOM_final(Decomposition decomposition) {
 		return N_DOM_init + decomposition.X_N_amino;
 	}
 	
+	/**
+	 * Computes the quantity of P in the DOM resulting from the provided
+	 * decomposition.
+	 */
 	float P_DOM_final(Decomposition decomposition) {
 		return P_DOM_init + decomposition.X_P_labile_to_dom;
 	}
 	
+	/**
+	 * Computes the quantity of N in the DIM resulting from the provided
+	 * decomposition.
+	 */
 	float N_DIM_final(Decomposition decomposition) {
 		return N_DIM_init;
 	}
 	
+	/**
+	 * Computes the quantity of P in the DIM resulting from the provided
+	 * decomposition.
+	 */
 	float P_DIM_final(Decomposition decomposition) {
 		return P_DIM_init + decomposition.X_P_labile_to_dim + decomposition.X_P_recal_to_dim;
 	}
 	
 	/**
-	 * Computes the available C that results from the provided decomposition.
+	 * Computes the quantity of available C resulting in the DAM from the
+	 * provided decomposition.
 	 */
 	float C_avail_final(Decomposition decomposition) {
 		return C_DOM_final(decomposition);
 	}
 	
 	/**
-	 * Computes the available N that results from the provided decomposition.
+	 * Computes the quantity available N resulting in the DAM from the provided
+	 * decomposition.
 	 */
 	float N_avail_final(Decomposition decomposition) {
 		return N_DOM_final(decomposition) + N_DIM_final(decomposition);
 	}
 		
 	/**
-	 * Computes the available P that results from the provided decomposition.
+	 * Computes the quantity of available P resulting in the DAM from the
+	 * provided decomposition.
 	 */
 	float P_avail_final(Decomposition decomposition) {
 		return P_DOM_final(decomposition) + P_DIM_final(decomposition);
@@ -477,44 +546,6 @@ species SimulatedAnnealingState schedules: [] {
 			do decomposition(current_state.weighted_enzymes, current_state.decomposition);
 		}
 	}
-	
-	/**
-	 * Computes the estimation of labile C resulting from the current state.
-	 */
-	float C_labile {
-		return problem.decomposition_problem.C_labile_final(decomposition);
-	}
-	/**
-	 * Computes the estimation of labile N resulting from the current state.
-	 */
-	float N_labile {
-		return problem.decomposition_problem.N_labile_final(decomposition);
-	}
-	/**
-	 * Computes the estimation of labile P resulting from the current state.
-	 */
-	float P_labile {
-		return problem.decomposition_problem.P_labile_final(decomposition);
-	}
-	
-	/**
-	 * Computes the estimation of available C obtained in the current state.
-	 */
-	float C_avail {
-		return problem.decomposition_problem.C_avail_final(decomposition);
-	}
-	/**
-	 * Computes the estimation of available N obtained in the current state.
-	 */
-	float N_avail {
-		return problem.decomposition_problem.N_avail_final(decomposition);
-	}
-	/**
-	 * Computes the estimation of available P obtained in the current state.
-	 */
-	float P_avail {
-		return problem.decomposition_problem.P_avail_final(decomposition);
-	}
 }
 
 /**
@@ -566,24 +597,36 @@ species EnzymaticActivityProblem schedules: [] {
 	Enzymes max_enzymes;
 	
 	// Useful values used in the computation of objectives
+	
 	/**
-	 * Estimation of the maximum quantity of C that can be added to C labile due
+	 * Estimation of the maximum quantity of labile C that can be produced by
 	 * to the recalcitrant cleavage action.
+	 * 
+	 * The value is computed by the update_X_C_labile_max() method.
 	 */
 	float X_C_labile_max;
+	
 	/**
-	 * Estimation of the maximum quantity of C that can be added to the dam due
-	 * to the cellulolytic, amino acid production and P mineralisation actions.
+	 * Estimation of the maximum quantity of available C that can be produced
+	 * by the cellulolytic, amino acid production and P mineralisation actions.
+	 * 
+	 * The value is computed by the update_X_C_dam_max() method.
 	 */
 	float X_C_dam_max;
+	
 	/**
-	 * Estimation of the maximum quantity of N that can be added to the dam due
-	 * to the amino acid production action. 
+	 * Estimation of the maximum quantity of available N that can be produced
+	 * by the amino acid production action.
+	 * 
+	 * The value is computed by the update_X_N_dam_max() method.
 	 */
 	float X_N_dam_max;
+	
 	/**
-	 * Estimation of the maximum quantity of P that can be added to the dam due
-	 * to the recalcitrant cleavage and P mineralisation actions.
+	 * Estimation of the maximum quantity of available P that can be produced
+	 * by the recalcitrant cleavage and P mineralisation actions.
+	 * 
+	 * The value is computed by the update_X_P_dam_max() method.
 	 */
 	float X_P_dam_max;
 	
@@ -663,11 +706,6 @@ species EnzymaticActivityProblem schedules: [] {
  * Generic simulated annealing algorithm.
  */
 species SimulatedAnnealing schedules: [] {
-	/**
-	 * Problem to solve.
-	 */
-	// EnzymaticActivityProblem problem;
-	
 	/**
 	 * Maximum count of steps.
 	 */
@@ -839,8 +877,8 @@ species SimulatedAnnealing schedules: [] {
  */
 species ExactCN parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
-		float N_avail <- state.N_avail();
-		float C_avail <- state.C_avail();
+		float N_avail <- state.problem.decomposition_problem.N_avail_final(state.decomposition);
+		float C_avail <- state.problem.decomposition_problem.C_avail_final(state.decomposition);
 		if(C_avail > 0) {
 			return 1.0 - state.problem.C_N * (N_avail / C_avail);
 		}
@@ -859,8 +897,8 @@ species ExactCN parent: Objective schedules: [] {
  */
 species MaxCN parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
-		float N_avail <- state.N_avail();
-		float C_avail <- state.C_avail();
+		float N_avail <- state.problem.decomposition_problem.N_avail_final(state.decomposition);
+		float C_avail <- state.problem.decomposition_problem.C_avail_final(state.decomposition);
 		if(C_avail > 0) {
 			// If N_avail/C_avail > required N/C, then N_avail is in excess and its not a problem so value=0 in this case.
 			return 1.0 - state.problem.C_N * min(N_avail / C_avail, 1.0/state.problem.C_N);
@@ -880,8 +918,8 @@ species MaxCN parent: Objective schedules: [] {
  */
 species ExactCP parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
-		float P_avail <- state.P_avail();
-		float C_avail <- state.C_avail();
+		float P_avail <- state.problem.decomposition_problem.P_avail_final(state.decomposition);
+		float C_avail <- state.problem.decomposition_problem.C_avail_final(state.decomposition);
 		if(C_avail > 0) {
 			return 1.0 - state.problem.C_P * (P_avail / C_avail);
 		}
@@ -900,8 +938,8 @@ species ExactCP parent: Objective schedules: [] {
  */
 species MaxCP parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
-		float P_avail <- state.P_avail();
-		float C_avail <- state.C_avail();
+		float P_avail <- state.problem.decomposition_problem.P_avail_final(state.decomposition);
+		float C_avail <- state.problem.decomposition_problem.C_avail_final(state.decomposition);
 		if(C_avail > 0) {
 			// If P_avail/C_avail > required P/C, then P_avail is in excess and its not a problem so value=0 in this case.
 			return 1.0 - state.problem.C_P * min((P_avail / C_avail), 1.0/state.problem.C_P);	
@@ -916,10 +954,11 @@ species MaxCP parent: Objective schedules: [] {
 }
 
 /**
- * Objective minimised when the decomposition from recalcitrant C to labile C is
- * maximised.
+ * Objective minimised when the quantity of produced labile C is maximised.
+ * 
+ * Labile C is notably produced from recalcitrant cleavage action.
  */
-species MaxRecalC parent: Objective schedules: [] {
+species MaxLabileC parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
 		// Assumes max_enzymes.T_recal > 0.0. Otherwise, this objective should not be used.
 		float result;
@@ -936,10 +975,11 @@ species MaxRecalC parent: Objective schedules: [] {
 }
 
 /**
- * Objective minimised when the decomposition from labile C to C dam is
- * maximised.
+ * Objective minimised when the quantity of produced available C is maximised.
+ * 
+ * Available C is produced from the cellulolytic, amino acid production and P mineralisation actions.
  */
-species MaxLabileC parent: Objective schedules: [] {
+species MaxC parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
 		float result;
 		ask state {
@@ -956,8 +996,9 @@ species MaxLabileC parent: Objective schedules: [] {
 }
 
 /**
- * Objective minimised when the decomposition from labile and recalcitrant P to
- * P dam is maximised.
+ * Objective minimised when the quantity of produced available P is maximised.
+ * 
+ * Available P is produced from the P mineralisation action.
  */
 species MaxP parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
@@ -976,8 +1017,9 @@ species MaxP parent: Objective schedules: [] {
 }
 
 /**
- * Objective minimised when the decomposition from labile N to N dam is
- * maximised.
+ * Objective minimised when the quantity of produced available N is maximised.
+ * 
+ * Available N is produced from the amino acid production action.
  */
 species MaxN parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
@@ -1005,8 +1047,8 @@ experiment EnzymaticActivityWorkbench type: gui {
 	float C_P_objective_weight;
 	string C_labile_objective;
 	float C_labile_objective_weight;
-	string C_recal_objective;
-	float C_recal_objective_weight;
+	string C_objective;
+	float C_objective_weight;
 	string N_objective;
 	float N_objective_weight;
 	string P_objective;
@@ -1059,10 +1101,10 @@ experiment EnzymaticActivityWorkbench type: gui {
 	parameter "C/N weight" category: "Objectives" var: C_N_objective_weight init: 10.0;
 	parameter "C/P" category: "Objectives" var: C_P_objective init: "Max C/P" among: ["none", "Exact C/P", "Max C/P"];
 	parameter "C/P weight" category: "Objectives" var: C_P_objective_weight init: 10.0;
-	parameter "C labile" category: "Objectives" var: C_labile_objective init: "Max labile C" among: ["none", "Max labile C"];
-	parameter "C labile weight" category: "Objectives" var: C_labile_objective_weight init: 5.0;
-	parameter "C recal" category: "Objectives" var: C_recal_objective init: "Max recal C" among: ["none", "Max recal C"];
-	parameter "C recal weight" category: "Objectives" var: C_recal_objective_weight init: 1.0;
+	parameter "C labile" category: "Objectives" var: C_labile_objective init: "Max recal C" among: ["none", "Max recal C"];
+	parameter "C labile weight" category: "Objectives" var: C_labile_objective_weight init: 1.0;
+	parameter "C" category: "Objectives" var: C_objective init: "Max labile C" among: ["none", "Max labile C"];
+	parameter "C weight" category: "Objectives" var: C_objective_weight init: 5.0;
 	parameter "N" category: "Objectives" var: N_objective init: "Max N" among: ["none", "Max N"];
 	parameter "N weight" category: "Objectives" var: N_objective_weight init: 5.0;
 	parameter "P" category: "Objectives" var: P_objective init: "Max P" among: ["none", "Max P"];
@@ -1148,14 +1190,14 @@ experiment EnzymaticActivityWorkbench type: gui {
 			}	
 		}
 		
-		if(C_labile_objective = "Max labile C") {
+		if(C_labile_objective = "Max recalcitrant C") {
 			create MaxLabileC with: (weight: C_labile_objective_weight) {
 				add self to: myself.objectives;
 			}
 		}
 		
-		if(C_recal_objective = "Max recalcitrant C") {
-			create MaxRecalC with: (weight: C_recal_objective_weight) {
+		if(C_objective = "Max C") {
+			create MaxC with: (weight: C_objective_weight) {
 				add self to: myself.objectives;
 			}
 		}
@@ -1293,9 +1335,9 @@ experiment EnzymaticActivityWorkbench type: gui {
 		] {
 			do optimize(myself.problem);
 			
-			float C_avail <- s.C_avail();
-			float N_avail <- s.N_avail();
-			float P_avail <- s.P_avail();
+			float C_avail <- s.problem.decomposition_problem.C_avail_final(s.decomposition);
+			float N_avail <- s.problem.decomposition_problem.N_avail_final(s.decomposition);
+			float P_avail <- s.problem.decomposition_problem.P_avail_final(s.decomposition);
 			write "";
 			write "s: " + s;
 			write "T_cellylolytic: " + s.enzymes.T_cellulolytic / (#gram / #gram / #d);
@@ -1330,16 +1372,16 @@ experiment EnzymaticActivityWorkbench type: gui {
 	output {
 		display "Labile" type:2d {
 			chart "Labile" type:series style:line {
-				data "C (labile)" value: sum(SimulatedAnnealing collect each.s.C_labile())/#gram marker:false;
-				data "N (labile)" value: sum(SimulatedAnnealing collect each.s.N_labile())/#gram marker:false;
-				data "P (labile)" value: sum(SimulatedAnnealing collect each.s.P_labile())/#gram marker:false;
+				data "C (labile)" value: sum(SimulatedAnnealing collect each.s.problem.decomposition_problem.C_labile_final(each.s.decomposition))/#gram marker:false;
+				data "N (labile)" value: sum(SimulatedAnnealing collect each.s.problem.decomposition_problem.N_labile_final(each.s.decomposition))/#gram marker:false;
+				data "P (labile)" value: sum(SimulatedAnnealing collect each.s.problem.decomposition_problem.P_labile_final(each.s.decomposition))/#gram marker:false;
 			}
 		}
 		display "DAM" type:2d {
 			chart "DAM" type:series style:line {
-				data "C (avail)" value: sum(SimulatedAnnealing collect each.s.C_avail())/#gram marker:false;
-				data "N (avail)" value: sum(SimulatedAnnealing collect each.s.N_avail())/#gram marker:false;
-				data "P (avail)" value: sum(SimulatedAnnealing collect each.s.P_avail())/#gram marker:false;
+				data "C (avail)" value: sum(SimulatedAnnealing collect each.s.problem.decomposition_problem.C_avail_final(each.s.decomposition))/#gram marker:false;
+				data "N (avail)" value: sum(SimulatedAnnealing collect each.s.problem.decomposition_problem.N_avail_final(each.s.decomposition))/#gram marker:false;
+				data "P (avail)" value: sum(SimulatedAnnealing collect each.s.problem.decomposition_problem.P_avail_final(each.s.decomposition))/#gram marker:false;
 			}
 		}
 		display "Enzymatic rates" type:2d {
@@ -1359,8 +1401,9 @@ experiment EnzymaticActivityWorkbench type: gui {
 		display "C/N" type:2d {
 			chart "C/N" type:series style:line {
 				data "available C/N" value: sum(SimulatedAnnealing collect (
-					each.s.N_avail() > 0 ?
-					each.s.C_avail()/each.s.N_avail() : 0.0
+					each.s.problem.decomposition_problem.N_avail_final(each.s.decomposition) > 0 ?
+					each.s.problem.decomposition_problem.C_avail_final(each.s.decomposition)
+						/ each.s.problem.decomposition_problem.N_avail_final(each.s.decomposition) : 0.0
 				)) marker:false;
 				data "C/N" value: problem != nil ? problem.C_N : 0.0 marker:false;
 			}
@@ -1368,8 +1411,9 @@ experiment EnzymaticActivityWorkbench type: gui {
 		display "C/P" type:2d {
 			chart "C/P" type:series style:line {
 				data "available C/P" value: sum(SimulatedAnnealing collect (
-					each.s.P_avail() > 0 ?
-					each.s.C_avail() / each.s.P_avail() : 0.0
+					each.s.problem.decomposition_problem.P_avail_final(each.s.decomposition) > 0 ?
+					each.s.problem.decomposition_problem.C_avail_final(each.s.decomposition)
+						/ each.s.problem.decomposition_problem.P_avail_final(each.s.decomposition) : 0.0
 				)) marker:false;
 				data "C/P" value: problem != nil ? problem.C_P : 0.0 marker:false;
 			}

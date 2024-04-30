@@ -18,7 +18,7 @@ global {
 	
 	// Enzyme objectives
 	MaxLabileC max_labile_C;
-	MaxRecalC max_recal_C;
+	MaxC max_C;
 	MaxCN max_CN;
 	MaxCP max_CP;
 	
@@ -27,11 +27,11 @@ global {
 	SimulatedAnnealing simulated_annealing;
 	
 	action init_enzymatic_optimisation {
-		create MaxLabileC with: (weight: 5.0) {
+		create MaxLabileC with: (weight: 1.0) {
 			max_labile_C <- self;
 		}
-		create MaxRecalC with: (weight: 1.0) {
-			max_recal_C <- self;
+		create MaxC with: (weight: 5.0) {
+			max_C <- self;
 		}
 		create MaxCN with: (weight: 10.0) {
 			max_CN <- self;
@@ -51,7 +51,7 @@ global {
 			enzymatic_activity_problem <- self;
 		}
 		create SimulatedAnnealing with:[
-			objectives::[max_labile_C, max_recal_C, max_CN, max_CP],
+			objectives::[max_labile_C, max_C, max_CN, max_CP],
 			N::1000,
 			epsilon::0.0
 		] {
