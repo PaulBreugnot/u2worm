@@ -265,7 +265,8 @@ experiment Explore {
 	 */
 	string exp_name;
 	/**
-	 * Parameters used to plot P or N decomposition, depending on the parameter currently explored.
+	 * Parameters used to plot P or N decomposition, depending on the parameter
+	 * currently explored.
 	 */
 	string plot <- "N" among: ["N", "P"];
 
@@ -283,8 +284,11 @@ experiment Explore {
 	float exp_CP_dom;
 		
 	/* 
-	 * Default values for model parameters. Those values are set as defaut read_only experiment parameters below (init facet), or superseded for exploration in child experiment parameters.
-	 * In any case, experiment parameters values are used to initialise corresponding model attributes (init section below).
+	 * Default values for model parameters. Those values are set as default
+	 * read_only experiment parameters below (init facet), or superseded for
+	 * exploration in child experiment parameters. In any case, experiment
+	 * parameters values are used to initialise corresponding model attributes
+	 * (init section below).
 	 */
 	parameter "Labile C" var:exp_C_labile init:0.1#gram read_only:true;
 	parameter "Labile C/N" var:exp_CN_labile init:17.0 read_only:true;
@@ -494,7 +498,7 @@ experiment ExploreCN_labile parent:Explore {
  */
 experiment ExploreCN_High_C_labile type:batch parent:ExploreCN_labile until: cycle>0 repeat: 5 {
 	parameter "Output file" var:output_file init: "CN_high_C_labile" read_only:true;
-	parameter "Labile C" var:exp_C_labile init:8#gram read_only:true;
+	parameter "Labile C" var:exp_C_labile init:3#gram read_only:true;
 	
 	init {
 		min_CN_labile <- 4.0;
@@ -546,7 +550,7 @@ experiment ExploreCP_labile parent:Explore {
  */
 experiment ExploreCP_High_C_labile type:batch parent:ExploreCP_labile until: cycle>0 repeat: 5 {
 	parameter "Output file" var:output_file init: "CP_high_C_labile";
-	parameter "Labile C" var:exp_C_labile init:8#gram read_only:true;
+	parameter "Labile C" var:exp_C_labile init:3#gram read_only:true;
 	
 	init {
 		min_CP_labile <- 1.0;
