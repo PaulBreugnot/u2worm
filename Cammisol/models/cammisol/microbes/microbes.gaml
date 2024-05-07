@@ -25,18 +25,18 @@ global {
 	float minimum_awake_rate_S <- 1.0;
 	
 	float max_T_cellulolytic_Y <- 1 #gram/ #gram / #d;
-	float max_T_amino_Y <- 0.1 #gram / #gram / #d;
-	float max_T_P_Y <- 0.08 #gram / #gram / #d;
+	float max_T_amino_Y <- 0.2 #gram / #gram / #d;
+	float max_T_P_Y <- 0.04 #gram / #gram / #d;
 	float max_T_recal_Y <- 0.00001 #gram / #gram / #d;
 	
 	float max_T_cellulolytic_A <- 5 #gram/ #gram / #d;
-	float max_T_amino_A <- 0.5 #gram / #gram / #d;
-	float max_T_P_A <- 0.4 #gram / #gram / #d;
+	float max_T_amino_A <- 1 #gram / #gram / #d;
+	float max_T_P_A <- 0.2 #gram / #gram / #d;
 	float max_T_recal_A <- 1 #gram / #gram / #d;
 
 	float max_T_cellulolytic_S <- 0.5 #gram/ #gram / #d;
-	float max_T_amino_S <- 0.05 #gram / #gram / #d;
-	float max_T_P_S <- 0.04 #gram / #gram / #d;
+	float max_T_amino_S <- 0.1 #gram / #gram / #d;
+	float max_T_P_S <- 0.02 #gram / #gram / #d;
 	float max_T_recal_S <- 0.1 #gram / #gram / #d;
 	
 	Enzymes min_enzymes_Y;
