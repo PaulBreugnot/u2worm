@@ -42,13 +42,13 @@ global {
 	float max_T_P_A <- 0.2 #gram / #gram / #d;
 	float max_T_recal_A <- 1 #gram / #gram / #d;
 	
-	float min_T_C_S <- 0.1 #gram/ #gram / #d;
-	float min_T_N_S <- 0.02 #gram/ #gram / #d;
-	float min_T_P_S <- 0.004 #gram/ #gram / #d;
+	float min_T_C_S <- 0.04 #gram/ #gram / #d;
+	float min_T_N_S <- 0.05 #gram/ #gram / #d;
+	float min_T_P_S <- 0.005 #gram/ #gram / #d;
 	float min_T_recal_S <- 0.0;
-	float max_T_C_S <- 0.2 #gram/ #gram / #d;
-	float max_T_N_S <- 0.04 #gram / #gram / #d;
-	float max_T_P_S <- 0.008 #gram / #gram / #d;
+	float max_T_C_S <- 0.14 #gram/ #gram / #d;
+	float max_T_N_S <- 0.07 #gram / #gram / #d;
+	float max_T_P_S <- 0.009 #gram / #gram / #d;
 	float max_T_recal_S <- 0.0;
 	
 	Enzymes min_enzymes_Y;
