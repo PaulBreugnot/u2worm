@@ -14,23 +14,7 @@ import "nematode/nematode.gaml"
 global {
 	int nematodes_count <- 50;
 
-	/**
-	 * Solid matter weight by volume of soil.
-	 */
-	float bulk_density <- 1.17#gram/(#cm*#cm*#cm);
-	/**
-	 * The total weight of matter in the model.
-	 */
-	float total_model_weight <- bulk_density * world.shape.area * 1#cm;
-	
-	/*Jean*/
-	float carbone_concentration_in_dam <- (729.0 * 10^-6) #gram/#gram;
-	float azote_concentration_in_dam <- (60.0 * 10^-6) #gram/#gram;
-	float phosphore_concentration_in_dam <- (400.0 * 10^-6) #gram/#gram;
-	
-	/*Bernard Et Al 2021 -> Bouzac 2015*/
-	float azote_concentration_in_dim <- (4.74 * 10^-6) #gram/#gram;
-	float phosphore_concentration_in_dim <- (1.43 * 10^-6) #gram/#gram;
+
 		
 	// 5E8 -> 5E9 bacterie / gramme de sol
 	/*
@@ -46,12 +30,6 @@ global {
 	float init_A_rate <- 0.2;
 	float init_S_rate <- 0.7;
 	
-	
-	float init_C_FOM <- 0.02157#gram/(#cm*#cm);
-	float init_N_FOM <- 0.00132#gram/(#cm*#cm);
-	float init_P_FOM <- 0.00077#gram/(#cm*#cm);
-	float init_labile_rate_FOM <- 0.2;
-	
 	float rain_diffusion_rate <- 0.1;
 	float rain_period <- 7#days;
 	
@@ -64,27 +42,6 @@ global {
 		ask PoreParticle {
 			// The carrying capacity of each pore is equal to 10 times the initial bacteria population
 			carrying_capacity <- 10 * total_initial_bacteria_weight / pores_count;
-			
-			ask dam {
-				float carbon_in_all_pore <- total_model_weight * carbone_concentration_in_dam; 
-				float carbon_in_pore <- carbon_in_all_pore / pores_count;
-				
-				float azote_in_all_pore <- total_model_weight * azote_concentration_in_dam;
-				float azote_in_pore <- azote_in_all_pore / pores_count;
-				
-				float phosphore_in_all_pore <- total_model_weight * phosphore_concentration_in_dam;
-				float phosphore_in_pore <- phosphore_in_all_pore / pores_count;
-		
-
-				float phosphore_in_dim <- phosphore_concentration_in_dim * total_model_weight;
-				float phosphore_in_dim_in_pore <- phosphore_in_dim / pores_count;
-				
-				float azote_in_dim <- azote_concentration_in_dim * total_model_weight;
-				float azote_in_dim_in_pore <- phosphore_in_dim / pores_count;
-				
-				dom <- [azote_in_pore, phosphore_in_pore, carbon_in_pore];
-				dim <- [azote_in_dim_in_pore, phosphore_in_dim_in_pore];
-			}
 			
 			create Y_Strategist with: [C::init_Y_rate * total_initial_bacteria_weight / length(PoreParticle)] {
 				add self to:myself.populations;
@@ -102,39 +59,12 @@ global {
 			current_pore <- one_of(PoreParticle); 
 			location <- any_location_in(current_pore);
 		}
-	 	// Default soil initialization. Can be safely overriden with subsequent init_soil() calls.
-		do init_FOM(
-			C: init_C_FOM,
-			N: init_N_FOM,
-			P: init_P_FOM
-		);
 		
 		ask PoreParticle {
 			ask populations {
 				do update;
 				write "Initial enzymes optimization for " + self;
 				do optimize_enzymes(myself.dam, myself.accessible_organics);
-			}
-		}
-	}
-	
-	action init_FOM(float C, float N, float P) {
-		write "Soil C (FOM): " + C/(#kg/#m2) + "kg/m2";
-		write "Soil N (FOM): " + N/(#kg/#m2) + "kg/m2";
-		write "Soil P (FOM): " + P/(#kg/#m2) + "kg/m2";
-//		ask MineralParticle {
-//			N <- N*cell_area;
-//			P <- P*cell_area;
-//		}
-		ask OrganicParticle {
-			if(!in_pore) {
-				// TODO: variable labile/recal factor
-				C_labile <- init_labile_rate_FOM*C*cell_area; 
-				N_labile <- init_labile_rate_FOM*N*cell_area;
-				P_labile <- init_labile_rate_FOM*P*cell_area;
-				C_recalcitrant <- (1-init_labile_rate_FOM)*C*cell_area;
-				N_recalcitrant <- (1-init_labile_rate_FOM)*N*cell_area;
-				P_recalcitrant <- (1-init_labile_rate_FOM)*P*cell_area;
 			}
 		}
 	}
@@ -223,10 +153,10 @@ experiment base_cammisol_output {
 	parameter "Nematodes count" category: "Environment" var:nematodes_count;
 	parameter "Organic particle rate" category: "Environment" var:organic_rate;
 	parameter "Mineral particle rate" category: "Environment" var:mineral_rate;
-	parameter "Init C (FOM)" category: "Environment" var:init_C_FOM;
-	parameter "Init N (FOM)" category: "Environment" var:init_N_FOM;
-	parameter "Init P (FOM)" category: "Environment" var:init_P_FOM;
-	parameter "Init labile rate (FOM)" category: "Environment" var:init_labile_rate_FOM;
+	parameter "Init C (FOM)" category: "Environment" var:C_concentration_in_pom;
+	parameter "Init N (FOM)" category: "Environment" var:N_concentration_in_pom;
+	parameter "Init P (FOM)" category: "Environment" var:P_concentration_in_pom;
+	parameter "Init labile rate (FOM)" category: "Environment" var:labile_rate_pom;
 	
 	parameter "Nematodes predation rate" category: "Nematode" var:nematode_predation_rate;
 	parameter "Nematodes CUE" category: "Nematode" var:nematode_CUE;
@@ -330,7 +260,7 @@ experiment test_microbes parent:base_cammisol_output {
 	
 	init {
 		ask simulation {
-			do init_FOM(myself.C_soil, myself.N_soil, myself.P_soil);		
+			do init_POM(myself.C_soil, myself.N_soil, myself.P_soil);		
 		}
 	}
 }
@@ -344,15 +274,15 @@ experiment display_grid {
 		display grid type:2d axes:false {
 			grid Particle;
 			graphics legend {
-				draw square(cell_size) at: {soil_surface + cell_size, 1.5*cell_size, 0} color: #yellow;
-				draw square(cell_size) at: {soil_surface + cell_size, 2.8*cell_size, 0} color: #green;
-				draw square(cell_size) at: {soil_surface + cell_size, 4.1*cell_size, 0} color: #black;
-				draw "Mineral particle" font:font("Helvetica", 20 , #bold) at: {soil_surface + 2.1*cell_size, 1.7*cell_size, 0} color: #black;
-				draw "Organic particle" font:font("Helvetica", 20 , #bold) at: {soil_surface + 2.1*cell_size, 3*cell_size, 0} color: #black;
-				draw "Pore particle" font:font("Helvetica", 20 , #bold) at: {soil_surface + 2.1*cell_size, 4.3*cell_size, 0} color: #black;
+				draw square(cell_size) at: {soil_size + cell_size, 1.5*cell_size, 0} color: #yellow;
+				draw square(cell_size) at: {soil_size + cell_size, 2.8*cell_size, 0} color: #green;
+				draw square(cell_size) at: {soil_size + cell_size, 4.1*cell_size, 0} color: #black;
+				draw "Mineral particle" font:font("Helvetica", 20 , #bold) at: {soil_size + 2.1*cell_size, 1.7*cell_size, 0} color: #black;
+				draw "Organic particle" font:font("Helvetica", 20 , #bold) at: {soil_size + 2.1*cell_size, 3*cell_size, 0} color: #black;
+				draw "Pore particle" font:font("Helvetica", 20 , #bold) at: {soil_size + 2.1*cell_size, 4.3*cell_size, 0} color: #black;
 				if show_nematodes {
-					draw circle(cell_size/4) at: {soil_surface + cell_size, 5.4*cell_size, 0} color: #red;
-					draw "Nematode" font:font("Helvetica", 20 , #bold) at: {soil_surface + 2.1*cell_size, 5.5*cell_size, 0} color: #black;
+					draw circle(cell_size/4) at: {soil_size + cell_size, 5.4*cell_size, 0} color: #red;
+					draw "Nematode" font:font("Helvetica", 20 , #bold) at: {soil_size + 2.1*cell_size, 5.5*cell_size, 0} color: #black;
 				}
 			}
 			species Nematode aspect: red_dot visible: show_nematodes;
@@ -387,9 +317,9 @@ experiment cammisol parent:base_cammisol_output {
 			// Notice that this has no scientific meaning, and is used only for test purpose.
 			// This might however represent a kind of fertilizer added to the soil.
 			int pores_count <- length(PoreParticle);
-			float carbon_in_all_pore <- total_model_weight * carbone_concentration_in_dam; 
-			float azote_in_all_pore <- total_model_weight * azote_concentration_in_dam;
-			float phosphore_in_all_pore <- total_model_weight * phosphore_concentration_in_dam;
+			float carbon_in_all_pore <- soil_weight * C_concentration_in_dom; 
+			float azote_in_all_pore <- soil_weight * N_concentration_in_dom;
+			float phosphore_in_all_pore <- soil_weight * P_concentration_in_dom;
 			
 			ask PoreParticle {
 				ask dam {

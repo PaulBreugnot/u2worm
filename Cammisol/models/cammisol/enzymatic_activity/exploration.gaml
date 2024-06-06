@@ -17,6 +17,7 @@ global {
 		"CN dom"::CN_DOMGetter,
 		"CP dom"::CP_DOMGetter
 	];
+	list<species<MicrobePopulation>> populations <- [Y_Strategist, A_Strategist, S_Strategist];
 	
 	/* 
 	 * Default values for all parameters to explore.
@@ -53,31 +54,7 @@ global {
 		create getter_types[x_var] {
 			param_getter <- self;
 		}
-//		write "Init model parameters";
-//		// Init model parameters
-//		enzymes_optimization_period <- 1#d;
-//		
-//		max_T_cellulolytic_Y <- 1 #gram/ #gram / #d;
-//		max_T_amino_Y <- 0.2 #gram/ #gram / #d;
-//		max_T_P_Y <- 0.1 #gram/ #gram / #d;
-//		max_T_recal_Y <- 0.00001 #gram/ #gram / #d;
-//
-//		max_T_cellulolytic_A <- 4 #gram/ #gram / #d;
-//		max_T_amino_A <- 6 #gram/ #gram / #d;
-//		max_T_P_A <- 1 #gram/ #gram / #d;
-//		max_T_recal_A <- 2 #gram/ #gram / #d;
-//		
-//		max_T_cellulolytic_S <- 0.2 #gram/ #gram / #d;
-//		max_T_amino_S <- 0.05 #gram/ #gram / #d;
-//		max_T_P_S <- 0.01 #gram/ #gram / #d;
-//		max_T_recal_S <- 0.02 #gram/ #gram / #d;
-//		
-//		// carbon_use_efficiency_Y <- 1.0;
-//		carbon_use_efficiency_A <- 1.0;
-//		carbon_use_efficiency_S <- 1.0;
-//		
-//		microbes_CN <- 10.0;
-//		microbes_CP <- 17.0;
+
 		do init_enzymes;
 		do init_enzymatic_optimisation;
 		create OrganicParticle with: [
@@ -97,34 +74,20 @@ global {
 				world.pore_particle <- self;
 			}
 		}
-
-		create Y_Strategist with: [
-			C: 1#gram,
-			awake_population: 1.0
-		] {
-			do update;
+		loop s over:populations {
+			create s with: [
+				C: 1#gram,
+				awake_population: 1.0
+			] {
+				do update;
+			}
 		}
 		
-		create A_Strategist with: [
-			C: 1#gram,
-			awake_population: 1.0
-		] {
-			do update;
-		}
-		
-		create S_Strategist with: [
-			C: 1#gram,
-			awake_population: 1.0
-		] {
-			do update;
-		}
-		
-		loop s over: [Y_Strategist, A_Strategist, S_Strategist] {
+		loop s over: populations {
 			create DataOutput {
 				output[s] <- self;
 			}
 		}
-		write "Model C labile: " + C_labile/#gram;
 	}
 	
 	reflex {
@@ -184,21 +147,31 @@ global {
 	
 	reflex {
 		list<float> data <- [];
+		map<species<MicrobePopulation>, int> data_index;
+		loop s over: [Y_Strategist, A_Strategist, S_Strategist] {
+			data_index[s] <- length(data);
+			data <- data + [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+		}
+		
 		ask Y_Strategist + A_Strategist + S_Strategist {
-			data <- data + [
-				self.enzymes.T_recal/(#gram/#gram/#d),
-				self.enzymes.T_cellulolytic/(#gram/#gram/#d),
-				self.enzymes.T_amino/(#gram/#gram/#d),
-				self.enzymes.T_P/(#gram/#gram/#d)
-			];
+			int current_index <- data_index[species(self)];
+			data[current_index] <- self.enzymes.T_recal/(#gram/#gram/#d);
+			data[current_index+1] <- self.enzymes.T_cellulolytic/(#gram/#gram/#d);
+			data[current_index+2] <- self.enzymes.T_amino/(#gram/#gram/#d);
+			data[current_index+3] <- self.enzymes.T_P/(#gram/#gram/#d);
 
-			data <- data + [myself.output[species(self)].X_C, myself.output[species(self)].X_N, myself.output[species(self)].X_P, myself.output[species(self)].X_recal];
+			data[current_index+4] <- myself.output[species(self)].X_C;
+			data[current_index+5] <- myself.output[species(self)].X_N;
+			data[current_index+6] <- myself.output[species(self)].X_P;
+			data[current_index+7] <- myself.output[species(self)].X_recal;
 				
-			data <- data + [
-				myself.output[species(self)].C_recal,
-				myself.output[species(self)].C_labile, myself.output[species(self)].N_labile, myself.output[species(self)].P_labile,
-				myself.output[species(self)].C_avail, myself.output[species(self)].N_avail, myself.output[species(self)].P_avail
-			];
+			data[current_index+8] <- myself.output[species(self)].C_recal;
+			data[current_index+9] <- myself.output[species(self)].C_labile;
+			data[current_index+10] <- myself.output[species(self)].N_labile;
+			data[current_index+11] <- myself.output[species(self)].P_labile;
+			data[current_index+12] <- myself.output[species(self)].C_avail;
+			data[current_index+13] <- myself.output[species(self)].N_avail;
+			data[current_index+14] <- myself.output[species(self)].P_avail;
 		}
 		save [self.index, param_getter.param_value()] + data header: false rewrite:false to: output_file + "_data.csv" format: "csv";
 	}
@@ -273,6 +246,9 @@ experiment Explore {
 	/*
 	 * Values of parameters used to perform config output.
 	 */
+	bool exp_enable_Y_strategist;
+	bool exp_enable_A_strategist;
+	bool exp_enable_S_strategist;
 	float exp_C_labile;
 	float exp_CN_labile;
 	float exp_CP_labile;
@@ -290,6 +266,9 @@ experiment Explore {
 	 * parameters values are used to initialise corresponding model attributes
 	 * (init section below).
 	 */
+	parameter "Enable Y strategist" var:exp_enable_Y_strategist init:true read_only:true;
+	parameter "Enable A strategist" var:exp_enable_A_strategist init:true read_only:true;
+	parameter "Enable S strategist" var:exp_enable_S_strategist init:true read_only:true;
 	parameter "Labile C" var:exp_C_labile init:0.1#gram read_only:true;
 	parameter "Labile C/N" var:exp_CN_labile init:17.0 read_only:true;
 	parameter "Labile C/P" var:exp_CP_labile init:31.0 read_only:true;
@@ -313,7 +292,6 @@ experiment Explore {
 			"C/N DOM",
 			"C/P DOM"
 		];
-		write "Config C labile: " + exp_C_labile/#gram;
 		list<float> config <- [
 			enzymes_optimization_period/#d,
 			exp_C_labile/#gram,
@@ -330,6 +308,10 @@ experiment Explore {
 		loop s over: [Y_Strategist, A_Strategist, S_Strategist] {
 			add "Requested C/N (" + labels[s] + ")" to: header;
 			add "Requested C/P (" + labels[s] + ")" to: header;
+			add "Min T_cellulolytic (" + labels[s] + ")" to: header;
+			add "Min T_amino (" + labels[s] + ")" to: header;
+			add "Min T_P (" + labels[s] + ")" to: header;
+			add "Min T_recal (" + labels[s] + ")" to: header;
 			add "Max T_cellulolytic (" + labels[s] + ")" to: header;
 			add "Max T_amino (" + labels[s] + ")" to: header;
 			add "Max T_P (" + labels[s] + ")" to: header;
@@ -337,6 +319,10 @@ experiment Explore {
 		}
 		add microbes_CN / carbon_use_efficiency_Y to: config;
 		add microbes_CP / carbon_use_efficiency_Y to: config;
+		add min_T_cellulolytic_Y/(#gram/#gram/#d) to: config;
+		add min_T_amino_Y/(#gram/#gram/#d) to: config;
+		add min_T_P_Y/(#gram/#gram/#d) to: config;
+		add min_T_recal_Y/(#gram/#gram/#d) to: config;
 		add max_T_cellulolytic_Y/(#gram/#gram/#d) to: config;
 		add max_T_amino_Y/(#gram/#gram/#d) to: config;
 		add max_T_P_Y/(#gram/#gram/#d) to: config;
@@ -344,6 +330,10 @@ experiment Explore {
 		
 		add microbes_CN / carbon_use_efficiency_A to: config;
 		add microbes_CP / carbon_use_efficiency_A to: config;
+		add min_T_cellulolytic_A/(#gram/#gram/#d) to: config;
+		add min_T_amino_A/(#gram/#gram/#d) to: config;
+		add min_T_P_A/(#gram/#gram/#d) to: config;
+		add min_T_recal_A/(#gram/#gram/#d) to: config;
 		add max_T_cellulolytic_A/(#gram/#gram/#d) to: config;
 		add max_T_amino_A/(#gram/#gram/#d) to: config;
 		add max_T_P_A/(#gram/#gram/#d) to: config;
@@ -351,6 +341,10 @@ experiment Explore {
 		
 		add microbes_CN / carbon_use_efficiency_S to: config;
 		add microbes_CP / carbon_use_efficiency_S to: config;
+		add min_T_cellulolytic_S/(#gram/#gram/#d) to: config;
+		add min_T_amino_S/(#gram/#gram/#d) to: config;
+		add min_T_P_S/(#gram/#gram/#d) to: config;
+		add min_T_recal_S/(#gram/#gram/#d) to: config;
 		add max_T_cellulolytic_S/(#gram/#gram/#d) to: config;
 		add max_T_amino_S/(#gram/#gram/#d) to: config;
 		add max_T_P_S/(#gram/#gram/#d) to: config;
@@ -393,6 +387,18 @@ experiment Explore {
 	string x_label virtual: true;
 	
 	init {
+		list<species<MicrobePopulation>> exp_populations;
+
+		if exp_enable_Y_strategist {
+			add Y_Strategist to: exp_populations;
+		}
+		if exp_enable_A_strategist {
+			add A_Strategist to: exp_populations;
+		}
+		if exp_enable_S_strategist {
+			add S_Strategist to: exp_populations;
+		}
+		populations <- exp_populations;
 		C_labile <- exp_C_labile;
 		CN_labile <- exp_CN_labile;
 		CP_labile <- exp_CP_labile;
@@ -407,67 +413,79 @@ experiment Explore {
 	permanent {
 		display "Enzymatic activity (Y)" {
 			chart "Enzymatic activity (Y)" type:xy x_label: x_label() y_label: "Enzymatic activity (gC/gM/d)" {
-				data "T_P" value:{mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[Y_Strategist].T_P/(#gram/#gram/#d)))};
-				data "T_cellulolytic" value:{mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[Y_Strategist].T_C/(#gram/#gram/#d)))};
-				data "T_amino" value:{mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[Y_Strategist].T_N/(#gram/#gram/#d)))};
-				data "T_recal" value:{mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[Y_Strategist].T_r/(#gram/#gram/#d)))};
+				if exp_enable_Y_strategist {
+					data "T_P" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[Y_Strategist].T_P / (#gram / #gram / #d)))};
+					data "T_cellulolytic" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[Y_Strategist].T_C / (#gram / #gram / #d)))};
+					data "T_amino" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[Y_Strategist].T_N / (#gram / #gram / #d)))};
+					data "T_recal" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[Y_Strategist].T_r / (#gram / #gram / #d)))};
+				}
 			}
 		}
 			
 		display "Enzymatic activity (A)" {
 			chart "Enzymatic activity (A)" type:xy x_label: x_label() y_label: "Enzymatic activity (gC/gM/d)" {
-				data "T_P" value:{mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[A_Strategist].T_P/(#gram/#gram/#d)))};
-				data "T_cellulolytic" value:{mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[A_Strategist].T_C/(#gram/#gram/#d)))};
-				data "T_amino" value:{mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[A_Strategist].T_N/(#gram/#gram/#d)))};
-				data "T_recal" value:{mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[A_Strategist].T_r/(#gram/#gram/#d)))};
+				if exp_enable_A_strategist {
+					data "T_P" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[A_Strategist].T_P / (#gram / #gram / #d)))};
+					data "T_cellulolytic" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[A_Strategist].T_C / (#gram / #gram / #d)))};
+					data "T_amino" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[A_Strategist].T_N / (#gram / #gram / #d)))};
+					data "T_recal" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[A_Strategist].T_r / (#gram / #gram / #d)))};
+				}
 			}
 		}
 			
 		display "Enzymatic activity (S)" {
 			chart "Enzymatic activity (S)" type:xy x_label: x_label() y_label: "Enzymatic activity (gC/gM/d)" {
-				data "T_P" value:{mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[S_Strategist].T_P/(#gram/#gram/#d)))};
-				data "T_cellulolytic" value:{mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[S_Strategist].T_C/(#gram/#gram/#d)))};
-				data "T_amino" value:{mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[S_Strategist].T_N/(#gram/#gram/#d)))};
-				data "T_recal" value:{mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[S_Strategist].T_r/(#gram/#gram/#d)))};
+				if exp_enable_S_strategist {
+					data "T_P" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[S_Strategist].T_P / (#gram / #gram / #d)))};
+					data "T_cellulolytic" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[S_Strategist].T_C / (#gram / #gram / #d)))};
+					data "T_amino" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[S_Strategist].T_N / (#gram / #gram / #d)))};
+					data "T_recal" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[S_Strategist].T_r / (#gram / #gram / #d)))};
+				}
 			}
 		}
 		
 		display "Decomposition (Y)" {
 			chart "Decomposition (Y)" type:xy x_label: x_label() y_label: "Decomposition (g)" {
-				if(plot = "N") {
-					data "N labile (final)" value:{simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[Y_Strategist].N_labile};
-					data "N avail" value:{simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[Y_Strategist].N_avail};
-					data "N labile (init)" value:{simulations mean_of each.param_getter.param_value(), simulations mean_of (each.C_labile/each.CN_labile)/#gram} marker:false;
-				} else if (plot = "P") {
-					data "P labile (final)" value:{simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[Y_Strategist].P_labile};
-					data "P avail" value:{simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[Y_Strategist].P_avail};
-					data "P labile (init)" value:{simulations mean_of each.param_getter.param_value(), simulations mean_of (each.C_labile/each.CP_labile)/#gram} marker:false;	
+				if exp_enable_Y_strategist {
+					if (plot = "N") {
+						data "N labile (final)" value: {simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[Y_Strategist].N_labile};
+						data "N avail" value: {simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[Y_Strategist].N_avail};
+						data "N labile (init)" value: {simulations mean_of each.param_getter.param_value(), simulations mean_of (each.C_labile / each.CN_labile) / #gram} marker: false;
+					} else if (plot = "P") {
+						data "P labile (final)" value: {simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[Y_Strategist].P_labile};
+						data "P avail" value: {simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[Y_Strategist].P_avail};
+						data "P labile (init)" value: {simulations mean_of each.param_getter.param_value(), simulations mean_of (each.C_labile / each.CP_labile) / #gram} marker: false;
+					}
 				}
 			}
 		}
 		display "Decomposition (A)" {
 			chart "Decomposition (A)" type:xy x_label: x_label() y_label: "Decomposition (g)" {
-				if(plot = "N") {
-					data "N labile (final)" value:{simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[A_Strategist].N_labile};
-					data "N avail" value:{simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[A_Strategist].N_avail};
-					data "N labile (init)" value:{simulations mean_of each.param_getter.param_value(), simulations mean_of (each.C_labile/each.CN_labile)/#gram} marker:false;
-				} else if (plot = "P") {
-					data "P labile (final)" value:{simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[A_Strategist].P_labile};
-					data "P avail" value:{simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[A_Strategist].P_avail};
-					data "P labile (init)" value:{simulations mean_of each.param_getter.param_value(), simulations mean_of (each.C_labile/each.CP_labile)/#gram} marker:false;	
+				if exp_enable_A_strategist {
+					if (plot = "N") {
+						data "N labile (final)" value: {simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[A_Strategist].N_labile};
+						data "N avail" value: {simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[A_Strategist].N_avail};
+						data "N labile (init)" value: {simulations mean_of each.param_getter.param_value(), simulations mean_of (each.C_labile / each.CN_labile) / #gram} marker: false;
+					} else if (plot = "P") {
+						data "P labile (final)" value: {simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[A_Strategist].P_labile};
+						data "P avail" value: {simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[A_Strategist].P_avail};
+						data "P labile (init)" value: {simulations mean_of each.param_getter.param_value(), simulations mean_of (each.C_labile / each.CP_labile) / #gram} marker: false;
+					}
 				}
 			}
 		}
 		display "Decomposition (S)" {
 			chart "Decomposition (S)" type:xy x_label: x_label() y_label: "Decomposition (g)" {
-				if(plot = "N") {
-					data "N labile (final)" value:{simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[S_Strategist].N_labile};
-					data "N avail" value:{simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[S_Strategist].N_avail};
-					data "N labile (init)" value:{simulations mean_of each.param_getter.param_value(), simulations mean_of (each.C_labile/each.CN_labile)/#gram} marker:false;
-				} else if (plot = "P") {
-					data "P labile (final)" value:{simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[S_Strategist].P_labile};
-					data "P avail" value:{simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[S_Strategist].P_avail};
-					data "P labile (init)" value:{simulations mean_of each.param_getter.param_value(), simulations mean_of (each.C_labile/each.CP_labile)/#gram} marker:false;	
+				if exp_enable_S_strategist {
+					if (plot = "N") {
+						data "N labile (final)" value: {simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[S_Strategist].N_labile};
+						data "N avail" value: {simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[S_Strategist].N_avail};
+						data "N labile (init)" value: {simulations mean_of each.param_getter.param_value(), simulations mean_of (each.C_labile / each.CN_labile) / #gram} marker: false;
+					} else if (plot = "P") {
+						data "P labile (final)" value: {simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[S_Strategist].P_labile};
+						data "P avail" value: {simulations mean_of each.param_getter.param_value(), simulations mean_of each.output[S_Strategist].P_avail};
+						data "P labile (init)" value: {simulations mean_of each.param_getter.param_value(), simulations mean_of (each.C_labile / each.CP_labile) / #gram} marker: false;
+					}
 				}
 			}
 		}
@@ -480,8 +498,8 @@ experiment Explore {
 experiment ExploreCN_labile parent:Explore {
 	parameter "X var" var:x_var init:"CN labile" read_only:true;
 	
-	float min_CN_labile <- CN_labile;
-	float max_CN_labile <- CN_labile;
+	float min_CN_labile <- 4.0;
+	float max_CN_labile <- 70.0;
 	parameter "Labile C/N" var: CN_labile min: min_CN_labile max: max_CN_labile step: 1.0;
 	
 	init {
@@ -501,8 +519,6 @@ experiment ExploreCN_High_C_labile type:batch parent:ExploreCN_labile until: cyc
 	parameter "Labile C" var:exp_C_labile init:3#gram read_only:true;
 	
 	init {
-		min_CN_labile <- 4.0;
-		max_CN_labile <- 70.0;
 		exp_name <- "CN_high_C_labile";
 		do write_config_csv;
 		do init_data_csv;
@@ -518,8 +534,6 @@ experiment ExploreCN_Low_C_labile type:batch parent:ExploreCN_labile until: cycl
 	parameter "Labile C" var:exp_C_labile init:0.1#gram read_only:true;
 	
 	init {
-		min_CN_labile <- 4.0;
-		max_CN_labile <- 70.0;
 		exp_name <- "CN_low_C_labile";
 		do write_config_csv;
 		do init_data_csv;

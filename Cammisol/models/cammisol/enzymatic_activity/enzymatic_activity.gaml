@@ -178,7 +178,7 @@ species DecompositionProblem schedules: [] {
 	 * Fixed CN rates of amino acids.
 	 * Represent the distribution of amino acids.
 	 */
-	float amino_CN <- 4.0;
+	float amino_CN <- 5.0;
 
 	/**
 	 * Rate of organic P sent from recalcitrant to DIM among the P decomposed by
@@ -1101,9 +1101,9 @@ experiment EnzymaticActivityWorkbench type: gui {
 	parameter "C/N weight" category: "Objectives" var: C_N_objective_weight init: 10.0;
 	parameter "C/P" category: "Objectives" var: C_P_objective init: "Max C/P" among: ["none", "Exact C/P", "Max C/P"];
 	parameter "C/P weight" category: "Objectives" var: C_P_objective_weight init: 10.0;
-	parameter "C labile" category: "Objectives" var: C_labile_objective init: "Max recal C" among: ["none", "Max recal C"];
+	parameter "C labile" category: "Objectives" var: C_labile_objective init: "Max labile C" among: ["none", "Max labile C"];
 	parameter "C labile weight" category: "Objectives" var: C_labile_objective_weight init: 1.0;
-	parameter "C" category: "Objectives" var: C_objective init: "Max labile C" among: ["none", "Max labile C"];
+	parameter "C" category: "Objectives" var: C_objective init: "Max C" among: ["none", "Max C"];
 	parameter "C weight" category: "Objectives" var: C_objective_weight init: 5.0;
 	parameter "N" category: "Objectives" var: N_objective init: "Max N" among: ["none", "Max N"];
 	parameter "N weight" category: "Objectives" var: N_objective_weight init: 5.0;
