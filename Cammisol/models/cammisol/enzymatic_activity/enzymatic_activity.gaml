@@ -11,11 +11,11 @@ global {
 	/**
 	 * Index of the budget allocated to the cellulolytic action.
 	 */
-	int T_CELLULOLYTIC_BUDGET <- 0;
+	int T_C_BUDGET <- 0;
 	/**
 	 * Index of the budget allocated to the amino acid production action.
 	 */
-	int T_AMINO_BUDGET <- 1;
+	int T_N_BUDGET <- 1;
 	/**
 	 * Index of the budget allocated to the P mineralisation action.
 	 */
@@ -31,30 +31,34 @@ global {
  */
 species Enzymes schedules: [] {
 	/**
-	 * Cellulolytic action.
+	 * Decomposition of sugars and carboxylic acids by endocleaving
+	 * (depolymerisation) or exocleaving. Produces "pure" C (H, O and elements
+	 * other that C, N and P are not represented in the model). (C extraction)
 	 */
-	float T_cellulolytic <- 0.0#gram/#gram/#d;
+	float T_C <- 0.0#gram/#gram/#d;
 	/**
-	 * Amino acid production action.
+	 * Decomposition of polypeptides and amino sugars, from which amino acids
+	 * and N-acetyl glucosamine are extracted. (N extraction)
 	 */
-	float T_amino <- 0.0#gram/#gram/#d;
+	float T_N <- 0.0#gram/#gram/#d;
 	/**
-	 * P mineralisation action.
+	 * Mineralisation of P. (P extraction)
 	 */
 	float T_P <- 0.0#gram/#gram/#d;
 	/**
-	 * Recalcitrant cleavage action.
+	 * Cleavage of recalcitrant matter. Extract blocks of C/N/P into the labile
+	 * compartments. (Recalcitrant cleavage)
 	 */
 	float T_recal <- 0.0#gram/#gram/#d;
 }
 
 /**
  * Enzymatic action rates, multiplied by the active microbe biomass.
- * Notice the difference of units.
+ * Notice the difference of units compared to Enzymes.
  */
 species WeightedEnzymes schedules: [] {
-	float T_cellulolytic <- 0.0#gram/#d;
-	float T_amino <- 0.0#gram/#d;
+	float T_C <- 0.0#gram/#d;
+	float T_N <- 0.0#gram/#d;
 	float T_P <- 0.0#gram/#d;
 	float T_recal <- 0.0#gram/#d;
 }
@@ -64,52 +68,56 @@ species WeightedEnzymes schedules: [] {
  */
 species Decomposition schedules: [] {
 	/**
-	 * Quantity of matter removed from C labile and added to C dom due to
-	 * cellulolytic action.
+	 * Quantity of C removed from C labile and added to C dom due to
+	 * C extraction.
 	 */
-	float X_C_cellulolytic <- 0.0;
+	float X_C_eC <- 0.0;
 	/**
-	 * Quantity of matter removed from C labile and added to C dom due to amino
-	 * action.
+	 * Quantity of C removed from C labile and added to C dom due to N
+	 * extraction.
 	 */
-	float X_C_amino <- 0.0;
+	float X_C_eN <- 0.0;
 	/**
-	 * Quantity of matter removed from C labile and added to N dom due to amino
-	 * action.
+	 * Quantity of N removed from N labile and added to N dom due to N
+	 * extraction.
 	 */
-	float X_N_amino <- 0.0;
+	float X_N_eN <- 0.0;
 	/**
-	 * Quantity of matter removed from C labile and added to C dom due to P
-	 * mineralisation action.
+	 * Quantity of C removed from C labile and added to C dom due to P
+	 * extraction.
 	 */
-	float X_C_P <- 0.0;
+	float X_C_eP <- 0.0;
 	/**
-	 * Quantity of matter removed from P labile and added to P dom due to P
-	 * mineralisation action.
+	 * Quantity of P removed from P labile and added to P dom due to P
+	 * extraction.
 	 */
-	float X_P_labile_to_dom <- 0.0;
+	float X_P_eP_labile_to_dom <- 0.0;
 	/**
-	 * Quantity of matter removed from P labile and added to P dim due to P
-	 * mineralisation action.
+	 * Quantity of P removed from P labile and added to P dim due to P
+	 * extraction.
 	 */
-	float X_P_labile_to_dim <- 0.0;
+	float X_P_eP_labile_to_dim <- 0.0;
 	
 	/**
-	 * Quantity of matter removed from C recalcitrant and added to C labile.
+	 * Quantity of C removed from C recalcitrant and added to C labile due to
+	 * recalcitrant cleavage.
 	 */
-	float X_C_recal <- 0.0;
+	float X_C_eR <- 0.0;
 	/**
-	 * Quantity of matter removed from N recalcitrant and added to N labile.
+	 * Quantity of N removed from N recalcitrant and added to N labile due to
+	 * recalcitrant cleavage.
 	 */
-	float X_N_recal <- 0.0;
+	float X_N_eR <- 0.0;
 	/**
-	 * Quantity of matter removed from P recalcitrant and added to P labile.
+	 * Quantity of P removed from P recalcitrant and added to P labile due to
+	 * recalcitrant cleavage.
 	 */
-	float X_P_recal_to_labile <- 0.0;
+	float X_P_eR_recal_to_labile <- 0.0;
 	/**
-	 * Quantity of matter removed from P recalcitrant and added to P dim.
+	 * Quantity of P removed from P recalcitrant and added to P dim due to
+	 * recalcitrant cleavage. (specific action of phytases)
 	 */
-	float X_P_recal_to_dim <- 0.0;
+	float X_P_eR_recal_to_dim <- 0.0;
 }
 
 /**
@@ -269,7 +277,7 @@ species DecompositionProblem schedules: [] {
 	 */
 	float d_C_cellulolytic(WeightedEnzymes enzymes) {
 		return min(
-					dt * enzymes.T_cellulolytic,
+					dt * enzymes.T_C,
 					cellulolytic_substrate()
 				);
 	}
@@ -279,7 +287,7 @@ species DecompositionProblem schedules: [] {
 	 */
 	float d_C_amino(WeightedEnzymes enzymes) {
 		return min(
-			dt * enzymes.T_amino,
+			dt * enzymes.T_N,
 			amino_substrate()
 		);
 	}
@@ -304,7 +312,7 @@ species DecompositionProblem schedules: [] {
 	 * decomposition.
 	 */
 	float C_recal_final(Decomposition decomposition) {
-		return C_recal_init - decomposition.X_C_recal;
+		return C_recal_init - decomposition.X_C_eR;
 	}
 	
 	/**
@@ -312,7 +320,7 @@ species DecompositionProblem schedules: [] {
 	 * decomposition.
 	 */
 	float N_recal_final(Decomposition decomposition) {
-		return N_recal_init - decomposition.X_N_recal;
+		return N_recal_init - decomposition.X_N_eR;
 	}
 	
 	/**
@@ -320,7 +328,7 @@ species DecompositionProblem schedules: [] {
 	 * decomposition.
 	 */
 	float P_recal_final(Decomposition decomposition) {
-		return P_recal_init - decomposition.X_P_recal_to_labile - decomposition.X_P_recal_to_dim;
+		return P_recal_init - decomposition.X_P_eR_recal_to_labile - decomposition.X_P_eR_recal_to_dim;
 	}
 	
 	/**
@@ -328,7 +336,7 @@ species DecompositionProblem schedules: [] {
 	 * decomposition.
 	 */
 	float C_labile_final(Decomposition decomposition) {
-		return C_labile_init + decomposition.X_C_recal - decomposition.X_C_cellulolytic - decomposition.X_C_P - decomposition.X_C_amino;
+		return C_labile_init + decomposition.X_C_eR - decomposition.X_C_eC - decomposition.X_C_eP - decomposition.X_C_eN;
 	}
 	
 	/**
@@ -336,7 +344,7 @@ species DecompositionProblem schedules: [] {
 	 * decomposition.
 	 */
 	float N_labile_final(Decomposition decomposition) {
-		return N_labile_init + decomposition.X_N_recal - decomposition.X_N_amino;
+		return N_labile_init + decomposition.X_N_eR - decomposition.X_N_eN;
 	}
 	
 	/**
@@ -344,7 +352,7 @@ species DecompositionProblem schedules: [] {
 	 * decomposition.
 	 */
 	float P_labile_final(Decomposition decomposition) {
-		return P_labile_init + decomposition.X_P_recal_to_labile - decomposition.X_P_labile_to_dom - decomposition.X_P_labile_to_dim;
+		return P_labile_init + decomposition.X_P_eR_recal_to_labile - decomposition.X_P_eP_labile_to_dom - decomposition.X_P_eP_labile_to_dim;
 	}
 	
 	/**
@@ -352,7 +360,7 @@ species DecompositionProblem schedules: [] {
 	 * decomposition.
 	 */
 	float C_DOM_final(Decomposition decomposition) {
-		return C_DOM_init + decomposition.X_C_cellulolytic + decomposition.X_C_amino + decomposition.X_C_P;
+		return C_DOM_init + decomposition.X_C_eC + decomposition.X_C_eN + decomposition.X_C_eP;
 	}
 	
 	/**
@@ -360,7 +368,7 @@ species DecompositionProblem schedules: [] {
 	 * decomposition.
 	 */
 	float N_DOM_final(Decomposition decomposition) {
-		return N_DOM_init + decomposition.X_N_amino;
+		return N_DOM_init + decomposition.X_N_eN;
 	}
 	
 	/**
@@ -368,7 +376,7 @@ species DecompositionProblem schedules: [] {
 	 * decomposition.
 	 */
 	float P_DOM_final(Decomposition decomposition) {
-		return P_DOM_init + decomposition.X_P_labile_to_dom;
+		return P_DOM_init + decomposition.X_P_eP_labile_to_dom;
 	}
 	
 	/**
@@ -384,7 +392,7 @@ species DecompositionProblem schedules: [] {
 	 * decomposition.
 	 */
 	float P_DIM_final(Decomposition decomposition) {
-		return P_DIM_init + decomposition.X_P_labile_to_dim + decomposition.X_P_recal_to_dim;
+		return P_DIM_init + decomposition.X_P_eP_labile_to_dim + decomposition.X_P_eR_recal_to_dim;
 	}
 	
 	/**
@@ -426,11 +434,11 @@ species DecompositionProblem schedules: [] {
 			float d_C_P <- d_C_P(enzymes);
 			float d_C_amino <- d_C_amino(enzymes);
 			
-			result.X_C_cellulolytic <- d_C_cellulolytic
+			result.X_C_eC <- d_C_cellulolytic
 				- beta_cellulolytic_amino * d_C_amino * d_C_cellulolytic / C_labile_init
 				- beta_cellulolytic_P * d_C_P * d_C_cellulolytic / C_labile_init;
 				
-			result.X_C_amino <- d_C_amino
+			result.X_C_eN <- d_C_amino
 				- (1-beta_cellulolytic_amino) * d_C_amino * d_C_cellulolytic / C_labile_init
 				- beta_amino_P * d_C_amino * d_C_P / C_labile_init;
 
@@ -438,51 +446,51 @@ species DecompositionProblem schedules: [] {
 				- (1-beta_cellulolytic_P) * d_C_P * d_C_cellulolytic / C_labile_init
 				- (1-beta_amino_P) * d_C_amino * d_C_P / C_labile_init;
 				
-			result.X_N_amino <- result.X_C_amino / amino_CN;
+			result.X_N_eN <- result.X_C_eN / amino_CN;
 			if(P_labile_init > 0) {
 				float D_P <- D_C_P * (P_labile_init / C_labile_init);
 				
-				result.X_P_labile_to_dim <- alpha_P_e_P * D_P;
+				result.X_P_eP_labile_to_dim <- alpha_P_e_P * D_P;
 						
 				// Only a fraction goes to the dom, the rest is left in the labile section
-				result.X_C_P <- alpha_C_e_P * D_C_P;
-				result.X_P_labile_to_dom <- alpha_C_e_P * (D_P-result.X_P_labile_to_dim);
+				result.X_C_eP <- alpha_C_e_P * D_C_P;
+				result.X_P_eP_labile_to_dom <- alpha_C_e_P * (D_P-result.X_P_eP_labile_to_dim);
 			} else {
-				result.X_P_labile_to_dim <- 0.0;
-				result.X_C_P <- 0.0;
-				result.X_P_labile_to_dom <- 0.0;	
+				result.X_P_eP_labile_to_dim <- 0.0;
+				result.X_C_eP <- 0.0;
+				result.X_P_eP_labile_to_dom <- 0.0;	
 			}
 		} else {
-			result.X_C_cellulolytic <- 0.0;
-			result.X_C_amino <- 0.0;
-			result.X_N_amino <- 0.0;
-			result.X_P_labile_to_dim <- 0.0;
-			result.X_C_P <- 0.0;
-			result.X_P_labile_to_dom <- 0.0;
+			result.X_C_eC <- 0.0;
+			result.X_C_eN <- 0.0;
+			result.X_N_eN <- 0.0;
+			result.X_P_eP_labile_to_dim <- 0.0;
+			result.X_C_eP <- 0.0;
+			result.X_P_eP_labile_to_dom <- 0.0;
 		}
 
 		if(C_recal_init > 0) {
-			result.X_C_recal <- d_C_recal(enzymes);
+			result.X_C_eR <- d_C_recal(enzymes);
 			if(N_recal_init > 0) {
-				result.X_N_recal <- result.X_C_recal * (N_recal_init / C_recal_init);
+				result.X_N_eR <- result.X_C_eR * (N_recal_init / C_recal_init);
 			} else {
-				result.X_N_recal <- 0.0;
+				result.X_N_eR <- 0.0;
 			}
 			if(P_recal_init > 0) {
-				float D_P_recal <- result.X_C_recal * (P_recal_init / C_recal_init);
-				result.X_P_recal_to_dim <-
+				float D_P_recal <- result.X_C_eR * (P_recal_init / C_recal_init);
+				result.X_P_eR_recal_to_dim <-
 					alpha_P_e_r * D_P_recal;
-				result.X_P_recal_to_labile <-
+				result.X_P_eR_recal_to_labile <-
 					(1-alpha_P_e_r) * D_P_recal;
 			} else {
-				result.X_P_recal_to_dim <- 0.0;
-				result.X_P_recal_to_labile <- 0.0;
+				result.X_P_eR_recal_to_dim <- 0.0;
+				result.X_P_eR_recal_to_labile <- 0.0;
 			}
 		} else {
-			result.X_C_recal <- 0.0;
-			result.X_N_recal <- 0.0;
-			result.X_P_recal_to_dim <- 0.0;
-			result.X_P_recal_to_labile <- 0.0;
+			result.X_C_eR <- 0.0;
+			result.X_N_eR <- 0.0;
+			result.X_P_eR_recal_to_dim <- 0.0;
+			result.X_P_eR_recal_to_labile <- 0.0;
 		}
 	}
 }
@@ -520,8 +528,8 @@ species SimulatedAnnealingState schedules: [] {
 		SimulatedAnnealingState current_state <- self;
 		ask problem {
 			create Enzymes with: [
-				T_cellulolytic: min_enzymes.T_cellulolytic + myself.budget[T_CELLULOLYTIC_BUDGET]*(max_enzymes.T_cellulolytic - min_enzymes.T_cellulolytic),
-				T_amino: min_enzymes.T_amino + myself.budget[T_AMINO_BUDGET]*(max_enzymes.T_amino - min_enzymes.T_amino),
+				T_C: min_enzymes.T_C + myself.budget[T_C_BUDGET]*(max_enzymes.T_C - min_enzymes.T_C),
+				T_N: min_enzymes.T_N + myself.budget[T_N_BUDGET]*(max_enzymes.T_N - min_enzymes.T_N),
 				T_P: min_enzymes.T_P + myself.budget[T_P_BUDGET]*(max_enzymes.T_P - min_enzymes.T_P),
 				T_recal: min_enzymes.T_recal + myself.budget[T_RECALCITRANT_BUDGET]*(max_enzymes.T_recal - min_enzymes.T_recal)
 			] {
@@ -530,8 +538,8 @@ species SimulatedAnnealingState schedules: [] {
 		}
 		
 		create WeightedEnzymes with: [
-			T_cellulolytic::problem.C_microbes*enzymes.T_cellulolytic,
-			T_amino::problem.C_microbes*enzymes.T_amino,
+			T_C::problem.C_microbes*enzymes.T_C,
+			T_N::problem.C_microbes*enzymes.T_N,
 			T_P::problem.C_microbes*enzymes.T_P,
 			T_recal::problem.C_microbes*enzymes.T_recal
 		] {
@@ -642,15 +650,15 @@ species EnzymaticActivityProblem schedules: [] {
 	action update_X_C_dam_max {
 		WeightedEnzymes enzymes;
 		create WeightedEnzymes with: [
-			T_cellulolytic::C_microbes*max_enzymes.T_cellulolytic,
-			T_amino::C_microbes*max_enzymes.T_amino,
+			T_C::C_microbes*max_enzymes.T_C,
+			T_N::C_microbes*max_enzymes.T_N,
 			T_P::C_microbes*max_enzymes.T_P,
 			T_recal::0.0
 		] {
 			// The current weighted enzymes is impossible in terms of budget, but it is a way
 			// to easily compute each d_* max since:
-			// - the maximum of d_C_cellulolytic is only computed from the max_enzymes.T_cellulolytic (assuming other T_* = 0)
-			// - the maximum of d_C_amino is only computed from the max_enzymes.T_amino (assuming other T_* = 0)
+			// - the maximum of d_C_cellulolytic is only computed from the max_enzymes.T_C (assuming other T_* = 0)
+			// - the maximum of d_C_amino is only computed from the max_enzymes.T_N (assuming other T_* = 0)
 			// - ... idem form d_C_P
 			enzymes <- self;
 		}
@@ -669,7 +677,7 @@ species EnzymaticActivityProblem schedules: [] {
 	action update_X_N_dam_max {
 		WeightedEnzymes enzymes;
 		create WeightedEnzymes with: [
-			T_amino::C_microbes*max_enzymes.T_amino
+			T_N::C_microbes*max_enzymes.T_N
 		] {
 			enzymes <- self;
 		}
@@ -754,11 +762,11 @@ species SimulatedAnnealing schedules: [] {
 		if(problem.max_enzymes.T_recal - problem.min_enzymes.T_recal > 0.0) {
 			add T_RECALCITRANT_BUDGET to: budget_indexes;
 		}
-		if(problem.max_enzymes.T_cellulolytic - problem.min_enzymes.T_cellulolytic > 0.0) {
-			add T_CELLULOLYTIC_BUDGET to: budget_indexes;
+		if(problem.max_enzymes.T_C - problem.min_enzymes.T_C > 0.0) {
+			add T_C_BUDGET to: budget_indexes;
 		}
-		if(problem.max_enzymes.T_amino - problem.min_enzymes.T_amino > 0.0) {
-			add T_AMINO_BUDGET to: budget_indexes;
+		if(problem.max_enzymes.T_N - problem.min_enzymes.T_N > 0.0) {
+			add T_N_BUDGET to: budget_indexes;
 		}
 		if(problem.max_enzymes.T_P - problem.min_enzymes.T_P > 0.0) {
 			add T_P_BUDGET to: budget_indexes;
@@ -964,7 +972,7 @@ species MaxLabileC parent: Objective schedules: [] {
 		float result;
 		ask state {
 			if(problem.X_C_labile_max > 0.0) {
-				result <- 1.0 - decomposition.X_C_recal / problem.X_C_labile_max;
+				result <- 1.0 - decomposition.X_C_eR / problem.X_C_labile_max;
 			} else {
 				// Forces T_recal to tend to 0 if max_recal_C_decomposition = 0.0
 				result <- exp(ln(2) * budget[T_RECALCITRANT_BUDGET]) - 1.0;	
@@ -984,11 +992,11 @@ species MaxC parent: Objective schedules: [] {
 		float result;
 		ask state {
 			if(problem.X_C_dam_max > 0.0) {
-				result <- 1.0 - (decomposition.X_C_cellulolytic + decomposition.X_C_amino + decomposition.X_C_P)
+				result <- 1.0 - (decomposition.X_C_eC + decomposition.X_C_eN + decomposition.X_C_eP)
 						/ problem.X_C_dam_max;
 			} else {
-				// Forces T_cellulolytic, T_amino and T_P budgets to 0 since no labile C/N/P can be decomposed anyway.
-				result <- exp(ln(2) * (state.budget[T_CELLULOLYTIC_BUDGET] + budget[T_AMINO_BUDGET] + budget[T_P_BUDGET])/3) - 1.0;
+				// Forces T_C, T_N and T_P budgets to 0 since no labile C/N/P can be decomposed anyway.
+				result <- exp(ln(2) * (state.budget[T_C_BUDGET] + budget[T_N_BUDGET] + budget[T_P_BUDGET])/3) - 1.0;
 			}
 		}
 		return result;
@@ -1005,7 +1013,7 @@ species MaxP parent: Objective schedules: [] {
 		float result;
 		ask state {
 			if(problem.X_P_dam_max > 0.0) {
-				result <- 1.0 - (decomposition.X_P_recal_to_dim + decomposition.X_P_labile_to_dom + decomposition.X_P_labile_to_dim)
+				result <- 1.0 - (decomposition.X_P_eR_recal_to_dim + decomposition.X_P_eP_labile_to_dom + decomposition.X_P_eP_labile_to_dim)
 						/ problem.X_P_dam_max;
 			} else {
 				// No P can be decomposed anyway
@@ -1026,10 +1034,10 @@ species MaxN parent: Objective schedules: [] {
 		float result;
 		ask state {
 			if(problem.X_N_dam_max > 0) {
-				result <- 1.0 - decomposition.X_N_amino / problem.X_N_dam_max;
+				result <- 1.0 - decomposition.X_N_eN / problem.X_N_dam_max;
 			} else {
-				// max_N_decomposition = 0, so we force T_amino budget to 0
-				result <- exp(ln(2) * state.budget[T_AMINO_BUDGET]) - 1.0;		
+				// max_N_decomposition = 0, so we force T_N budget to 0
+				result <- exp(ln(2) * state.budget[T_N_BUDGET]) - 1.0;		
 			}
 		}
 		return result;
@@ -1055,12 +1063,12 @@ experiment EnzymaticActivityWorkbench type: gui {
 	float P_objective_weight;
 	list<Objective> objectives;
 
-	float min_T_cellulolytic;
-	float min_T_amino;
+	float min_T_C;
+	float min_T_N;
 	float min_T_P;
 	float min_T_recal;
-	float max_T_cellulolytic;
-	float max_T_amino;
+	float max_T_C;
+	float max_T_N;
 	float max_T_P;
 	float max_T_recal;
 	
@@ -1110,12 +1118,12 @@ experiment EnzymaticActivityWorkbench type: gui {
 	parameter "P" category: "Objectives" var: P_objective init: "Max P" among: ["none", "Max P"];
 	parameter "P weight" category: "Objectives" var: P_objective_weight init: 5.0;
 	
-	parameter "Min cellulolytic (gC/gM/d)" category: "Microbe population" var: min_T_cellulolytic init: 0.0;
-	parameter "Min amino (gC/gM/d)" category: "Microbe population" var: min_T_amino init: 0.0;
+	parameter "Min cellulolytic (gC/gM/d)" category: "Microbe population" var: min_T_C init: 0.0;
+	parameter "Min amino (gC/gM/d)" category: "Microbe population" var: min_T_N init: 0.0;
 	parameter "Min P (gC/gM/d)" category: "Microbe population" var: min_T_P init: 0.0;
 	parameter "Min recalcitrant (gC/gM/d)" category: "Microbe population" var: min_T_recal init: 0.0;
-	parameter "Max cellulolytic (gC/gM/d)" category: "Microbe population" var: max_T_cellulolytic init: 0.4;
-	parameter "Max amino (gC/gM/d)" category: "Microbe population" var: max_T_amino init: 0.08;
+	parameter "Max cellulolytic (gC/gM/d)" category: "Microbe population" var: max_T_C init: 0.4;
+	parameter "Max amino (gC/gM/d)" category: "Microbe population" var: max_T_N init: 0.08;
 	parameter "Max P (gC/gM/d)" category: "Microbe population" var: max_T_P init: 0.02;
 	parameter "Max recalcitrant (gC/gM/d)" category: "Microbe population" var: max_T_recal init: 0.08;
 
@@ -1247,8 +1255,8 @@ experiment EnzymaticActivityWorkbench type: gui {
 		
 		Enzymes min_enzymes;
 		create Enzymes with: [
-			T_cellulolytic::min_T_cellulolytic #gram/#gram/#d,
-			T_amino::min_T_amino #gram/#gram/#d,
+			T_C::min_T_C #gram/#gram/#d,
+			T_N::min_T_N #gram/#gram/#d,
 			T_P::min_T_P #gram/#gram/#d,
 			T_recal::min_T_recal #gram/#gram/#d
 		] {
@@ -1256,8 +1264,8 @@ experiment EnzymaticActivityWorkbench type: gui {
 		}
 		Enzymes max_enzymes;
 		create Enzymes with: [
-			T_cellulolytic::max_T_cellulolytic #gram/#gram/#d,
-			T_amino::max_T_amino #gram/#gram/#d,
+			T_C::max_T_C #gram/#gram/#d,
+			T_N::max_T_N #gram/#gram/#d,
 			T_P::max_T_P #gram/#gram/#d,
 			T_recal::max_T_recal #gram/#gram/#d
 		] {
@@ -1340,8 +1348,8 @@ experiment EnzymaticActivityWorkbench type: gui {
 			float P_avail <- s.problem.decomposition_problem.P_avail_final(s.decomposition);
 			write "";
 			write "s: " + s;
-			write "T_cellylolytic: " + s.enzymes.T_cellulolytic / (#gram / #gram / #d);
-			write "T_amino: " + s.enzymes.T_amino / (#gram / #gram / #d);
+			write "T_cellylolytic: " + s.enzymes.T_C / (#gram / #gram / #d);
+			write "T_N: " + s.enzymes.T_N / (#gram / #gram / #d);
 			write "T_P: " + s.enzymes.T_P / (#gram / #gram / #d);
 			write "C/N: " + (N_avail > 0 ? C_avail / N_avail : 0.0);
 			write "C/P: " + (P_avail > 0 ? C_avail / P_avail : 0.0);
@@ -1350,14 +1358,14 @@ experiment EnzymaticActivityWorkbench type: gui {
 			write "e: " + E(s);
 						
 			ask s.decomposition {
-				write "X_C_cellulolytic: " + X_C_cellulolytic / #gram;
-				write "X_C_amino: " + X_C_amino / #gram;
-				write "X_N_amino: " + X_N_amino / #gram;
-				write "X_C_P: " + X_C_P / #gram;
-				write "X_P_labile_to_dom:" + X_P_labile_to_dom / #gram;
-				write "X_P_labile_to_dim: " + X_P_labile_to_dim / #gram;
-				write "X_C_recal: " + X_C_recal / #gram;
-				write "X_P_recal_to_dim:" + X_P_recal_to_dim / #gram;
+				write "X_C_eC: " + X_C_eC / #gram;
+				write "X_C_eN: " + X_C_eN / #gram;
+				write "X_N_eN: " + X_N_eN / #gram;
+				write "X_C_eP: " + X_C_eP / #gram;
+				write "X_P_eP_labile_to_dom:" + X_P_eP_labile_to_dom / #gram;
+				write "X_P_eP_labile_to_dim: " + X_P_eP_labile_to_dim / #gram;
+				write "X_C_eR: " + X_C_eR / #gram;
+				write "X_P_eR_recal_to_dim:" + X_P_eR_recal_to_dim / #gram;
 			}
 			exp.simulated_annealing <- self;
 		}
@@ -1386,13 +1394,13 @@ experiment EnzymaticActivityWorkbench type: gui {
 		}
 		display "Enzymatic rates" type:2d {
 			chart "Enzymatic rates" type:series style:line {
-				data "T_cellulolytic" value: sum(SimulatedAnnealing collect (each.s.enzymes.T_cellulolytic / (#gram / #gram / #d))) marker:false;
-				data "T_amino" value: sum(SimulatedAnnealing collect (each.s.enzymes.T_amino / (#gram / #gram / #d))) marker:false;
+				data "T_C" value: sum(SimulatedAnnealing collect (each.s.enzymes.T_C / (#gram / #gram / #d))) marker:false;
+				data "T_N" value: sum(SimulatedAnnealing collect (each.s.enzymes.T_N / (#gram / #gram / #d))) marker:false;
 				data "T_P" value: sum(SimulatedAnnealing collect (each.s.enzymes.T_P / (#gram / #gram / #d))) marker:false;
 				data "T_recal" value: sum(SimulatedAnnealing collect (each.s.enzymes.T_recal / (#gram / #gram / #d))) marker:false;
 				if show_max_rates {
-					data "T_cellulolytic (max)" value: problem != nil ? problem.max_enzymes.T_cellulolytic / (#gram / #gram / #d) : 0.0 marker:false;
-					data "T_amino (max)" value: problem != nil ? problem.max_enzymes.T_amino / (#gram / #gram / #d) : 0.0 marker:false;
+					data "T_C (max)" value: problem != nil ? problem.max_enzymes.T_C / (#gram / #gram / #d) : 0.0 marker:false;
+					data "T_N (max)" value: problem != nil ? problem.max_enzymes.T_N / (#gram / #gram / #d) : 0.0 marker:false;
 					data "T_P (max)" value: problem != nil ? problem.max_enzymes.T_P / (#gram / #gram / #d) : 0.0 marker:false;
 					data "T_recal (max)" value: problem != nil ? problem.max_enzymes.T_recal / (#gram / #gram / #d) : 0.0 marker:false;			
 				}

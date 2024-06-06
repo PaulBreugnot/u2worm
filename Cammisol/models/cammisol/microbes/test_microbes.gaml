@@ -144,15 +144,15 @@ experiment MicrobesTestBase {
 			
 			if enzymes_display = "Budget" {
 				enzymes_output[s] <- [
-					populations[s].enzymes.T_cellulolytic/(#gram/#gram/#h),
-					populations[s].enzymes.T_amino/(#gram/#gram/#h),
+					populations[s].enzymes.T_C/(#gram/#gram/#h),
+					populations[s].enzymes.T_N/(#gram/#gram/#h),
 					populations[s].enzymes.T_P/(#gram/#gram/#h),
 					populations[s].enzymes.T_recal/(#gram/#gram/#h)
 					];
 			} else if enzymes_display = "Absolute" {
 				enzymes_output[s] <- [
-					populations[s].enzymes.T_cellulolytic * C[s] * awake[s] / (#gram/#h),
-					populations[s].enzymes.T_amino * C[s] * awake[s] / (#gram/#h),
+					populations[s].enzymes.T_C * C[s] * awake[s] / (#gram/#h),
+					populations[s].enzymes.T_N * C[s] * awake[s] / (#gram/#h),
 					populations[s].enzymes.T_P * C[s] * awake[s] / (#gram/#h),
 					populations[s].enzymes.T_recal * C[s] * awake[s] / (#gram/#h)
 					];

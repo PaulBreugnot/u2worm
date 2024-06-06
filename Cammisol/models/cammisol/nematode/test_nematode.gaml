@@ -7,7 +7,8 @@
 
 model testnematode
 
-import "../cammisol_grid.gaml"
+import "../environment/grid.gaml"
+import "nematode.gaml"
 
 global {
 	int nematodes_count <- 1;

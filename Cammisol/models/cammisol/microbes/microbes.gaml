@@ -24,30 +24,30 @@ global {
 	float minimum_awake_rate_A <- 0.018;
 	float minimum_awake_rate_S <- 1.0;
 	
-	float min_T_cellulolytic_Y <- 0.0;
-	float min_T_amino_Y <- 0.0;
+	float min_T_C_Y <- 0.0;
+	float min_T_N_Y <- 0.0;
 	float min_T_P_Y <- 0.0;
 	float min_T_recal_Y <- 0.0;
-	float max_T_cellulolytic_Y <- 1 #gram / #gram / #d;
-	float max_T_amino_Y <- 0.2 #gram / #gram / #d;
+	float max_T_C_Y <- 1 #gram / #gram / #d;
+	float max_T_N_Y <- 0.2 #gram / #gram / #d;
 	float max_T_P_Y <- 0.04 #gram / #gram / #d;
 	float max_T_recal_Y <- 0.0;
 	
-	float min_T_cellulolytic_A <- 0.0;
-	float min_T_amino_A <- 0.0;
+	float min_T_C_A <- 0.0;
+	float min_T_N_A <- 0.0;
 	float min_T_P_A <- 0.0;
 	float min_T_recal_A <- 0.0;
-	float max_T_cellulolytic_A <- 5 #gram/ #gram / #d;
-	float max_T_amino_A <- 1 #gram / #gram / #d;
+	float max_T_C_A <- 5 #gram/ #gram / #d;
+	float max_T_N_A <- 1 #gram / #gram / #d;
 	float max_T_P_A <- 0.2 #gram / #gram / #d;
 	float max_T_recal_A <- 1 #gram / #gram / #d;
 	
-	float min_T_cellulolytic_S <- 0.1 #gram/ #gram / #d;
-	float min_T_amino_S <- 0.02 #gram/ #gram / #d;
+	float min_T_C_S <- 0.1 #gram/ #gram / #d;
+	float min_T_N_S <- 0.02 #gram/ #gram / #d;
 	float min_T_P_S <- 0.004 #gram/ #gram / #d;
 	float min_T_recal_S <- 0.0;
-	float max_T_cellulolytic_S <- 0.2 #gram/ #gram / #d;
-	float max_T_amino_S <- 0.04 #gram / #gram / #d;
+	float max_T_C_S <- 0.2 #gram/ #gram / #d;
+	float max_T_N_S <- 0.04 #gram / #gram / #d;
 	float max_T_P_S <- 0.008 #gram / #gram / #d;
 	float max_T_recal_S <- 0.0;
 	
@@ -61,8 +61,8 @@ global {
 	action init_enzymes {
 		create Enzymes with: [
 			name::"Min enzymes (Y)",
-			T_cellulolytic::min_T_cellulolytic_Y,
-			T_amino::min_T_amino_Y,
+			T_C::min_T_C_Y,
+			T_N::min_T_N_Y,
 			T_P::min_T_P_Y,
 			T_recal::min_T_recal_Y
 		] {
@@ -71,8 +71,8 @@ global {
 		
 		create Enzymes with: [
 			name::"Max enzymes (Y)",
-			T_cellulolytic::max_T_cellulolytic_Y,
-			T_amino::max_T_amino_Y,
+			T_C::max_T_C_Y,
+			T_N::max_T_N_Y,
 			T_P::max_T_P_Y,
 			T_recal::max_T_recal_Y
 		] {
@@ -81,8 +81,8 @@ global {
 		
 		create Enzymes with: [
 			name::"Min enzymes (A)",
-			T_cellulolytic::min_T_cellulolytic_A,
-			T_amino::min_T_amino_A,
+			T_C::min_T_C_A,
+			T_N::min_T_N_A,
 			T_P::min_T_P_A,
 			T_recal::min_T_recal_A
 		] {
@@ -91,8 +91,8 @@ global {
 		
 		create Enzymes with: [
 			name::"Max enzymes (A)",
-			T_cellulolytic::max_T_cellulolytic_A,
-			T_amino::max_T_amino_A,
+			T_C::max_T_C_A,
+			T_N::max_T_N_A,
 			T_P::max_T_P_A,
 			T_recal::max_T_recal_A
 		] {
@@ -101,8 +101,8 @@ global {
 		
 		create Enzymes with: [
 			name::"Min enzymes (S)",
-			T_cellulolytic::min_T_cellulolytic_S,
-			T_amino::min_T_amino_S,
+			T_C::min_T_C_S,
+			T_N::min_T_N_S,
 			T_P::min_T_P_S,
 			T_recal::min_T_recal_S
 		] {
@@ -111,8 +111,8 @@ global {
 		
 		create Enzymes with: [
 			name::"Max enzymes (S)",
-			T_cellulolytic::max_T_cellulolytic_S,
-			T_amino::max_T_amino_S,
+			T_C::max_T_C_S,
+			T_N::max_T_N_S,
 			T_P::max_T_P_S,
 			T_recal::max_T_recal_S
 		] {

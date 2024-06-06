@@ -98,8 +98,8 @@ global {
 			create Decomposition {
 				WeightedEnzymes weighted_enzymes;
 				create WeightedEnzymes with: [
-					T_cellulolytic::myself.enzymes.T_cellulolytic*myself.active_C,
-					T_amino::myself.enzymes.T_amino*myself.active_C,
+					T_C::myself.enzymes.T_C*myself.active_C,
+					T_N::myself.enzymes.T_N*myself.active_C,
 					T_P::myself.enzymes.T_P*myself.active_C,
 					T_recal::myself.enzymes.T_recal*myself.active_C
 				] {
@@ -111,14 +111,14 @@ global {
 				}
 				
 				output[species(myself)].T_r <- myself.enzymes.T_recal;
-				output[species(myself)].T_C <- myself.enzymes.T_cellulolytic;
-				output[species(myself)].T_N <- myself.enzymes.T_amino;
+				output[species(myself)].T_C <- myself.enzymes.T_C;
+				output[species(myself)].T_N <- myself.enzymes.T_N;
 				output[species(myself)].T_P <- myself.enzymes.T_P;
 				
-				output[species(myself)].X_C <- (X_C_cellulolytic + X_C_amino + X_C_P)/#gram;
-				output[species(myself)].X_N <- X_N_amino/#gram;
-				output[species(myself)].X_P <- (X_P_labile_to_dom + X_P_labile_to_dim)/#gram;
-				output[species(myself)].X_recal <- X_C_recal/#gram;
+				output[species(myself)].X_C <- (X_C_eC + X_C_eN + X_C_eP)/#gram;
+				output[species(myself)].X_N <- X_N_eN/#gram;
+				output[species(myself)].X_P <- (X_P_eP_labile_to_dom + X_P_eP_labile_to_dim)/#gram;
+				output[species(myself)].X_recal <- X_C_eR/#gram;
 				
 				float C_avail; float N_avail; float P_avail;
 				ask decomposition_problem {
@@ -127,15 +127,15 @@ global {
 					P_avail <- P_avail_final(myself);
 				}
 				
-				output[species(myself)].C_recal <- (world.C_recalcitrant - X_C_recal)/#gram;
+				output[species(myself)].C_recal <- (world.C_recalcitrant - X_C_eR)/#gram;
 				
-				output[species(myself)].C_labile <- (world.C_labile + X_C_recal - (X_C_cellulolytic + X_C_amino + X_C_P))/#gram;
-				output[species(myself)].N_labile <- (world.C_labile/world.CN_labile + X_N_recal - X_N_amino)/#gram;
-				output[species(myself)].P_labile <- (world.C_labile/world.CP_labile + X_P_recal_to_labile - X_P_labile_to_dom - X_P_labile_to_dim)/#gram;
+				output[species(myself)].C_labile <- (world.C_labile + X_C_eR - (X_C_eC + X_C_eN + X_C_eP))/#gram;
+				output[species(myself)].N_labile <- (world.C_labile/world.CN_labile + X_N_eR - X_N_eN)/#gram;
+				output[species(myself)].P_labile <- (world.C_labile/world.CP_labile + X_P_eR_recal_to_labile - X_P_eP_labile_to_dom - X_P_eP_labile_to_dim)/#gram;
 				
-				output[species(myself)].C_avail <- (world.C_dom + X_C_cellulolytic + X_C_amino + X_C_P)/#gram;
-				output[species(myself)].N_avail <- (world.C_dom/world.CN_dom + X_N_amino)/#gram;
-				output[species(myself)].P_avail <- (world.C_dom/world.CP_dom + X_P_labile_to_dom + X_P_labile_to_dim + X_P_recal_to_dim)/#gram;
+				output[species(myself)].C_avail <- (world.C_dom + X_C_eC + X_C_eN + X_C_eP)/#gram;
+				output[species(myself)].N_avail <- (world.C_dom/world.CN_dom + X_N_eN)/#gram;
+				output[species(myself)].P_avail <- (world.C_dom/world.CP_dom + X_P_eP_labile_to_dom + X_P_eP_labile_to_dim + X_P_eR_recal_to_dim)/#gram;
 				
 				ask weighted_enzymes {
 					do die;
@@ -156,8 +156,8 @@ global {
 		ask Y_Strategist + A_Strategist + S_Strategist {
 			int current_index <- data_index[species(self)];
 			data[current_index] <- self.enzymes.T_recal/(#gram/#gram/#d);
-			data[current_index+1] <- self.enzymes.T_cellulolytic/(#gram/#gram/#d);
-			data[current_index+2] <- self.enzymes.T_amino/(#gram/#gram/#d);
+			data[current_index+1] <- self.enzymes.T_C/(#gram/#gram/#d);
+			data[current_index+2] <- self.enzymes.T_N/(#gram/#gram/#d);
 			data[current_index+3] <- self.enzymes.T_P/(#gram/#gram/#d);
 
 			data[current_index+4] <- myself.output[species(self)].X_C;
@@ -308,45 +308,45 @@ experiment Explore {
 		loop s over: [Y_Strategist, A_Strategist, S_Strategist] {
 			add "Requested C/N (" + labels[s] + ")" to: header;
 			add "Requested C/P (" + labels[s] + ")" to: header;
-			add "Min T_cellulolytic (" + labels[s] + ")" to: header;
-			add "Min T_amino (" + labels[s] + ")" to: header;
+			add "Min T_C (" + labels[s] + ")" to: header;
+			add "Min T_N (" + labels[s] + ")" to: header;
 			add "Min T_P (" + labels[s] + ")" to: header;
 			add "Min T_recal (" + labels[s] + ")" to: header;
-			add "Max T_cellulolytic (" + labels[s] + ")" to: header;
-			add "Max T_amino (" + labels[s] + ")" to: header;
+			add "Max T_C (" + labels[s] + ")" to: header;
+			add "Max T_N (" + labels[s] + ")" to: header;
 			add "Max T_P (" + labels[s] + ")" to: header;
 			add "Max T_recal (" + labels[s] + ")" to: header;
 		}
 		add microbes_CN / carbon_use_efficiency_Y to: config;
 		add microbes_CP / carbon_use_efficiency_Y to: config;
-		add min_T_cellulolytic_Y/(#gram/#gram/#d) to: config;
-		add min_T_amino_Y/(#gram/#gram/#d) to: config;
+		add min_T_C_Y/(#gram/#gram/#d) to: config;
+		add min_T_N_Y/(#gram/#gram/#d) to: config;
 		add min_T_P_Y/(#gram/#gram/#d) to: config;
 		add min_T_recal_Y/(#gram/#gram/#d) to: config;
-		add max_T_cellulolytic_Y/(#gram/#gram/#d) to: config;
-		add max_T_amino_Y/(#gram/#gram/#d) to: config;
+		add max_T_C_Y/(#gram/#gram/#d) to: config;
+		add max_T_N_Y/(#gram/#gram/#d) to: config;
 		add max_T_P_Y/(#gram/#gram/#d) to: config;
 		add max_T_recal_Y/(#gram/#gram/#d) to: config;
 		
 		add microbes_CN / carbon_use_efficiency_A to: config;
 		add microbes_CP / carbon_use_efficiency_A to: config;
-		add min_T_cellulolytic_A/(#gram/#gram/#d) to: config;
-		add min_T_amino_A/(#gram/#gram/#d) to: config;
+		add min_T_C_A/(#gram/#gram/#d) to: config;
+		add min_T_N_A/(#gram/#gram/#d) to: config;
 		add min_T_P_A/(#gram/#gram/#d) to: config;
 		add min_T_recal_A/(#gram/#gram/#d) to: config;
-		add max_T_cellulolytic_A/(#gram/#gram/#d) to: config;
-		add max_T_amino_A/(#gram/#gram/#d) to: config;
+		add max_T_C_A/(#gram/#gram/#d) to: config;
+		add max_T_N_A/(#gram/#gram/#d) to: config;
 		add max_T_P_A/(#gram/#gram/#d) to: config;
 		add max_T_recal_A/(#gram/#gram/#d) to: config;
 		
 		add microbes_CN / carbon_use_efficiency_S to: config;
 		add microbes_CP / carbon_use_efficiency_S to: config;
-		add min_T_cellulolytic_S/(#gram/#gram/#d) to: config;
-		add min_T_amino_S/(#gram/#gram/#d) to: config;
+		add min_T_C_S/(#gram/#gram/#d) to: config;
+		add min_T_N_S/(#gram/#gram/#d) to: config;
 		add min_T_P_S/(#gram/#gram/#d) to: config;
 		add min_T_recal_S/(#gram/#gram/#d) to: config;
-		add max_T_cellulolytic_S/(#gram/#gram/#d) to: config;
-		add max_T_amino_S/(#gram/#gram/#d) to: config;
+		add max_T_C_S/(#gram/#gram/#d) to: config;
+		add max_T_N_S/(#gram/#gram/#d) to: config;
 		add max_T_P_S/(#gram/#gram/#d) to: config;
 		add max_T_recal_S/(#gram/#gram/#d) to: config;
 			
@@ -362,8 +362,8 @@ experiment Explore {
 		loop strategy over: ["Y", "A", "S"] {
 			header <- header + [
 				"T recal (" + strategy + ")",
-				"T cellulolytic (" + strategy + ")",
-				"T amino (" + strategy + ")",
+				"T C (" + strategy + ")",
+				"T N (" + strategy + ")",
 				"T P (" + strategy + ")",
 				"X C (" + strategy + ")",
 				"X N (" + strategy + ")",
@@ -415,8 +415,8 @@ experiment Explore {
 			chart "Enzymatic activity (Y)" type:xy x_label: x_label() y_label: "Enzymatic activity (gC/gM/d)" {
 				if exp_enable_Y_strategist {
 					data "T_P" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[Y_Strategist].T_P / (#gram / #gram / #d)))};
-					data "T_cellulolytic" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[Y_Strategist].T_C / (#gram / #gram / #d)))};
-					data "T_amino" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[Y_Strategist].T_N / (#gram / #gram / #d)))};
+					data "T_C" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[Y_Strategist].T_C / (#gram / #gram / #d)))};
+					data "T_N" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[Y_Strategist].T_N / (#gram / #gram / #d)))};
 					data "T_recal" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[Y_Strategist].T_r / (#gram / #gram / #d)))};
 				}
 			}
@@ -426,8 +426,8 @@ experiment Explore {
 			chart "Enzymatic activity (A)" type:xy x_label: x_label() y_label: "Enzymatic activity (gC/gM/d)" {
 				if exp_enable_A_strategist {
 					data "T_P" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[A_Strategist].T_P / (#gram / #gram / #d)))};
-					data "T_cellulolytic" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[A_Strategist].T_C / (#gram / #gram / #d)))};
-					data "T_amino" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[A_Strategist].T_N / (#gram / #gram / #d)))};
+					data "T_C" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[A_Strategist].T_C / (#gram / #gram / #d)))};
+					data "T_N" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[A_Strategist].T_N / (#gram / #gram / #d)))};
 					data "T_recal" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[A_Strategist].T_r / (#gram / #gram / #d)))};
 				}
 			}
@@ -437,8 +437,8 @@ experiment Explore {
 			chart "Enzymatic activity (S)" type:xy x_label: x_label() y_label: "Enzymatic activity (gC/gM/d)" {
 				if exp_enable_S_strategist {
 					data "T_P" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[S_Strategist].T_P / (#gram / #gram / #d)))};
-					data "T_cellulolytic" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[S_Strategist].T_C / (#gram / #gram / #d)))};
-					data "T_amino" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[S_Strategist].T_N / (#gram / #gram / #d)))};
+					data "T_C" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[S_Strategist].T_C / (#gram / #gram / #d)))};
+					data "T_N" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[S_Strategist].T_N / (#gram / #gram / #d)))};
 					data "T_recal" value: {mean(simulations collect each.param_getter.param_value()), mean(simulations collect (each.output[S_Strategist].T_r / (#gram / #gram / #d)))};
 				}
 			}
