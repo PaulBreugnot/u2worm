@@ -29,7 +29,7 @@ The [Cammisol wiki](https://github.com/u2worm/cammisol/wiki) provides informatio
 
 #Camisol model
 
-The `camisol` experiment of the `camisol/camisol.gaml` model allows to explore outputs of the model with default parameters.
+The `cammisol` experiment of the `cammisol/cammisol.gaml` model allows to explore outputs of the model with default parameters.
 
 Model parameters are dispatched in the global scope of model files.
 
@@ -37,4 +37,4 @@ Model parameters are dispatched in the global scope of model files.
 
 The participative version of the Camisol application can be launched from the `application.gaml` model, using the `application` experiment.
 
-Notice that the participative version calls several instances of the standalone `camisol` model (one per plot).
+Notice that the participative version calls several instances of the standalone `cammisol` model (one per plot).
