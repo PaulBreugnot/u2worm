@@ -165,15 +165,15 @@ experiment base_cammisol_output {
 	
 	parameter "Dividing time (Y)" category: "Y Strategists" var:dividing_time_Y;
 	parameter "CUE (Y)" category: "Y Strategists" var:carbon_use_efficiency_Y;
-	parameter "Minimum awake rate (Y)" category: "Y Strategists" var:minimum_awake_rate_Y;
+	parameter "Minimum active rate (Y)" category: "Y Strategists" var:minimum_active_rate_Y;
 	
 	parameter "Dividing time (A)" category: "A Strategists" var:dividing_time_A;
 	parameter "CUE (A)" category: "A Strategists" var:carbon_use_efficiency_A;
-	parameter "Minimum awake rate (A)" category: "A Strategists" var:minimum_awake_rate_A;
+	parameter "Minimum active rate (A)" category: "A Strategists" var:minimum_active_rate_A;
 	
 	parameter "Dividing time (S)" category: "S Strategists" var:dividing_time_S;
 	parameter "CUE (S)" category: "S Strategists" var:carbon_use_efficiency_S;
-	parameter "Minimum awake rate (S)" category: "S Strategists" var:minimum_awake_rate_S;
+	parameter "Minimum active rate (S)" category: "S Strategists" var:minimum_active_rate_S;
 	
 	reflex update_particle_color {
 		float max_population <- 0.0;
@@ -201,9 +201,9 @@ experiment base_cammisol_output {
 		display "Awoken population" type: java2D {
 			chart "Awoken population" type: series {
 				if (length(PoreParticle) > 0) {
-					data "Y awake (%)" value: sum(Y_Strategist collect (each.awake_population))/length(Y_Strategist) * 100 style:spline color: #red marker:false thickness:3;
-					data "A awake (%)" value: sum(A_Strategist collect (each.awake_population))/length(A_Strategist) * 100 style:spline color: #green marker:false thickness:3;
-					data "S awake (%)" value: sum(S_Strategist collect (each.awake_population))/length(S_Strategist) * 100 style:spline color: #blue marker:false thickness:3;
+					data "Y awake (%)" value: sum(Y_Strategist collect (each.active_rate))/length(Y_Strategist) * 100 style:spline color: #red marker:false thickness:3;
+					data "A awake (%)" value: sum(A_Strategist collect (each.active_rate))/length(A_Strategist) * 100 style:spline color: #green marker:false thickness:3;
+					data "S awake (%)" value: sum(S_Strategist collect (each.active_rate))/length(S_Strategist) * 100 style:spline color: #blue marker:false thickness:3;
 				}
 				if(nematodes_count > 0) {
 					data "Nematode awake (%)" value: (sum(Nematode collect (each.awake as int)) / length(Nematode)) * 100 style:spline color: #yellow marker:false thickness:3;				

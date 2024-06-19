@@ -1,14 +1,18 @@
 /**
 * Name: microbes
-* Based on the internal empty template. 
-* Author: pbreugno
-* Tags: 
+* Author: Paul Breugnot
+* 
+* Instantiation of Y-A-S Strategists as microbe populations.
 */
 
 model microbes
 
 import "../environment/pore_particle.gaml"
 
+/**
+ * Parameter specialization for Y-A-S strategies. See the documentation of the
+ * microbe_population module for the meaning of each parameter.
+ */
 global {
 	list<species<MicrobePopulation>> bacteria_types <- [Y_Strategist, A_Strategist, S_Strategist];
 
@@ -20,9 +24,9 @@ global {
 	float carbon_use_efficiency_A <- 0.3;
 	float carbon_use_efficiency_S <- 0.5;
 	
-	float minimum_awake_rate_Y <- 0.002;
-	float minimum_awake_rate_A <- 0.018;
-	float minimum_awake_rate_S <- 1.0;
+	float minimum_active_rate_Y <- 0.002;
+	float minimum_active_rate_A <- 0.018;
+	float minimum_active_rate_S <- 1.0;
 	
 	float min_T_C_Y <- 0.0;
 	float min_T_N_Y <- 0.0;
@@ -58,6 +62,9 @@ global {
 	Enzymes min_enzymes_S;
 	Enzymes max_enzymes_S;
 	
+	/**
+	 * This method must be called from the main global method to allow the usage of Y-A-S_Strategists.
+	 */
 	action init_enzymes {
 		create Enzymes with: [
 			name::"Min enzymes (Y)",
@@ -120,12 +127,18 @@ global {
 		}	
 	}
 }
-
+/**
+ * Y strategists (Yield) can decompose labile OM, but not recalcitrant OM, as
+ * they invest most of their metabolism in growth rather than in complex
+ * enzymatic systems. While enough nutrients are available, they grow rapidly
+ * and exponentially. But once not enough nutrients are available, they rapidly
+ * go dormant (sporulation).
+ */
 species Y_Strategist parent:MicrobePopulation schedules:[] {
 	init {
 		dividing_time <- dividing_time_Y;
 		carbon_use_efficiency <- carbon_use_efficiency_Y;
-		minimum_awake_rate <- minimum_awake_rate_Y;
+		minimum_active_rate <- minimum_active_rate_Y;
 		
 		cytosol_mineralization_rate <- 1.0;
 		
@@ -133,11 +146,19 @@ species Y_Strategist parent:MicrobePopulation schedules:[] {
 		max_enzymes <- max_enzymes_Y;
 	}
 }
+
+/**
+ * A stategists (resource Acquisition) grow slowly than Y strategists, to invest
+ * more of their metabolism in enzymatic systems. In consequence, if not enough
+ * labile OM is available, they have the ability to also decompose recalcitrant
+ * OM, but only if it is necessary. They also go dormant once not enough
+ * nutrients are available.
+ */
 species A_Strategist parent:MicrobePopulation schedules:[] {
 	init {
 		dividing_time <- dividing_time_A;
 		carbon_use_efficiency <- carbon_use_efficiency_A;
-		minimum_awake_rate <- minimum_awake_rate_A;
+		minimum_active_rate <- minimum_active_rate_A;
 		
 		cytosol_mineralization_rate <- 0.0;
 		
@@ -146,11 +167,22 @@ species A_Strategist parent:MicrobePopulation schedules:[] {
 	}
 }
 
+/**
+ * S strategists (Stress tolerant) have a very slow metabolism to survive in
+ * poor environments. In order to limit the energy requirement of their
+ * metabolism, they do not have the ability to produce complex enzymes as it
+ * would require complex genomes that are costly to maintain: they can decompose
+ * simple labile compounds, but not recalcitrant OM. For the same reason, they
+ * do not have much adaptation capacity to the environment: they survive in any
+ * circumstance and never go dormant, but they have a limited capacity to adapt
+ * to the environment. In consequence, they will never grow rapidly, even if
+ * lots of nutrients are available.
+ */
 species S_Strategist parent:MicrobePopulation schedules:[] {
 	init {
 		dividing_time <- dividing_time_S;
 		carbon_use_efficiency <- carbon_use_efficiency_S;
-		minimum_awake_rate <- minimum_awake_rate_S;
+		minimum_active_rate <- minimum_active_rate_S;
 
 		cytosol_mineralization_rate <- 0.0;
 		

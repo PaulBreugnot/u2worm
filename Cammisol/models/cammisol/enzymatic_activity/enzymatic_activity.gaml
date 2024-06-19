@@ -1,27 +1,27 @@
 /**
 * Name: enzymes
-* Based on the internal skeleton template. 
-* Author: pbreugno
-* Tags: 
+* Author: Paul Breugnot
+* 
+* Implementation of the buzy-pop model.
 */
 
 model enzyme_activity
 
 global {
 	/**
-	 * Index of the budget allocated to the cellulolytic action.
+	 * Index of the budget allocated to C extraction.
 	 */
 	int T_C_BUDGET <- 0;
 	/**
-	 * Index of the budget allocated to the amino acid production action.
+	 * Index of the budget allocated to N extraction.
 	 */
 	int T_N_BUDGET <- 1;
 	/**
-	 * Index of the budget allocated to the P mineralisation action.
+	 * Index of the budget allocated to P extraction.
 	 */
 	int T_P_BUDGET <- 2;
 	/**
-	 * Index of the budget allocated to the recalcitrant cleavage action.
+	 * Index of the budget allocated to recalcitrant cleavage.
 	 */
 	int T_RECALCITRANT_BUDGET <- 3;
 }
@@ -32,7 +32,7 @@ global {
 species Enzymes schedules: [] {
 	/**
 	 * Decomposition of sugars and carboxylic acids by endocleaving
-	 * (depolymerisation) or exocleaving. Produces "pure" C (H, O and elements
+	 * (depolymerization) or exocleaving. Produces "pure" C (H, O and elements
 	 * other that C, N and P are not represented in the model). (C extraction)
 	 */
 	float T_C <- 0.0#gram/#gram/#d;
@@ -42,7 +42,7 @@ species Enzymes schedules: [] {
 	 */
 	float T_N <- 0.0#gram/#gram/#d;
 	/**
-	 * Mineralisation of P. (P extraction)
+	 * Mineralization of P. (P extraction)
 	 */
 	float T_P <- 0.0#gram/#gram/#d;
 	/**
@@ -126,7 +126,7 @@ species Decomposition schedules: [] {
  *
  * It is notably used to estimate the quality of an enzymatic budget allocation
  * in the EnzymaticActivityProblem, but also standalone to compute the
- * decomposition of organic particles at each time step, without optimisation.
+ * decomposition of organic particles at each time step, without optimization.
  */
 species DecompositionProblem schedules: [] {
 	/**
@@ -183,8 +183,10 @@ species DecompositionProblem schedules: [] {
 	float P_DIM_init;
 	
 	/**
-	 * Fixed CN rates of amino acids.
-	 * Represent the distribution of amino acids.
+	 * Fixed C:N rate of matter produced by the N extraction action.
+	 * 
+	 * Represents the distribution of amino acids and N-acetyl glucosamine in
+	 * the substrate.
 	 */
 	float extracted_CN <- 5.0;
 
@@ -195,32 +197,30 @@ species DecompositionProblem schedules: [] {
 	float alpha_P_e_r <- 1e-3;
 
 	/**
-	 * Rate of organic C sent from labile to DOM among the C decomposed by the P
-	 * mineralisation.
+	 * Rate of organic C sent from labile to DOM among the C decomposed by P
+	 * extraction.
 	 */
 	float alpha_C_e_P <- 0.1;
 
 	/**
-	 * Rate of organic P sent from labile to DIM among the P decomposed by the P
-	 * mineralisation.
+	 * Rate of organic P sent from labile to DIM among the P decomposed by P
+	 * extraction.
 	 */
 	float alpha_P_e_P <- 0.9;
 
 	/**
-	 * Rate of C decomposed by the cellulolytic action if only the cellulolytic
-	 * and amino actions request all the labile C.
+	 * Rate of C decomposed by C extraction if only C and N extractions request
+	 * all the labile C.
 	 */
 	float beta_C_N <- 0.5;
-
 	/**
-	 * Rate of C decomposed by the cellulolytic action if only the cellulolytic
-	 * and P mineralisation actions request all the labile C.
+	 * Rate of C decomposed by C extraction if only C and P extractions request
+	 * all the labile C.
 	 */
 	float beta_C_P <- 0.5;
-
 	/**
-	 * Rate of C decomposed by the amino action if only the amino and P
-	 * mineralisation actions request all the labile C.
+	 * Rate of C decomposed by N extraction if only N and P extractions request
+	 * all the labile C.
 	 */
 	float beta_N_P <- 0.5;
 
@@ -235,30 +235,30 @@ species DecompositionProblem schedules: [] {
 	}
 	
 	/**
-	 * Quantity of substrate that can be requested by the cellulolytic action.
+	 * Quantity of substrate that can be requested by C extraction.
 	 * 
 	 * It is expressed as a quantity of labile C.
 	 */
-	float cellulolytic_substrate {
+	float C_extraction_substrate {
 		return C_labile_init;
 	}
 	
 	/**
-	 * Quantity of substrate that can be requested by the amino acid production
-	 * action.
+	 * Quantity of substrate that can be requested by N extraction.
 	 * 
-	 * It is expressed as a quantity of labile C included in amino acids.
+	 * It is expressed as a quantity of labile C included in polypeptides and
+	 * chitin (amino acids and N-acetyl glucosamine based molecules).
 	 */
-	float amino_substrate {
+	float N_extraction_substrate {
 		return min(C_labile_init, N_labile_init * extracted_CN);
 	}
 	
 	/**
-	 * Quantity of substrate that can be requested by the P mineralisation action.
+	 * Quantity of substrate that can be requested by P extraction.
 	 * 
 	 * It is expressed as a quantity of labile P.
 	 */
-	float P_substrate {
+	float P_extraction_substrate {
 		return P_labile_init;
 	}
 	
@@ -273,34 +273,34 @@ species DecompositionProblem schedules: [] {
 	}
 	
 	/**
-	 * Quantity of carbon requested by the cellulolytic action.
+	 * Quantity of carbon requested by C extraction.
 	 */
-	float d_C_cellulolytic(WeightedEnzymes enzymes) {
+	float d_C_extraction(WeightedEnzymes enzymes) {
 		return min(
 					dt * enzymes.T_C,
-					cellulolytic_substrate()
+					C_extraction_substrate()
 				);
 	}
 	
 	/**
-	 * Quantity of carbon requested by the amino acid production action.
+	 * Quantity of carbon requested by N extraction.
 	 */
-	float d_C_amino(WeightedEnzymes enzymes) {
+	float d_N_extraction(WeightedEnzymes enzymes) {
 		return min(
 			dt * enzymes.T_N,
-			amino_substrate()
+			N_extraction_substrate()
 		);
 	}
 	
 	/**
-	 * Quantity of carbon requested by the P mineralisation action.
+	 * Quantity of carbon requested by P extraction.
 	 */
 	float d_C_P(WeightedEnzymes enzymes) {
 		float result <- 0.0;
 		if(P_labile_init > 0.0) {
 			float P_attacked <- min(
 						dt * enzymes.T_P,
-						P_substrate()
+						P_extraction_substrate()
 					);
 			result <- P_attacked * C_labile_init / P_labile_init;
 		}
@@ -430,21 +430,21 @@ species DecompositionProblem schedules: [] {
 	) {
 		if(C_labile_init > 0) {
 			// Requested labile C by each action
-			float d_C_cellulolytic <- d_C_cellulolytic(enzymes);
+			float d_C_extraction <- d_C_extraction(enzymes);
 			float d_C_P <- d_C_P(enzymes);
-			float d_C_amino <- d_C_amino(enzymes);
+			float d_N_extraction <- d_N_extraction(enzymes);
 
-			result.X_C_eC <- d_C_cellulolytic
-				- beta_C_N * d_C_amino * d_C_cellulolytic / C_labile_init
-				- beta_C_P * d_C_P * d_C_cellulolytic / C_labile_init;
+			result.X_C_eC <- d_C_extraction
+				- beta_C_N * d_N_extraction * d_C_extraction / C_labile_init
+				- beta_C_P * d_C_P * d_C_extraction / C_labile_init;
 
-			result.X_C_eN <- d_C_amino
-				- (1-beta_C_N) * d_C_amino * d_C_cellulolytic / C_labile_init
-				- beta_N_P * d_C_amino * d_C_P / C_labile_init;
+			result.X_C_eN <- d_N_extraction
+				- (1-beta_C_N) * d_N_extraction * d_C_extraction / C_labile_init
+				- beta_N_P * d_N_extraction * d_C_P / C_labile_init;
 
 			float D_C_P <- d_C_P
-				- (1-beta_C_P) * d_C_P * d_C_cellulolytic / C_labile_init
-				- (1-beta_N_P) * d_C_amino * d_C_P / C_labile_init;
+				- (1-beta_C_P) * d_C_P * d_C_extraction / C_labile_init
+				- (1-beta_N_P) * d_N_extraction * d_C_P / C_labile_init;
 
 			result.X_N_eN <- result.X_C_eN / extracted_CN;
 			if(P_labile_init > 0) {
@@ -496,7 +496,7 @@ species DecompositionProblem schedules: [] {
 }
 
 /**
- * Represents the state of the problem optimised by the simulated annealing
+ * Represents the state of the problem optimized by the simulated annealing
  * algorithm.
  */
 species SimulatedAnnealingState schedules: [] {
@@ -615,16 +615,16 @@ species EnzymaticActivityProblem schedules: [] {
 	float X_C_labile_max;
 	
 	/**
-	 * Estimation of the maximum quantity of available C that can be produced
-	 * by the cellulolytic, amino acid production and P mineralisation actions.
+	 * Estimation of the maximum quantity of available C that can be produced by
+	 * C, N and P extraction actions.
 	 * 
 	 * The value is computed by the update_X_C_dam_max() method.
 	 */
 	float X_C_dam_max;
 	
 	/**
-	 * Estimation of the maximum quantity of available N that can be produced
-	 * by the amino acid production action.
+	 * Estimation of the maximum quantity of available N that can be produced by
+	 * N extraction.
 	 * 
 	 * The value is computed by the update_X_N_dam_max() method.
 	 */
@@ -632,7 +632,7 @@ species EnzymaticActivityProblem schedules: [] {
 	
 	/**
 	 * Estimation of the maximum quantity of available P that can be produced
-	 * by the recalcitrant cleavage and P mineralisation actions.
+	 * by the recalcitrant cleavage and P extraction actions.
 	 * 
 	 * The value is computed by the update_X_P_dam_max() method.
 	 */
@@ -657,15 +657,15 @@ species EnzymaticActivityProblem schedules: [] {
 		] {
 			// The current weighted enzymes is impossible in terms of budget, but it is a way
 			// to easily compute each d_* max since:
-			// - the maximum of d_C_cellulolytic is only computed from the max_enzymes.T_C (assuming other T_* = 0)
-			// - the maximum of d_C_amino is only computed from the max_enzymes.T_N (assuming other T_* = 0)
+			// - the maximum of d_C_extraction is only computed from the max_enzymes.T_C (assuming other T_* = 0)
+			// - the maximum of d_N_extraction is only computed from the max_enzymes.T_N (assuming other T_* = 0)
 			// - ... idem form d_C_P
 			enzymes <- self;
 		}
 		ask decomposition_problem {
 			myself.X_C_dam_max <- max(
-				d_C_cellulolytic(enzymes),
-				d_C_amino(enzymes),
+				d_C_extraction(enzymes),
+				d_N_extraction(enzymes),
 				alpha_C_e_P * d_C_P(enzymes)
 			);
 		}
@@ -682,7 +682,7 @@ species EnzymaticActivityProblem schedules: [] {
 			enzymes <- self;
 		}
 		ask decomposition_problem {
-			myself.X_N_dam_max <- d_C_amino(enzymes) / extracted_CN;
+			myself.X_N_dam_max <- d_N_extraction(enzymes) / extracted_CN;
 		}
 		ask enzymes {
 			do die;
@@ -750,8 +750,8 @@ species SimulatedAnnealing schedules: [] {
 	list<float> init_budget;
 
 	/**
-	 * Indexes of actions used in the optimisation (when the enzymatic activity
-	 * of an action is fixed, it is ignored in the optimisation process).
+	 * Indexes of actions used in the optimization (when the enzymatic activity
+	 * of an action is fixed, it is ignored in the optimization process).
 	 */
 	list<int> budget_indexes;
 	
@@ -880,7 +880,7 @@ species SimulatedAnnealing schedules: [] {
 }
 
 /**
- * Objective that is minimised when the available CN rate is exactly equal to
+ * Objective that is minimized when the available CN rate is exactly equal to
  * the requested CN rate.
  */
 species ExactCN parent: Objective schedules: [] {
@@ -900,7 +900,7 @@ species ExactCN parent: Objective schedules: [] {
 }
 
 /**
- * Objective that is minimised when the available CN rate is at most equal to
+ * Objective that is minimized when the available CN rate is at most equal to
  * the requested CN rate.
  */
 species MaxCN parent: Objective schedules: [] {
@@ -921,7 +921,7 @@ species MaxCN parent: Objective schedules: [] {
 }
 
 /**
- * Objective that is minimised when the available CP rate is exactly equal to
+ * Objective that is minimized when the available CP rate is exactly equal to
  * the requested CP rate.
  */
 species ExactCP parent: Objective schedules: [] {
@@ -941,7 +941,7 @@ species ExactCP parent: Objective schedules: [] {
 }
 
 /**
- * Objective that is minimised when the available CP rate is at most equal to
+ * Objective that is minimized when the available CP rate is at most equal to
  * the requested CP rate.
  */
 species MaxCP parent: Objective schedules: [] {
@@ -962,7 +962,7 @@ species MaxCP parent: Objective schedules: [] {
 }
 
 /**
- * Objective minimised when the quantity of produced labile C is maximised.
+ * Objective minimized when the quantity of produced labile C is maximized.
  * 
  * Labile C is notably produced from recalcitrant cleavage action.
  */
@@ -983,9 +983,9 @@ species MaxLabileC parent: Objective schedules: [] {
 }
 
 /**
- * Objective minimised when the quantity of produced available C is maximised.
+ * Objective minimized when the quantity of produced available C is maximized.
  * 
- * Available C is produced from the cellulolytic, amino acid production and P mineralisation actions.
+ * Available C is produced from the C, N and P extraction actions.
  */
 species MaxC parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
@@ -1004,9 +1004,9 @@ species MaxC parent: Objective schedules: [] {
 }
 
 /**
- * Objective minimised when the quantity of produced available P is maximised.
+ * Objective minimized when the quantity of produced available P is maximized.
  * 
- * Available P is produced from the P mineralisation action.
+ * Available P is produced from the P extraction.
  */
 species MaxP parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
@@ -1025,9 +1025,9 @@ species MaxP parent: Objective schedules: [] {
 }
 
 /**
- * Objective minimised when the quantity of produced available N is maximised.
+ * Objective minimized when the quantity of produced available N is maximized.
  * 
- * Available N is produced from the amino acid production action.
+ * Available N is produced from N extraction.
  */
 species MaxN parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {

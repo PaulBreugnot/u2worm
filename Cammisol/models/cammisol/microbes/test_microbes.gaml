@@ -140,7 +140,7 @@ experiment MicrobesTestBase {
 			P_cytosol[s] <- populations[s].cytosol_P;
 			N[s] <- populations[s].N;
 			P[s] <- populations[s].P;
-			awake[s] <- populations[s].awake_population;
+			awake[s] <- populations[s].active_rate;
 			
 			if enzymes_display = "Budget" {
 				enzymes_output[s] <- [
@@ -530,9 +530,9 @@ experiment MicrobesDormancy parent:IndividualMicrobesGrowth {
 			dam.dom[0] <- population.requested_N;
 			dam.dom[1] <- population.requested_P;
 		} else if local_time > (phase_2_duration + phase_1_duration) {
-			dam.dom[2] <- population.requested_C / population.awake_population;
-			dam.dom[0] <- population.requested_N / population.awake_population;
-			dam.dom[1] <- population.requested_P / population.awake_population;
+			dam.dom[2] <- population.requested_C / population.active_rate;
+			dam.dom[0] <- population.requested_N / population.active_rate;
+			dam.dom[1] <- population.requested_P / population.active_rate;
 		}
 	}
 }

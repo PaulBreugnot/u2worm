@@ -1,7 +1,13 @@
 /**
- * The purpose of this model is to explore the reactions of the enzymatic activity in different scenarios, that correspond to different environmental conditions.
+ * Name: enzymatic_activity/exploration
+ * Author: Paul Breugnot
  * 
- * It a standalone and experiment only model that does not add any feature to the cammisol or enzymatic activity models.
+ * The purpose of this model is to explore the reactions of the enzymatic
+ * activity in different scenarios, that correspond to different environmental
+ * conditions.
+ * 
+ * It is a standalone experiment only model that does not add any feature to
+ * the cammisol or enzymatic activity models.
  */
 
 model enzymatic_activity_exploration
@@ -77,7 +83,7 @@ global {
 		loop s over:populations {
 			create s with: [
 				C: 1#gram,
-				awake_population: 1.0
+				active_rate: 1.0
 			] {
 				do update;
 			}

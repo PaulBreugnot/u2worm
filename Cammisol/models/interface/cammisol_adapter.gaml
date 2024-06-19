@@ -246,9 +246,9 @@ experiment TestCamisolWithFertilizer {
 		
 		display "awake population" type: java2D {
 			chart "awake population" type: series {
-				data "CopioR awake %" value: (sum(Copiotrophe_R collect (each.awake_population)) / length(Copiotrophe_R)) * 100 style:spline color: #red marker:false thickness: 3.0;
-				data "CopioK awake %" value: (sum(Copiotrophe_K collect (each.awake_population)) / length(Copiotrophe_K)) * 100 style:spline color: #green marker:false thickness: 3.0;
-				data "Oligo awake %" value: (sum(Oligotrophe_K collect (each.awake_population)) / length(Oligotrophe_K)) * 100 style:spline color: #blue marker:false thickness: 3.0;
+				data "CopioR awake %" value: (sum(Copiotrophe_R collect (each.active_rate)) / length(Copiotrophe_R)) * 100 style:spline color: #red marker:false thickness: 3.0;
+				data "CopioK awake %" value: (sum(Copiotrophe_K collect (each.active_rate)) / length(Copiotrophe_K)) * 100 style:spline color: #green marker:false thickness: 3.0;
+				data "Oligo awake %" value: (sum(Oligotrophe_K collect (each.active_rate)) / length(Oligotrophe_K)) * 100 style:spline color: #blue marker:false thickness: 3.0;
 				data "Nematode awake %" value: (sum(Nematode collect (each.awake as int)) / length(Nematode)) * 100 style:line color: #yellow marker:false thickness: 3.0;
 			}
 		}
