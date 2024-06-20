@@ -19,8 +19,8 @@ global {
 	// Enzyme objectives
 	MaxLabileC max_labile_C;
 	MaxC max_C;
-	MaxCN max_CN;
-	MaxCP max_CP;
+	CapCN max_CN;
+	CapCP max_CP;
 	
 	DecompositionProblem decomposition_problem;
 	EnzymaticActivityProblem enzymatic_activity_problem;
@@ -33,10 +33,10 @@ global {
 		create MaxC with: (weight: 5.0) {
 			max_C <- self;
 		}
-		create MaxCN with: (weight: 10.0) {
+		create CapCN with: (weight: 10.0) {
 			max_CN <- self;
 		}
-		create MaxCP with: (weight: 10.0) {
+		create CapCP with: (weight: 10.0) {
 			max_CP <- self;
 		}
 		

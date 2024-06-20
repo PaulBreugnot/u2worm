@@ -903,7 +903,7 @@ species ExactCN parent: Objective schedules: [] {
  * Objective that is minimized when the available CN rate is at most equal to
  * the requested CN rate.
  */
-species MaxCN parent: Objective schedules: [] {
+species CapCN parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
 		float N_avail <- state.problem.decomposition_problem.N_avail_final(state.decomposition);
 		float C_avail <- state.problem.decomposition_problem.C_avail_final(state.decomposition);
@@ -944,7 +944,7 @@ species ExactCP parent: Objective schedules: [] {
  * Objective that is minimized when the available CP rate is at most equal to
  * the requested CP rate.
  */
-species MaxCP parent: Objective schedules: [] {
+species CapCP parent: Objective schedules: [] {
 	action value(SimulatedAnnealingState state) type: float {
 		float P_avail <- state.problem.decomposition_problem.P_avail_final(state.decomposition);
 		float C_avail <- state.problem.decomposition_problem.C_avail_final(state.decomposition);
@@ -1113,9 +1113,9 @@ experiment EnzymaticActivityWorkbench type: gui {
 	int steps;
 	bool show_max_rates;
 	
-	parameter "C/N" category: "Objectives" var: C_N_objective init: "Max C/N" among: ["none", "Exact C/N", "Max C/N"];
+	parameter "C/N" category: "Objectives" var: C_N_objective init: "Cap C/N" among: ["none", "Exact C/N", "Cap C/N"];
 	parameter "C/N weight" category: "Objectives" var: C_N_objective_weight init: 10.0;
-	parameter "C/P" category: "Objectives" var: C_P_objective init: "Max C/P" among: ["none", "Exact C/P", "Max C/P"];
+	parameter "C/P" category: "Objectives" var: C_P_objective init: "Cap C/P" among: ["none", "Exact C/P", "Cap C/P"];
 	parameter "C/P weight" category: "Objectives" var: C_P_objective_weight init: 10.0;
 	parameter "C labile" category: "Objectives" var: C_labile_objective init: "Max labile C" among: ["none", "Max labile C"];
 	parameter "C labile weight" category: "Objectives" var: C_labile_objective_weight init: 1.0;
@@ -1186,8 +1186,8 @@ experiment EnzymaticActivityWorkbench type: gui {
 			create ExactCN {
 				_C_N_objective <- self;
 			}
-		} else if (C_N_objective = "Max C/N") {
-			create MaxCN {
+		} else if (C_N_objective = "Cap C/N") {
+			create CapCN {
 				_C_N_objective <- self;
 			}
 		}
@@ -1203,8 +1203,8 @@ experiment EnzymaticActivityWorkbench type: gui {
 			create ExactCP {
 				_C_P_objective <- self;
 			}
-		} else if (C_P_objective = "Max C/P") {
-			create MaxCP {
+		} else if (C_P_objective = "Cap C/P") {
+			create CapCP {
 				_C_P_objective <- self;		
 			}
 		}
