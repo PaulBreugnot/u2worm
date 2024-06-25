@@ -1,8 +1,9 @@
 /**
 * Name: testmicrobes
-* This wizard creates a new test experiment 
-* Author: pbreugno
-* Tags: 
+* This model allows to test and calibrate the behavior of standalone microbe
+* populations. It does not add any feature to the CAMMISOL model.
+* 
+* Author: pbreugno 
 */
 
 model test_microbes
@@ -10,31 +11,31 @@ model test_microbes
 import "microbes.gaml"
 
 experiment MicrobesTestBase {
-	float init_Y_C <- 1.0 on_change: change_species;
-	float init_A_C <- 1.0 on_change: change_species;
-	float init_S_C <- 1.0 on_change: change_species;
+	float init_O_C <- 1.0 on_change: change_species;
+	float init_F_C <- 1.0 on_change: change_species;
+	float init_M_C <- 1.0 on_change: change_species;
 	float carrying_capacity <- 10#gram;
 	
-	bool enable_Y_Strategist <- true on_change: change_species;
-	bool enable_A_Strategist <- true on_change: change_species;
-	bool enable_S_Strategist <- true on_change: change_species;
+	bool enable_O_Strategist <- true on_change: change_species;
+	bool enable_F_Strategist <- true on_change: change_species;
+	bool enable_M_Strategist <- true on_change: change_species;
 	
 	bool only_one_population <- false;
 	
-	parameter "Enable Y Strategist" var:enable_Y_Strategist category: "Y strategist";
-	parameter "Y C init (g)" var:init_Y_C category:"Y strategist";
-	parameter "Y dividing time" var:dividing_time_Y category:"Y strategist";
-	parameter "Y CUE" var:carbon_use_efficiency_Y category:"Y strategist";
+	parameter "Enable O Strategist" var:enable_O_Strategist category: "O strategist";
+	parameter "O C init (g)" var:init_O_C category:"O strategist";
+	parameter "O dividing time" var:dividing_time_O category:"O strategist";
+	parameter "O CUE" var:carbon_use_efficiency_O category:"O strategist";
 	
-	parameter "Enable A Strategist" var:enable_A_Strategist category: "A strategist";
-	parameter "A C init (g)" var:init_A_C category:"A strategist";
-	parameter "A dividing time" var:dividing_time_A category:"A strategist";
-	parameter "A CUE" var:carbon_use_efficiency_A category:"A strategist";
+	parameter "Enable F Strategist" var:enable_F_Strategist category: "F strategist";
+	parameter "F C init (g)" var:init_F_C category:"F strategist";
+	parameter "F dividing time" var:dividing_time_F category:"F strategist";
+	parameter "F CUE" var:carbon_use_efficiency_F category:"F strategist";
 	
-	parameter "Enable S Strategist" var:enable_S_Strategist category: "S strategist";
-	parameter "S C init (g)" var:init_S_C category:"S strategist";
-	parameter "S dividing time" var:dividing_time_S category:"S strategist";
-	parameter "S CUE" var:carbon_use_efficiency_S category:"S strategist";
+	parameter "Enable M Strategist" var:enable_M_Strategist category: "M strategist";
+	parameter "M C init (g)" var:init_M_C category:"M strategist";
+	parameter "M dividing time" var:dividing_time_M category:"M strategist";
+	parameter "M CUE" var:carbon_use_efficiency_M category:"M strategist";
 	
 	parameter "Carrying capacity" var:carrying_capacity;
 	
@@ -66,9 +67,9 @@ experiment MicrobesTestBase {
 	string enzymes_display <- "Budget" among:["Budget", "Absolute"] on_change:update_enzyme_unit;
 	string enzyme_unit <- "gS/gM/h";
 	map<species<MicrobePopulation>, list<float>> enzymes_output <- [
-		Y_Strategist::[0.0, 0.0, 0.0, 0.0],
-		A_Strategist::[0.0, 0.0, 0.0, 0.0],
-		S_Strategist::[0.0, 0.0, 0.0, 0.0]
+		O_Strategist::[0.0, 0.0, 0.0, 0.0],
+		F_Strategist::[0.0, 0.0, 0.0, 0.0],
+		M_Strategist::[0.0, 0.0, 0.0, 0.0]
 	];
 	
 	action update_enzyme_unit {
@@ -86,17 +87,17 @@ experiment MicrobesTestBase {
 	action init_species {
 		list<species<MicrobePopulation>> _microbe_species;
 		init_C <- [];
-		if enable_Y_Strategist {
-			add Y_Strategist to: _microbe_species;
-			init_C[Y_Strategist] <- init_Y_C#gram;
+		if enable_O_Strategist {
+			add O_Strategist to: _microbe_species;
+			init_C[O_Strategist] <- init_O_C#gram;
 		}
-		if enable_A_Strategist {
-			add A_Strategist to: _microbe_species;
-			init_C[A_Strategist] <- init_A_C#gram;
+		if enable_F_Strategist {
+			add F_Strategist to: _microbe_species;
+			init_C[F_Strategist] <- init_F_C#gram;
 		}
-		if enable_S_Strategist {
-			add S_Strategist to: _microbe_species;
-			init_C[S_Strategist] <- init_S_C#gram;
+		if enable_M_Strategist {
+			add M_Strategist to: _microbe_species;
+			init_C[M_Strategist] <- init_M_C#gram;
 		}
 		C <- [];
 		C_cytosol <- [];
@@ -114,7 +115,7 @@ experiment MicrobesTestBase {
 			P[s] <- init_C[s]/C_P;
 			awake[s] <- 1.0;
 		}
-		only_one_population <- int(enable_Y_Strategist) + int(enable_A_Strategist) + int(enable_S_Strategist) = 1;
+		only_one_population <- int(enable_O_Strategist) + int(enable_F_Strategist) + int(enable_M_Strategist) = 1;
 		return _microbe_species;
 	}
 	
@@ -178,25 +179,25 @@ experiment MicrobesTestBase {
 	output {
 		display "C" {
 			chart "Microbes populations" {
-				if enable_Y_Strategist {
-					data "C (Y, g)" value:C[Y_Strategist]/#gram marker: false;
+				if enable_O_Strategist {
+					data "C (O, g)" value:C[O_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N (Y, g)" value:N[Y_Strategist]/#gram marker: false;
-						data "P (Y, g)" value:P[Y_Strategist]/#gram marker: false;
+						data "N (O, g)" value:N[O_Strategist]/#gram marker: false;
+						data "P (O, g)" value:P[O_Strategist]/#gram marker: false;
 					}
 				}
-				if enable_A_Strategist {
-					data "C (A, g)" value:C[A_Strategist]/#gram marker: false;
+				if enable_F_Strategist {
+					data "C (F, g)" value:C[F_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N (A, g)" value:N[A_Strategist]/#gram marker: false;
-						data "P (A, g)" value:P[A_Strategist]/#gram marker: false;
+						data "N (F, g)" value:N[F_Strategist]/#gram marker: false;
+						data "P (F, g)" value:P[F_Strategist]/#gram marker: false;
 					}
 				}
-				if enable_S_Strategist {
-					data "C (S, g)" value:C[S_Strategist]/#gram marker: false;
+				if enable_M_Strategist {
+					data "C (M, g)" value:C[M_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N (S, g)" value:N[S_Strategist]/#gram marker: false;
-						data "P (S, g)" value:P[S_Strategist]/#gram marker: false;
+						data "N (M, g)" value:N[M_Strategist]/#gram marker: false;
+						data "P (M, g)" value:P[M_Strategist]/#gram marker: false;
 					}
 				}
 			}
@@ -210,25 +211,25 @@ experiment MicrobesTestBase {
 		
 		display "C cytosol" {
 			chart "Microbes populations cytosol" {
-				if enable_Y_Strategist {
-					data "C (Y, g)" value:C_cytosol[Y_Strategist]/#gram marker: false;
+				if enable_O_Strategist {
+					data "C (O, g)" value:C_cytosol[O_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N (Y, g)" value:N_cytosol[Y_Strategist]/#gram marker: false;
-						data "P (Y, g)" value:P_cytosol[Y_Strategist]/#gram marker: false;
+						data "N (O, g)" value:N_cytosol[O_Strategist]/#gram marker: false;
+						data "P (O, g)" value:P_cytosol[O_Strategist]/#gram marker: false;
 					}
 				}
-				if enable_A_Strategist {
-					data "C (A, g)" value:C_cytosol[A_Strategist]/#gram marker: false;
+				if enable_F_Strategist {
+					data "C (F, g)" value:C_cytosol[F_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N (A, g)" value:N_cytosol[A_Strategist]/#gram marker: false;
-						data "P (A, g)" value:P_cytosol[A_Strategist]/#gram marker: false;
+						data "N (F, g)" value:N_cytosol[F_Strategist]/#gram marker: false;
+						data "P (F, g)" value:P_cytosol[F_Strategist]/#gram marker: false;
 					}				
 				}
-				if enable_S_Strategist {
-					data "C (S, g)" value:C_cytosol[S_Strategist]/#gram marker: false;
+				if enable_M_Strategist {
+					data "C (M, g)" value:C_cytosol[M_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N (S, g)" value:N_cytosol[S_Strategist]/#gram marker: false;
-						data "P (S, g)" value:P_cytosol[S_Strategist]/#gram marker: false;
+						data "N (M, g)" value:N_cytosol[M_Strategist]/#gram marker: false;
+						data "P (M, g)" value:P_cytosol[M_Strategist]/#gram marker: false;
 					}
 				}
 			}
@@ -237,14 +238,14 @@ experiment MicrobesTestBase {
 		
 		display "Awake rate" {
 			chart "Awake rate" {
-				if enable_Y_Strategist {
-					data "Y (%)" value:awake[Y_Strategist] marker: false;
+				if enable_O_Strategist {
+					data "O (%)" value:awake[O_Strategist] marker: false;
 				}
-				if enable_A_Strategist {
-					data "A (%)" value:awake[A_Strategist] marker: false;
+				if enable_F_Strategist {
+					data "F (%)" value:awake[F_Strategist] marker: false;
 				}
-				if enable_S_Strategist {
-					data "S (%)" value:awake[S_Strategist] marker: false;
+				if enable_M_Strategist {
+					data "M (%)" value:awake[M_Strategist] marker: false;
 				}
 			}
 		}
@@ -282,27 +283,27 @@ experiment MicrobesTestBase {
 		}
 		display "C/N" {
 			chart "C/N" {
-				if enable_Y_Strategist {
-					data "Y" value:C[Y_Strategist]/N[Y_Strategist] marker: false;
+				if enable_O_Strategist {
+					data "O" value:C[O_Strategist]/N[O_Strategist] marker: false;
 				}
-				if enable_A_Strategist {
-					data "A" value:C[A_Strategist]/N[A_Strategist] marker: false;
+				if enable_F_Strategist {
+					data "F" value:C[F_Strategist]/N[F_Strategist] marker: false;
 				}
-				if enable_S_Strategist {
-					data "S" value:C[S_Strategist]/N[S_Strategist] marker: false;
+				if enable_M_Strategist {
+					data "M" value:C[M_Strategist]/N[M_Strategist] marker: false;
 				}
 			}
 		}
 		display "C/P" {
 			chart "C/P" {
-				if enable_Y_Strategist {
-					data "Y" value:C[Y_Strategist]/P[Y_Strategist] marker: false;
+				if enable_O_Strategist {
+					data "O" value:C[O_Strategist]/P[O_Strategist] marker: false;
 				}
-				if enable_A_Strategist {
-					data "A" value:C[A_Strategist]/P[A_Strategist] marker: false;
+				if enable_F_Strategist {
+					data "F" value:C[F_Strategist]/P[F_Strategist] marker: false;
 				}
-				if enable_S_Strategist {
-					data "S" value:C[S_Strategist]/P[S_Strategist] marker: false;
+				if enable_M_Strategist {
+					data "M" value:C[M_Strategist]/P[M_Strategist] marker: false;
 				}
 			}
 		}
@@ -375,7 +376,7 @@ experiment IndividualMicrobesGrowth_InfiniteNutrients parent:IndividualMicrobesG
 
 experiment IndividualMicrobesGrowth_FixedNutrients parent:IndividualMicrobesGrowth {
 	float C_dom <- 15#gram;
-	map<species<MicrobePopulation>, float> C_dom_output <- [Y_Strategist::C_dom, A_Strategist::C_dom, S_Strategist::C_dom];
+	map<species<MicrobePopulation>, float> C_dom_output <- [O_Strategist::C_dom, F_Strategist::C_dom, M_Strategist::C_dom];
 	
 	parameter "C dom" var:C_dom;
 	
@@ -407,14 +408,14 @@ experiment IndividualMicrobesGrowth_FixedNutrients parent:IndividualMicrobesGrow
 	output {
 		display "C dom" {
 			chart "C dom" {
-				if enable_Y_Strategist {
-					data "C dom (Y, g)" value:C_dom_output[Y_Strategist]/#gram marker: false;
+				if enable_O_Strategist {
+					data "C dom (O, g)" value:C_dom_output[O_Strategist]/#gram marker: false;
 				}
-				if enable_A_Strategist {
-					data "C dom (A, g)" value:C_dom_output[A_Strategist]/#gram marker: false;
+				if enable_F_Strategist {
+					data "C dom (F, g)" value:C_dom_output[F_Strategist]/#gram marker: false;
 				}
-				if enable_S_Strategist {
-					data "C dom (S, g)" value:C_dom_output[S_Strategist]/#gram marker: false;
+				if enable_M_Strategist {
+					data "C dom (M, g)" value:C_dom_output[M_Strategist]/#gram marker: false;
 				}
 			}
 		}
@@ -482,7 +483,7 @@ experiment CollectiveMicrobesGrowth_InfiniteNutrients parent:CollectiveMicrobesG
 
 experiment CollectiveMicrobesGrowth_FixedNutrients parent:CollectiveMicrobesGrowth {
 	float C_dom <- 15#gram;
-	map<species<MicrobePopulation>, float> C_dom_output <- [Y_Strategist::C_dom, A_Strategist::C_dom, S_Strategist::C_dom];
+	map<species<MicrobePopulation>, float> C_dom_output <- [O_Strategist::C_dom, F_Strategist::C_dom, M_Strategist::C_dom];
 	
 	parameter "C dom" var:C_dom;
 	
@@ -554,19 +555,19 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 	parameter "C/P recal (g)" var:C_P_recal;
 	parameter "Enzymes display" var:enzymes_display;
 	
-	map<species<MicrobePopulation>, float> C_dom_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
-	map<species<MicrobePopulation>, float> N_dom_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
-	map<species<MicrobePopulation>, float> P_dom_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
-	map<species<MicrobePopulation>, float> N_dim_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
-	map<species<MicrobePopulation>, float> P_dim_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
+	map<species<MicrobePopulation>, float> C_dom_output <- [O_Strategist::0.0, F_Strategist::0.0, M_Strategist::0.0];
+	map<species<MicrobePopulation>, float> N_dom_output <- [O_Strategist::0.0, F_Strategist::0.0, M_Strategist::0.0];
+	map<species<MicrobePopulation>, float> P_dom_output <- [O_Strategist::0.0, F_Strategist::0.0, M_Strategist::0.0];
+	map<species<MicrobePopulation>, float> N_dim_output <- [O_Strategist::0.0, F_Strategist::0.0, M_Strategist::0.0];
+	map<species<MicrobePopulation>, float> P_dim_output <- [O_Strategist::0.0, F_Strategist::0.0, M_Strategist::0.0];
 	
-	map<species<MicrobePopulation>, float> C_labile_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
-	map<species<MicrobePopulation>, float> N_labile_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
-	map<species<MicrobePopulation>, float> P_labile_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
+	map<species<MicrobePopulation>, float> C_labile_output <- [O_Strategist::0.0, F_Strategist::0.0, M_Strategist::0.0];
+	map<species<MicrobePopulation>, float> N_labile_output <- [O_Strategist::0.0, F_Strategist::0.0, M_Strategist::0.0];
+	map<species<MicrobePopulation>, float> P_labile_output <- [O_Strategist::0.0, F_Strategist::0.0, M_Strategist::0.0];
 	
-	map<species<MicrobePopulation>, float> C_recal_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
-	map<species<MicrobePopulation>, float> N_recal_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
-	map<species<MicrobePopulation>, float> P_recal_output <- [Y_Strategist::0.0, A_Strategist::0.0, S_Strategist::0.0];
+	map<species<MicrobePopulation>, float> C_recal_output <- [O_Strategist::0.0, F_Strategist::0.0, M_Strategist::0.0];
+	map<species<MicrobePopulation>, float> N_recal_output <- [O_Strategist::0.0, F_Strategist::0.0, M_Strategist::0.0];
+	map<species<MicrobePopulation>, float> P_recal_output <- [O_Strategist::0.0, F_Strategist::0.0, M_Strategist::0.0];
 	action feed_dam(MicrobePopulation population, Dam dam) {
 		// Nothing to do
 		dam.dom[2] <- dam.dom[2] + population.requested_C;
@@ -633,61 +634,61 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 	output {
 		display "C/N/P compartments" {
 			chart "C/N/P compartments" {
-				if enable_Y_Strategist {
-					data "C dom (Y, g)" value:C_dom_output[Y_Strategist]/#gram marker: false;
+				if enable_O_Strategist {
+					data "C dom (O, g)" value:C_dom_output[O_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N dom (Y, g)" value:N_dom_output[Y_Strategist]/#gram marker: false;
-						data "P dom (Y, g)" value:P_dom_output[Y_Strategist]/#gram marker: false;
-						data "N dim (Y, g)" value:N_dim_output[Y_Strategist]/#gram marker: false;
-						data "P dim (Y, g)" value:P_dim_output[Y_Strategist]/#gram marker: false;
+						data "N dom (O, g)" value:N_dom_output[O_Strategist]/#gram marker: false;
+						data "P dom (O, g)" value:P_dom_output[O_Strategist]/#gram marker: false;
+						data "N dim (O, g)" value:N_dim_output[O_Strategist]/#gram marker: false;
+						data "P dim (O, g)" value:P_dim_output[O_Strategist]/#gram marker: false;
 					}
-					data "C labile (Y, g)" value:C_labile_output[Y_Strategist]/#gram marker: false;
+					data "C labile (O, g)" value:C_labile_output[O_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N labile (Y, g)" value:N_labile_output[Y_Strategist]/#gram marker: false;
-						data "P labile (Y, g)" value:P_labile_output[Y_Strategist]/#gram marker: false;
+						data "N labile (O, g)" value:N_labile_output[O_Strategist]/#gram marker: false;
+						data "P labile (O, g)" value:P_labile_output[O_Strategist]/#gram marker: false;
 					}
-					data "C recal (Y, g)" value:C_recal_output[Y_Strategist]/#gram marker: false;
+					data "C recal (O, g)" value:C_recal_output[O_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N recal (Y, g)" value:N_recal_output[Y_Strategist]/#gram marker: false;
-						data "P recal (Y, g)" value:P_recal_output[Y_Strategist]/#gram marker: false;
-					}
-				}
-				if enable_A_Strategist {
-					data "C dom (A, g)" value:C_dom_output[A_Strategist]/#gram marker: false;
-					if only_one_population {
-						data "N dom (A, g)" value:N_dom_output[A_Strategist]/#gram marker: false;
-						data "P dom (A, g)" value:P_dom_output[A_Strategist]/#gram marker: false;
-						data "N dim (A, g)" value:N_dim_output[A_Strategist]/#gram marker: false;
-						data "P dim (A, g)" value:P_dim_output[A_Strategist]/#gram marker: false;
-					}
-					data "C labile (A, g)" value:C_labile_output[A_Strategist]/#gram marker: false;
-					if only_one_population {
-						data "N labile (A, g)" value:N_labile_output[A_Strategist]/#gram marker: false;
-						data "P labile (A, g)" value:P_labile_output[A_Strategist]/#gram marker: false;
-					}
-					data "C recal (A, g)" value:C_recal_output[A_Strategist]/#gram marker: false;
-					if only_one_population {
-						data "N recal (A, g)" value:N_recal_output[A_Strategist]/#gram marker: false;
-						data "P recal (A, g)" value:P_recal_output[A_Strategist]/#gram marker: false;
+						data "N recal (O, g)" value:N_recal_output[O_Strategist]/#gram marker: false;
+						data "P recal (O, g)" value:P_recal_output[O_Strategist]/#gram marker: false;
 					}
 				}
-				if enable_S_Strategist {
-					data "C dom (S, g)" value:C_dom_output[S_Strategist]/#gram marker: false;
+				if enable_F_Strategist {
+					data "C dom (F, g)" value:C_dom_output[F_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N dom (S, g)" value:N_dom_output[S_Strategist]/#gram marker: false;
-						data "P dom (S, g)" value:P_dom_output[S_Strategist]/#gram marker: false;
-						data "N dim (S, g)" value:N_dim_output[S_Strategist]/#gram marker: false;
-						data "P dim (S, g)" value:P_dim_output[S_Strategist]/#gram marker: false;
+						data "N dom (F, g)" value:N_dom_output[F_Strategist]/#gram marker: false;
+						data "P dom (F, g)" value:P_dom_output[F_Strategist]/#gram marker: false;
+						data "N dim (F, g)" value:N_dim_output[F_Strategist]/#gram marker: false;
+						data "P dim (F, g)" value:P_dim_output[F_Strategist]/#gram marker: false;
 					}
-					data "C labile (S, g)" value:C_labile_output[S_Strategist]/#gram marker: false;
+					data "C labile (F, g)" value:C_labile_output[F_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N labile (S, g)" value:N_labile_output[S_Strategist]/#gram marker: false;
-						data "P labile (S, g)" value:P_labile_output[S_Strategist]/#gram marker: false;
+						data "N labile (F, g)" value:N_labile_output[F_Strategist]/#gram marker: false;
+						data "P labile (F, g)" value:P_labile_output[F_Strategist]/#gram marker: false;
 					}
-					data "C recal (S, g)" value:C_recal_output[S_Strategist]/#gram marker: false;
+					data "C recal (F, g)" value:C_recal_output[F_Strategist]/#gram marker: false;
 					if only_one_population {
-						data "N recal (S, g)" value:N_recal_output[S_Strategist]/#gram marker: false;
-						data "P recal (S, g)" value:P_recal_output[S_Strategist]/#gram marker: false;
+						data "N recal (F, g)" value:N_recal_output[F_Strategist]/#gram marker: false;
+						data "P recal (F, g)" value:P_recal_output[F_Strategist]/#gram marker: false;
+					}
+				}
+				if enable_M_Strategist {
+					data "C dom (M, g)" value:C_dom_output[M_Strategist]/#gram marker: false;
+					if only_one_population {
+						data "N dom (M, g)" value:N_dom_output[M_Strategist]/#gram marker: false;
+						data "P dom (M, g)" value:P_dom_output[M_Strategist]/#gram marker: false;
+						data "N dim (M, g)" value:N_dim_output[M_Strategist]/#gram marker: false;
+						data "P dim (M, g)" value:P_dim_output[M_Strategist]/#gram marker: false;
+					}
+					data "C labile (M, g)" value:C_labile_output[M_Strategist]/#gram marker: false;
+					if only_one_population {
+						data "N labile (M, g)" value:N_labile_output[M_Strategist]/#gram marker: false;
+						data "P labile (M, g)" value:P_labile_output[M_Strategist]/#gram marker: false;
+					}
+					data "C recal (M, g)" value:C_recal_output[M_Strategist]/#gram marker: false;
+					if only_one_population {
+						data "N recal (M, g)" value:N_recal_output[M_Strategist]/#gram marker: false;
+						data "P recal (M, g)" value:P_recal_output[M_Strategist]/#gram marker: false;
 					}
 				}
 			}
@@ -695,23 +696,23 @@ experiment IndividualMicrobesMetabolism parent:IndividualMicrobesGrowth {
 		
 		display "Enzymes" {
 			chart "Enzymes" {
-				if enable_Y_Strategist {
-					data "T C (Y, " + enzyme_unit + ")" value:enzymes_output[Y_Strategist][0] marker: false;
-					data "T N (Y, " + enzyme_unit + ")" value:enzymes_output[Y_Strategist][1] marker: false;
-					data "T P (Y, " + enzyme_unit + ")" value:enzymes_output[Y_Strategist][2] marker: false;
-					data "T r (Y, " + enzyme_unit + ")" value:enzymes_output[Y_Strategist][3] marker: false;
+				if enable_O_Strategist {
+					data "T C (O, " + enzyme_unit + ")" value:enzymes_output[O_Strategist][0] marker: false;
+					data "T N (O, " + enzyme_unit + ")" value:enzymes_output[O_Strategist][1] marker: false;
+					data "T P (O, " + enzyme_unit + ")" value:enzymes_output[O_Strategist][2] marker: false;
+					data "T r (O, " + enzyme_unit + ")" value:enzymes_output[O_Strategist][3] marker: false;
 				}
-				if enable_A_Strategist {
-					data "T C (A, " + enzyme_unit + ")" value:enzymes_output[A_Strategist][0] marker: false;
-					data "T N (A, " + enzyme_unit + ")" value:enzymes_output[A_Strategist][1] marker: false;
-					data "T P (A, " + enzyme_unit + ")" value:enzymes_output[A_Strategist][2] marker: false;
-					data "T r (A, " + enzyme_unit + ")" value:enzymes_output[A_Strategist][3] marker: false;
+				if enable_F_Strategist {
+					data "T C (F, " + enzyme_unit + ")" value:enzymes_output[F_Strategist][0] marker: false;
+					data "T N (F, " + enzyme_unit + ")" value:enzymes_output[F_Strategist][1] marker: false;
+					data "T P (F, " + enzyme_unit + ")" value:enzymes_output[F_Strategist][2] marker: false;
+					data "T r (F, " + enzyme_unit + ")" value:enzymes_output[F_Strategist][3] marker: false;
 				}
-				if enable_S_Strategist {
-					data "T C (S, " + enzyme_unit + ")" value:enzymes_output[S_Strategist][0] marker: false;
-					data "T N (S, " + enzyme_unit + ")" value:enzymes_output[S_Strategist][1] marker: false;
-					data "T P (S, " + enzyme_unit + ")" value:enzymes_output[S_Strategist][2] marker: false;
-					data "T r (S, " + enzyme_unit + ")" value:enzymes_output[S_Strategist][3] marker: false;
+				if enable_M_Strategist {
+					data "T C (M, " + enzyme_unit + ")" value:enzymes_output[M_Strategist][0] marker: false;
+					data "T N (M, " + enzyme_unit + ")" value:enzymes_output[M_Strategist][1] marker: false;
+					data "T P (M, " + enzyme_unit + ")" value:enzymes_output[M_Strategist][2] marker: false;
+					data "T r (M, " + enzyme_unit + ")" value:enzymes_output[M_Strategist][3] marker: false;
 				}
 			}
 		}
@@ -822,23 +823,23 @@ experiment CollectiveMicrobesMetabolism parent:CollectiveMicrobesGrowth {
 		
 		display "Enzymes" {
 			chart "Enzymes" {
-				if enable_Y_Strategist {
-					data "T C (Y, " + enzyme_unit + ")" value:enzymes_output[Y_Strategist][0] marker: false;
-					data "T N (Y, " + enzyme_unit + ")" value:enzymes_output[Y_Strategist][1] marker: false;
-					data "T P (Y, " + enzyme_unit + ")" value:enzymes_output[Y_Strategist][2] marker: false;
-					data "T r (Y, " + enzyme_unit + ")" value:enzymes_output[Y_Strategist][3] marker: false;
+				if enable_O_Strategist {
+					data "T C (O, " + enzyme_unit + ")" value:enzymes_output[O_Strategist][0] marker: false;
+					data "T N (O, " + enzyme_unit + ")" value:enzymes_output[O_Strategist][1] marker: false;
+					data "T P (O, " + enzyme_unit + ")" value:enzymes_output[O_Strategist][2] marker: false;
+					data "T r (O, " + enzyme_unit + ")" value:enzymes_output[O_Strategist][3] marker: false;
 				}
-				if enable_A_Strategist {
-					data "T C (A, " + enzyme_unit + ")" value:enzymes_output[A_Strategist][0] marker: false;
-					data "T N (A, " + enzyme_unit + ")" value:enzymes_output[A_Strategist][1] marker: false;
-					data "T P (A, " + enzyme_unit + ")" value:enzymes_output[A_Strategist][2] marker: false;
-					data "T r (A, " + enzyme_unit + ")" value:enzymes_output[A_Strategist][3] marker: false;
+				if enable_F_Strategist {
+					data "T C (F, " + enzyme_unit + ")" value:enzymes_output[F_Strategist][0] marker: false;
+					data "T N (F, " + enzyme_unit + ")" value:enzymes_output[F_Strategist][1] marker: false;
+					data "T P (F, " + enzyme_unit + ")" value:enzymes_output[F_Strategist][2] marker: false;
+					data "T r (F, " + enzyme_unit + ")" value:enzymes_output[F_Strategist][3] marker: false;
 				}
-				if enable_S_Strategist {
-					data "T C (S, " + enzyme_unit + ")" value:enzymes_output[S_Strategist][0] marker: false;
-					data "T N (S, " + enzyme_unit + ")" value:enzymes_output[S_Strategist][1] marker: false;
-					data "T P (S, " + enzyme_unit + ")" value:enzymes_output[S_Strategist][2] marker: false;
-					data "T r (S, " + enzyme_unit + ")" value:enzymes_output[S_Strategist][3] marker: false;
+				if enable_M_Strategist {
+					data "T C (M, " + enzyme_unit + ")" value:enzymes_output[M_Strategist][0] marker: false;
+					data "T N (M, " + enzyme_unit + ")" value:enzymes_output[M_Strategist][1] marker: false;
+					data "T P (M, " + enzyme_unit + ")" value:enzymes_output[M_Strategist][2] marker: false;
+					data "T r (M, " + enzyme_unit + ")" value:enzymes_output[M_Strategist][3] marker: false;
 				}
 			}
 		}

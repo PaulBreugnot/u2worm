@@ -13,8 +13,6 @@ import "nematode/nematode.gaml"
 
 global {
 	int nematodes_count <- 50;
-
-
 		
 	// 5E8 -> 5E9 bacterie / gramme de sol
 	/*
@@ -26,9 +24,9 @@ global {
 	 */
 	float total_initial_bacteria_weight <-  0.05*1.5#gram/(#cm*#cm)*world.shape.area;
 	// TODO: what rates?
-	float init_Y_rate <- 0.1;
-	float init_A_rate <- 0.2;
-	float init_S_rate <- 0.7;
+	float init_O_rate <- 0.1;
+	float init_F_rate <- 0.2;
+	float init_M_rate <- 0.7;
 	
 	float rain_diffusion_rate <- 0.1;
 	float rain_period <- 7#days;
@@ -43,13 +41,13 @@ global {
 			// The carrying capacity of each pore is equal to 10 times the initial bacteria population
 			carrying_capacity <- 10 * total_initial_bacteria_weight / pores_count;
 			
-			create Y_Strategist with: [C::init_Y_rate * total_initial_bacteria_weight / length(PoreParticle)] {
+			create O_Strategist with: [C::init_O_rate * total_initial_bacteria_weight / length(PoreParticle)] {
 				add self to:myself.populations;
 			}
-			create A_Strategist with: [C::init_A_rate * total_initial_bacteria_weight / length(PoreParticle)]{
+			create F_Strategist with: [C::init_F_rate * total_initial_bacteria_weight / length(PoreParticle)]{
 				add self to:myself.populations;
 			}
-			create S_Strategist with: [C::init_S_rate * total_initial_bacteria_weight / length(PoreParticle)]{
+			create M_Strategist with: [C::init_M_rate * total_initial_bacteria_weight / length(PoreParticle)]{
 				add self to:myself.populations;
 			}
 		}
@@ -163,17 +161,17 @@ experiment base_cammisol_output {
 	parameter "Nematodes C/N" category: "Nematode" var:nematode_C_N;
 	parameter "Nematodes C/P" category: "Nematode" var:nematode_C_P;
 	
-	parameter "Dividing time (Y)" category: "Y Strategists" var:dividing_time_Y;
-	parameter "CUE (Y)" category: "Y Strategists" var:carbon_use_efficiency_Y;
-	parameter "Minimum active rate (Y)" category: "Y Strategists" var:minimum_active_rate_Y;
+	parameter "Dividing time (O)" category: "O Strategists" var:dividing_time_O;
+	parameter "CUE (O)" category: "O Strategists" var:carbon_use_efficiency_O;
+	parameter "Minimum active rate (O)" category: "O Strategists" var:minimum_active_rate_O;
 	
-	parameter "Dividing time (A)" category: "A Strategists" var:dividing_time_A;
-	parameter "CUE (A)" category: "A Strategists" var:carbon_use_efficiency_A;
-	parameter "Minimum active rate (A)" category: "A Strategists" var:minimum_active_rate_A;
+	parameter "Dividing time (F)" category: "F Strategists" var:dividing_time_F;
+	parameter "CUE (F)" category: "F Strategists" var:carbon_use_efficiency_F;
+	parameter "Minimum active rate (F)" category: "F Strategists" var:minimum_active_rate_F;
 	
-	parameter "Dividing time (S)" category: "S Strategists" var:dividing_time_S;
-	parameter "CUE (S)" category: "S Strategists" var:carbon_use_efficiency_S;
-	parameter "Minimum active rate (S)" category: "S Strategists" var:minimum_active_rate_S;
+	parameter "Dividing time (M)" category: "M Strategists" var:dividing_time_M;
+	parameter "CUE (M)" category: "M Strategists" var:carbon_use_efficiency_M;
+	parameter "Minimum active rate (M)" category: "M Strategists" var:minimum_active_rate_M;
 	
 	reflex update_particle_color {
 		float max_population <- 0.0;
@@ -201,9 +199,9 @@ experiment base_cammisol_output {
 		display "Awoken population" type: java2D {
 			chart "Awoken population" type: series {
 				if (length(PoreParticle) > 0) {
-					data "Y awake (%)" value: sum(Y_Strategist collect (each.active_rate))/length(Y_Strategist) * 100 style:spline color: #red marker:false thickness:3;
-					data "A awake (%)" value: sum(A_Strategist collect (each.active_rate))/length(A_Strategist) * 100 style:spline color: #green marker:false thickness:3;
-					data "S awake (%)" value: sum(S_Strategist collect (each.active_rate))/length(S_Strategist) * 100 style:spline color: #blue marker:false thickness:3;
+					data "O awake (%)" value: sum(O_Strategist collect (each.active_rate))/length(O_Strategist) * 100 style:spline color: #red marker:false thickness:3;
+					data "A awake (%)" value: sum(F_Strategist collect (each.active_rate))/length(F_Strategist) * 100 style:spline color: #green marker:false thickness:3;
+					data "M awake (%)" value: sum(M_Strategist collect (each.active_rate))/length(M_Strategist) * 100 style:spline color: #blue marker:false thickness:3;
 				}
 				if(nematodes_count > 0) {
 					data "Nematode awake (%)" value: (sum(Nematode collect (each.awake as int)) / length(Nematode)) * 100 style:spline color: #yellow marker:false thickness:3;				
@@ -234,9 +232,9 @@ experiment base_cammisol_output {
 		
 		display "populations" type:java2D {
 			chart "Bacteria populations" type:series {
-				data "Y (g)" value: sum(Y_Strategist collect each.C)/#gram style:spline color: #red marker:false thickness:3;
-				data "A (g)" value: sum(A_Strategist collect each.C)/#gram style:spline color: #green marker:false thickness:3;
-				data "S (g)" value: sum(S_Strategist collect each.C)/#gram style:spline color: #blue marker:false thickness:3;
+				data "O (g)" value: sum(O_Strategist collect each.C)/#gram style:spline color: #red marker:false thickness:3;
+				data "F (g)" value: sum(F_Strategist collect each.C)/#gram style:spline color: #green marker:false thickness:3;
+				data "M (g)" value: sum(M_Strategist collect each.C)/#gram style:spline color: #blue marker:false thickness:3;
 			}
 		}
 	}
@@ -252,9 +250,9 @@ experiment test_microbes parent:base_cammisol_output {
 	parameter "C soil" var:C_soil;
 	parameter "N soil" var:N_soil;
 	parameter "P soil" var:P_soil;
-	parameter "Initial Y population rate" var:init_Y_rate;
-	parameter "Initial A population rate" var:init_A_rate;
-	parameter "Initial S population rate" var:init_S_rate;
+	parameter "Initial O population rate" var:init_O_rate;
+	parameter "Initial F population rate" var:init_F_rate;
+	parameter "Initial M population rate" var:init_M_rate;
 	
 	parameter "Enzymes optimization period" var:enzymes_optimization_period init:local_step;
 	

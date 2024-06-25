@@ -60,7 +60,12 @@ global {
 	}
 }
 
-
+/**
+ * Microbe populations represent a spatially confined aggregate of microbes with
+ * its own functional characteristics. Microbes in a population do not
+ * necessarily belong to a common species, but rather share a common functional
+ * behavior, represented by parameters defined at the scale of each population. 
+ */
 species MicrobePopulation schedules:[]
 {
 	float carbon_use_efficiency;
