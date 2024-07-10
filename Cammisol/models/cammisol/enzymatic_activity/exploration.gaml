@@ -29,15 +29,15 @@ global {
 	 * Default values for all parameters to explore.
 	 * Values are set and explored using experiment parameters.
 	 */
-	float C_labile <- 0.1#gram;
-	float CN_labile <- 17.0;
-	float CP_labile <- 31.0;
-	float C_recalcitrant <- 10#gram;
-	float CN_recalcitrant <- 17.0;
-	float CP_recalcitrant <- 31.0;
-	float C_dom <- 0#gram;
-	float CN_dom <- 10.0;
-	float CP_dom <- 17.0;
+	float C_labile;
+	float CN_labile;
+	float CP_labile;
+	float C_recalcitrant;
+	float CN_recalcitrant;
+	float CP_recalcitrant;
+	float C_dom;
+	float CN_dom;
+	float CP_dom;
 	
 	/**
 	 * A single organic particle is decomposed.
@@ -280,11 +280,11 @@ experiment Explore {
 	parameter "Enable F strategist" var:exp_enable_F_strategist init:true read_only:true;
 	parameter "Enable M strategist" var:exp_enable_M_strategist init:true read_only:true;
 	parameter "Labile C" var:exp_C_labile init:0.1#gram read_only:true;
-	parameter "Labile C/N" var:exp_CN_labile init:17.0 read_only:true;
-	parameter "Labile C/P" var:exp_CP_labile init:31.0 read_only:true;
+	parameter "Labile C/N" var:exp_CN_labile init:40.0 read_only:true;
+	parameter "Labile C/P" var:exp_CP_labile init:60.0 read_only:true;
 	parameter "Recalcitrant C" var:exp_C_recalcitrant init:10#gram read_only:true;
-	parameter "Recalcitrant C/N" var:exp_CN_recalcitrant init:17.0 read_only:true;
-	parameter "Recalcitrant C/P" var:exp_CP_recalcitrant init:31.0 read_only:true;
+	parameter "Recalcitrant C/N" var:exp_CN_recalcitrant init:50.0 read_only:true;
+	parameter "Recalcitrant C/P" var:exp_CP_recalcitrant init:70.0 read_only:true;
 	parameter "C DOM" var:exp_C_dom init:0#gram read_only:true;
 	parameter "C/N DOM" var:exp_CN_dom init:10.0 read_only:true;
 	parameter "C/P DOM" var:exp_CP_dom init:17.0 read_only:true;
@@ -520,8 +520,8 @@ experiment Explore {
 experiment ExploreCN_labile parent:Explore {
 	parameter "X var" var:x_var init:"CN labile" read_only:true;
 	
-	float min_CN_labile <- 4.0;
-	float max_CN_labile <- 70.0;
+	float min_CN_labile <- 20.0;
+	float max_CN_labile <- 150.0;
 	parameter "Labile C/N" var: CN_labile min: min_CN_labile max: max_CN_labile step: 1.0;
 	
 	init {
@@ -553,7 +553,7 @@ experiment ExploreCN_High_C_labile type:batch parent:ExploreCN_labile until: cyc
  */
 experiment ExploreCN_Low_C_labile type:batch parent:ExploreCN_labile until: cycle>0 repeat: 5 {
 	parameter "Output file" var:output_file init: "CN_low_C_labile";
-	parameter "Labile C" var:exp_C_labile init:0.1#gram read_only:true;
+	parameter "Labile C" var:exp_C_labile init:0.3#gram read_only:true;
 	
 	init {
 		exp_name <- "CN_low_C_labile";
@@ -568,8 +568,8 @@ experiment ExploreCN_Low_C_labile type:batch parent:ExploreCN_labile until: cycl
 experiment ExploreCP_labile parent:Explore {
 	parameter "X var" var:x_var init:"CP labile" read_only:true;
 	
-	float min_CP_labile <- CP_labile;
-	float max_CP_labile <- CP_labile;
+	float min_CP_labile <- 40.0;
+	float max_CP_labile <- 150.0;
 	parameter "Labile C/P" var: CP_labile min: min_CP_labile max: max_CP_labile step: 1.0;
 	
 	init {
@@ -586,11 +586,9 @@ experiment ExploreCP_labile parent:Explore {
  */
 experiment ExploreCP_High_C_labile type:batch parent:ExploreCP_labile until: cycle>0 repeat: 5 {
 	parameter "Output file" var:output_file init: "CP_high_C_labile";
-	parameter "Labile C" var:exp_C_labile init:3#gram read_only:true;
+	parameter "Labile C" var:exp_C_labile init:5#gram read_only:true;
 	
 	init {
-		min_CP_labile <- 1.0;
-		max_CP_labile <- 60.0;
 		exp_name <- "CP_high_C_labile";
 		do write_config_csv;
 		do init_data_csv;
@@ -603,11 +601,9 @@ experiment ExploreCP_High_C_labile type:batch parent:ExploreCP_labile until: cyc
  */
 experiment ExploreCP_Low_C_labile type:batch parent:ExploreCP_labile until: cycle>0 repeat: 5 {
 	parameter "Output file" var:output_file init: "CP_low_C_labile";
-	parameter "Labile C" var:exp_C_labile init:0.1#gram read_only:true;
+	parameter "Labile C" var:exp_C_labile init:0.3#gram read_only:true;
 	
 	init {
-		min_CP_labile <- 1.0;
-		max_CP_labile <- 60.0;
 		exp_name <- "CP_low_C_labile";
 		do write_config_csv;
 		do init_data_csv;
@@ -623,16 +619,16 @@ experiment ExploreCN_dom parent:Explore type:batch until:cycle > 0 repeat: 5 {
 	float min_CN_dom <- CN_dom;
 	float max_CN_dom <- CN_dom;
 	parameter "C/N DOM" var: CN_dom min: min_CN_dom max: max_CN_dom step: 1.0;
-	parameter "Labile C" var:exp_C_labile init:1#gram read_only:true;
-	parameter "C DOM" var:exp_C_dom init:0.3#gram read_only:true;
+	parameter "Labile C" var:exp_C_labile init:10#gram read_only:true;
+	parameter "C DOM" var:exp_C_dom init:0.5#gram read_only:true;
 	
 	string x_label {
 		return "C/N (dom)";
 	}
 	
 	init {
-		min_CN_dom <- 1.0;
-		max_CN_dom <- 40.0;
+		min_CN_dom <- 20.0;
+		max_CN_dom <- 100.0;
 		exp_name <- "CN_dom";
 		do write_config_csv;
 		do init_data_csv;
@@ -649,16 +645,16 @@ experiment ExploreCP_dom parent:Explore type:batch until:cycle > 0 repeat: 5 {
 	float min_CP_dom <- CP_dom;
 	float max_CP_dom <- CP_dom;
 	parameter "C/P DOM" var: CP_dom min: min_CP_dom max: max_CP_dom step: 1.0;
-	parameter "Labile C" var:exp_C_labile init:1#gram read_only:true;
-	parameter "C DOM" var:exp_C_dom init:0.3#gram read_only:true;
+	parameter "Labile C" var:exp_C_labile init:10#gram read_only:true;
+	parameter "C DOM" var:exp_C_dom init:1#gram read_only:true;
 	
 	string x_label {
 		return "C/P (dom)";
 	}
 	
 	init {
-		min_CP_dom <- 1.0;
-		max_CP_dom <- 60.0;
+		min_CP_dom <- 40.0;
+		max_CP_dom <- 150.0;
 		exp_name <- "CP_dom";
 		do write_config_csv;
 		do init_data_csv;

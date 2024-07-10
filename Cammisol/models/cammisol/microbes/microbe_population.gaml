@@ -30,7 +30,7 @@ global {
 		create MaxLabileC with: (weight: 1.0) {
 			max_labile_C <- self;
 		}
-		create MaxC with: (weight: 10.0) {
+		create MaxC with: (weight: 5.0) {
 			max_C <- self;
 		}
 		create CapCN with: (weight: 10.0) {

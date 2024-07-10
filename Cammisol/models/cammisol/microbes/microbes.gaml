@@ -43,7 +43,7 @@ global {
 	float min_T_P_O <- 0.0;
 	float min_T_CNP_O <- 0.0;
 	float min_T_recal_O <- 0.0;
-	float max_T_C_O <- 1 #gram / #gram / #d;
+	float max_T_C_O <- 0.0 #gram / #gram / #d;
 	float max_T_N_O <- 0.2 #gram / #gram / #d;
 	float max_T_P_O <- 0.04 #gram / #gram / #d;
 	float max_T_CNP_O <- 0.6 #gram / #gram / #d;
@@ -54,21 +54,21 @@ global {
 	float min_T_P_F <- 0.0;
 	float min_T_CNP_F <- 0.0;
 	float min_T_recal_F <- 0.0;
-	float max_T_C_F <- 5 #gram/ #gram / #d;
+	float max_T_C_F <- 0.0 #gram/ #gram / #d;
 	float max_T_N_F <- 1 #gram / #gram / #d;
 	float max_T_P_F <- 0.2 #gram / #gram / #d;
 	float max_T_CNP_F <- 3 #gram / #gram / #d;
 	float max_T_recal_F <- 1 #gram / #gram / #d;
 	
-	float min_T_C_M <- 0.04 #gram/ #gram / #d;
-	float min_T_N_M <- 0.016 #gram/ #gram / #d;
+	float min_T_C_M <- 0.0 #gram/ #gram / #d;
+	float min_T_N_M <- 0.008 #gram/ #gram / #d;
 	float min_T_P_M <- 0.0016 #gram/ #gram / #d;
-	float min_T_CNP_M <- 0.1 #gram/ #gram / #d;
+	float min_T_CNP_M <- 0.2 #gram/ #gram / #d;
 	float min_T_recal_M <- 0.0;
-	float max_T_C_M <- 0.14 #gram/ #gram / #d;
-	float max_T_N_M <- 0.036 #gram / #gram / #d;
+	float max_T_C_M <- 0.0 #gram/ #gram / #d;
+	float max_T_N_M <- 0.028 #gram / #gram / #d;
 	float max_T_P_M <- 0.0056 #gram / #gram / #d;
-	float max_T_CNP_M <- 0.15 #gram / #gram / #d;
+	float max_T_CNP_M <- 0.25 #gram / #gram / #d;
 	float max_T_recal_M <- 1e-6 #gram / #gram / #d;
 	
 	Enzymes min_enzymes_O;
