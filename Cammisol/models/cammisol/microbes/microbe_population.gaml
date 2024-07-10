@@ -19,8 +19,8 @@ global {
 	// Enzyme objectives
 	MaxLabileC max_labile_C;
 	MaxC max_C;
-	CapCN max_CN;
-	CapCP max_CP;
+	CapCN cap_CN;
+	CapCP cap_CP;
 	
 	DecompositionProblem decomposition_problem;
 	EnzymaticActivityProblem enzymatic_activity_problem;
@@ -30,14 +30,14 @@ global {
 		create MaxLabileC with: (weight: 1.0) {
 			max_labile_C <- self;
 		}
-		create MaxC with: (weight: 5.0) {
+		create MaxC with: (weight: 10.0) {
 			max_C <- self;
 		}
 		create CapCN with: (weight: 10.0) {
-			max_CN <- self;
+			cap_CN <- self;
 		}
 		create CapCP with: (weight: 10.0) {
-			max_CP <- self;
+			cap_CP <- self;
 		}
 		
 		create DecompositionProblem with: [
@@ -51,7 +51,7 @@ global {
 			enzymatic_activity_problem <- self;
 		}
 		create SimulatedAnnealing with:[
-			objectives::[max_labile_C, max_C, max_CN, max_CP],
+			objectives::[max_labile_C, max_C, cap_CN, cap_CP],
 			N::1000,
 			epsilon::0.0
 		] {
