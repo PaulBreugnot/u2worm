@@ -57,7 +57,7 @@ species PoreParticle schedules:[] {
 		float total_C_recal <- sum(accessible_organics collect each.C_recalcitrant);
 		
 		ask total_enzymes_in_pore {
-			T_C <- sum(myself.populations collect (each.active_C * each.enzymes.T_C));
+			T_CNP <- sum(myself.populations collect (each.active_C * each.enzymes.T_CNP));
 			T_N <- sum(myself.populations collect (each.active_C * each.enzymes.T_N));
 			T_P <- sum(myself.populations collect (each.active_C * each.enzymes.T_P));
 			T_recal <- sum(myself.populations collect (each.active_C * each.enzymes.T_recal));
@@ -68,7 +68,7 @@ species PoreParticle schedules:[] {
 			PoreParticle pore <- myself;
 			
 			ask local_enzymes_in_pore {
-				T_C <- total_C_labile > 0.0 ? total_enzymes_in_pore.T_C * myself.C_labile / total_C_labile : 0.0;
+				T_CNP <- total_C_labile > 0.0 ? total_enzymes_in_pore.T_CNP * myself.C_labile / total_C_labile : 0.0;
 				T_N <- total_C_labile > 0.0 ? total_enzymes_in_pore.T_N * myself.C_labile / total_C_labile : 0.0;
 				T_P <- total_C_labile > 0.0 ? total_enzymes_in_pore.T_P * myself.C_labile / total_C_labile : 0.0;
 				T_recal <- total_C_recal > 0.0 ? total_enzymes_in_pore.T_recal * myself.C_recalcitrant / total_C_recal : 0.0;

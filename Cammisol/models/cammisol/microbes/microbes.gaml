@@ -38,37 +38,31 @@ global {
 	float minimum_active_rate_F <- 0.018;
 	float minimum_active_rate_M <- 1.0;
 	
-	float min_T_C_O <- 0.0;
+	float min_T_CNP_O <- 0.0;
 	float min_T_N_O <- 0.0;
 	float min_T_P_O <- 0.0;
-	float min_T_CNP_O <- 0.0;
 	float min_T_recal_O <- 0.0;
-	float max_T_C_O <- 0.0 #gram / #gram / #d;
+	float max_T_CNP_O <- 0.6 #gram / #gram / #d;
 	float max_T_N_O <- 0.2 #gram / #gram / #d;
 	float max_T_P_O <- 0.04 #gram / #gram / #d;
-	float max_T_CNP_O <- 0.6 #gram / #gram / #d;
 	float max_T_recal_O <- 1e-6 #gram / #gram / #d;
 	
-	float min_T_C_F <- 0.0;
+	float min_T_CNP_F <- 0.0;
 	float min_T_N_F <- 0.0;
 	float min_T_P_F <- 0.0;
-	float min_T_CNP_F <- 0.0;
 	float min_T_recal_F <- 0.0;
-	float max_T_C_F <- 0.0 #gram/ #gram / #d;
+	float max_T_CNP_F <- 3 #gram / #gram / #d;
 	float max_T_N_F <- 1 #gram / #gram / #d;
 	float max_T_P_F <- 0.2 #gram / #gram / #d;
-	float max_T_CNP_F <- 3 #gram / #gram / #d;
 	float max_T_recal_F <- 1 #gram / #gram / #d;
 	
-	float min_T_C_M <- 0.0 #gram/ #gram / #d;
+	float min_T_CNP_M <- 0.2 #gram/ #gram / #d;
 	float min_T_N_M <- 0.008 #gram/ #gram / #d;
 	float min_T_P_M <- 0.0016 #gram/ #gram / #d;
-	float min_T_CNP_M <- 0.2 #gram/ #gram / #d;
 	float min_T_recal_M <- 0.0;
-	float max_T_C_M <- 0.0 #gram/ #gram / #d;
+	float max_T_CNP_M <- 0.25 #gram / #gram / #d;
 	float max_T_N_M <- 0.028 #gram / #gram / #d;
 	float max_T_P_M <- 0.0056 #gram / #gram / #d;
-	float max_T_CNP_M <- 0.25 #gram / #gram / #d;
 	float max_T_recal_M <- 1e-6 #gram / #gram / #d;
 	
 	Enzymes min_enzymes_O;
@@ -84,10 +78,9 @@ global {
 	action init_enzymes {
 		create Enzymes with: [
 			name::"Min enzymes (O)",
-			T_C::min_T_C_O,
+			T_CNP::min_T_CNP_O,
 			T_N::min_T_N_O,
 			T_P::min_T_P_O,
-			T_CNP::min_T_CNP_O,
 			T_recal::min_T_recal_O
 		] {
 			myself.min_enzymes_O <- self;
@@ -95,10 +88,9 @@ global {
 		
 		create Enzymes with: [
 			name::"Max enzymes (O)",
-			T_C::max_T_C_O,
+			T_CNP::max_T_CNP_O,
 			T_N::max_T_N_O,
 			T_P::max_T_P_O,
-			T_CNP::max_T_CNP_O,
 			T_recal::max_T_recal_O
 		] {
 			myself.max_enzymes_O <- self;
@@ -106,10 +98,9 @@ global {
 		
 		create Enzymes with: [
 			name::"Min enzymes (F)",
-			T_C::min_T_C_F,
+			T_CNP::min_T_CNP_F,
 			T_N::min_T_N_F,
 			T_P::min_T_P_F,
-			T_CNP::min_T_CNP_F,
 			T_recal::min_T_recal_F
 		] {
 			myself.min_enzymes_F <- self;
@@ -117,10 +108,9 @@ global {
 		
 		create Enzymes with: [
 			name::"Max enzymes (F)",
-			T_C::max_T_C_F,
+			T_CNP::max_T_CNP_F,
 			T_N::max_T_N_F,
 			T_P::max_T_P_F,
-			T_CNP::max_T_CNP_F,
 			T_recal::max_T_recal_F
 		] {
 			myself.max_enzymes_F <- self;
@@ -128,10 +118,9 @@ global {
 		
 		create Enzymes with: [
 			name::"Min enzymes (M)",
-			T_C::min_T_C_M,
+			T_CNP::min_T_CNP_M,
 			T_N::min_T_N_M,
 			T_P::min_T_P_M,
-			T_CNP::min_T_CNP_M,
 			T_recal::min_T_recal_M
 		] {
 			myself.min_enzymes_M <- self;
@@ -139,10 +128,9 @@ global {
 		
 		create Enzymes with: [
 			name::"Max enzymes (M)",
-			T_C::max_T_C_M,
+			T_CNP::max_T_CNP_M,
 			T_N::max_T_N_M,
 			T_P::max_T_P_M,
-			T_CNP::max_T_CNP_M,
 			T_recal::max_T_recal_M
 		] {
 			myself.max_enzymes_M <- self;

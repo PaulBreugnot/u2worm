@@ -11,7 +11,7 @@ global {
 	/**
 	 * Index of the budget allocated to C extraction.
 	 */
-	int T_C_BUDGET <- 0;
+	int T_CNP_BUDGET <- 0;
 	/**
 	 * Index of the budget allocated to N extraction.
 	 */
@@ -20,11 +20,10 @@ global {
 	 * Index of the budget allocated to P extraction.
 	 */
 	int T_P_BUDGET <- 2;
-	int T_CNP_BUDGET <- 3;
 	/**
 	 * Index of the budget allocated to recalcitrant cleavage.
 	 */
-	int T_RECALCITRANT_BUDGET <- 4;
+	int T_RECALCITRANT_BUDGET <- 3;
 }
 
 /**
@@ -36,7 +35,7 @@ species Enzymes schedules: [] {
 	 * (depolymerization) or exocleaving. Produces "pure" C (H, O and elements
 	 * other that C, N and P are not represented in the model). (C extraction)
 	 */
-	float T_C <- 0.0#gram/#gram/#d;
+	float T_CNP <- 0.0#gram/#gram/#d;
 	/**
 	 * Decomposition of polypeptides and amino sugars, from which amino acids
 	 * and N-acetyl glucosamine are extracted. (N extraction)
@@ -46,8 +45,6 @@ species Enzymes schedules: [] {
 	 * Mineralization of P. (P extraction)
 	 */
 	float T_P <- 0.0#gram/#gram/#d;
-	
-	float T_CNP <- 0.0#gram/#gram/#d;
 	/**
 	 * Cleavage of recalcitrant matter. Extract blocks of C/N/P into the labile
 	 * compartments. (Recalcitrant cleavage)
@@ -60,10 +57,9 @@ species Enzymes schedules: [] {
  * Notice the difference of units compared to Enzymes.
  */
 species WeightedEnzymes schedules: [] {
-	float T_C <- 0.0#gram/#d;
+	float T_CNP <- 0.0#gram/#d;
 	float T_N <- 0.0#gram/#d;
 	float T_P <- 0.0#gram/#d;
-	float T_CNP <- 0.0#gram/#d;
 	float T_recal <- 0.0#gram/#d;
 }
 
@@ -75,7 +71,10 @@ species Decomposition schedules: [] {
 	 * Quantity of C removed from C labile and added to C dom due to
 	 * C extraction.
 	 */
-	float X_C_eC <- 0.0;
+	float X_C_eCNP <- 0.0;
+	float X_N_eCNP <- 0.0;
+	float X_P_eCNP <- 0.0;
+	
 	/**
 	 * Quantity of C removed from C labile and added to C dom due to N
 	 * extraction.
@@ -93,10 +92,6 @@ species Decomposition schedules: [] {
 	 * extraction.
 	 */
 	float X_P_eP <- 0.0;
-	
-	float X_C_eCNP <- 0.0;
-	float X_N_eCNP <- 0.0;
-	float X_P_eCNP <- 0.0;
 	
 	/**
 	 * Quantity of C removed from C recalcitrant and added to C labile due to
@@ -202,23 +197,17 @@ species DecompositionProblem schedules: [] {
 	 * Rate of C decomposed by C extraction if only C and N extractions request
 	 * all the labile C.
 	 */
-	float beta_C_N <- 0.5;
+	float beta_CNP_N <- 0.5;
 	/**
 	 * Rate of C decomposed by C extraction if only C and P extractions request
 	 * all the labile C.
 	 */
-	float beta_C_P <- 0.5;
+	float beta_CNP_P <- 0.5;
 	/**
 	 * Rate of C decomposed by N extraction if only N and P extractions request
 	 * all the labile C.
 	 */
 	float beta_N_P <- 0.5;
-	
-	float beta_C_CNP <- 0.5;
-	
-	float beta_N_CNP <- 0.5;
-	
-	float beta_P_CNP <- 0.5;
 
 	/**
 	 * Quantity of substrate that can be requested by the recalcitrant cleavage
@@ -235,7 +224,7 @@ species DecompositionProblem schedules: [] {
 	 * 
 	 * It is expressed as a quantity of labile C.
 	 */
-	float C_extraction_substrate {
+	float CNP_extraction_substrate {
 		return C_labile_init;
 	}
 	
@@ -258,10 +247,6 @@ species DecompositionProblem schedules: [] {
 		return min(C_labile_init, P_labile_init * phosphatase_CP);
 	}
 	
-	float CNP_extraction_substrate {
-		return C_labile_init;
-	}
-	
 	/**
 	 * Quantity of carbon requested by the recalcitrant cleavage action.
 	 */
@@ -273,12 +258,12 @@ species DecompositionProblem schedules: [] {
 	}
 	
 	/**
-	 * Quantity of carbon requested by C extraction.
+	 * Quantity of carbon requested by CNP extraction.
 	 */
-	float d_C_extraction(WeightedEnzymes enzymes) {
+	float d_CNP_extraction(WeightedEnzymes enzymes) {
 		return min(
-					dt * enzymes.T_C,
-					C_extraction_substrate()
+					dt * enzymes.T_CNP,
+					CNP_extraction_substrate()
 				);
 	}
 	
@@ -300,13 +285,6 @@ species DecompositionProblem schedules: [] {
 					dt * enzymes.T_P,
 					P_extraction_substrate()
 				);
-	}
-	
-	float d_CNP_extraction(WeightedEnzymes enzymes) {
-		return min(
-			dt * enzymes.T_CNP,
-			CNP_extraction_substrate()
-		);
 	}
 	
 	/**
@@ -334,15 +312,15 @@ species DecompositionProblem schedules: [] {
 	}
 	
 	float C_labile_decomp(Decomposition decomposition) {
-		return C_labile_init - decomposition.X_C_eC - decomposition.X_C_eN - decomposition.X_C_eCNP;
+		return C_labile_init - decomposition.X_C_eCNP - decomposition.X_C_eN;
 	}
 	
 	float N_labile_decomp(Decomposition decomposition) {
-		return N_labile_init - decomposition.X_N_eN - decomposition.X_N_eCNP;
+		return N_labile_init - decomposition.X_N_eCNP - decomposition.X_N_eN;
 	}
 	
 	float P_labile_decomp(Decomposition decomposition) {
-		return P_labile_init - decomposition.X_P_eP - decomposition.X_P_eCNP;
+		return P_labile_init - decomposition.X_P_eCNP - decomposition.X_P_eP;
 	}
 	
 	/**
@@ -374,7 +352,7 @@ species DecompositionProblem schedules: [] {
 	 * decomposition.
 	 */
 	float C_DOM_final(Decomposition decomposition) {
-		return C_DOM_init + decomposition.X_C_eC + decomposition.X_C_eN + decomposition.X_C_eCNP;
+		return C_DOM_init + decomposition.X_C_eCNP + decomposition.X_C_eN;
 	}
 	
 	/**
@@ -444,52 +422,41 @@ species DecompositionProblem schedules: [] {
 	) {
 		if(C_labile_init > 0) {
 			// Requested labile C by each action
-			float d_C <- d_C_extraction(enzymes);
+			float d_CNP <- d_CNP_extraction(enzymes);
 			float d_P <- d_P_extraction(enzymes);
 			float d_N <- d_N_extraction(enzymes);
-			float d_CNP <- d_CNP_extraction(enzymes);
-
-			result.X_C_eC <- d_C
-				- beta_C_N * d_N * d_C / C_labile_init
-				- beta_C_P * d_P * d_C / C_labile_init
-				- beta_C_CNP * d_CNP * d_C / C_labile_init;
-
-			result.X_C_eN <- d_N
-				- (1-beta_C_N) * d_N * d_C / C_labile_init
-				- beta_N_P * d_N * d_P / C_labile_init
-				- beta_N_CNP * d_N * d_CNP / C_labile_init;
-
-			float D_C_P <- d_P
-				- (1-beta_C_P) * d_P * d_C / C_labile_init
-				- (1-beta_N_P) * d_N * d_P / C_labile_init
-				- beta_P_CNP * d_P * d_CNP / C_labile_init;
 
 			result.X_C_eCNP <- d_CNP
-				- (1-beta_C_CNP) * d_C * d_CNP / C_labile_init
-				- (1-beta_N_CNP) * d_N * d_CNP / C_labile_init
-				- (1-beta_P_CNP) * d_P * d_CNP / C_labile_init;
+				- beta_CNP_N * d_N * d_CNP / C_labile_init
+				- beta_CNP_P * d_P * d_CNP / C_labile_init;
+
+			result.X_C_eN <- d_N
+				- (1-beta_CNP_N) * d_N * d_CNP / C_labile_init
+				- beta_N_P * d_N * d_P / C_labile_init;
+
+			float D_C_P <- d_P
+				- (1-beta_CNP_P) * d_P * d_CNP / C_labile_init
+				- (1-beta_N_P) * d_N * d_P / C_labile_init;
 	
 			result.X_N_eN <- result.X_C_eN / extracted_CN;
 			
 			result.X_P_eP <- D_C_P / phosphatase_CP;
 			
-			float left_C <- C_labile_init - result.X_C_eC - result.X_C_eN - D_C_P;
+			float left_C <- C_labile_init - result.X_C_eN - D_C_P;
 			if left_C > 0 {
 				result.X_N_eCNP <- result.X_C_eCNP * (N_labile_init-result.X_N_eN) / left_C;
 				result.X_P_eCNP <- result.X_C_eCNP * (P_labile_init-result.X_P_eP) / left_C;	
 			}
 		} else {
-			// C extraction
-			result.X_C_eC <- 0.0;
+			// C/N/P extraction
+			result.X_C_eCNP <- 0.0;
+			result.X_N_eCNP <- 0.0;
+			result.X_P_eCNP <- 0.0;
 			// N extraction
 			result.X_C_eN <- 0.0;
 			result.X_N_eN <- 0.0;
 			// P extraction
 			result.X_P_eP <- 0.0;
-			// CNP extraction
-			result.X_C_eCNP <- 0.0;
-			result.X_N_eCNP <- 0.0;
-			result.X_P_eCNP <- 0.0;
 		}
 
 		if(C_recal_init > 0) {
@@ -543,10 +510,9 @@ species SimulatedAnnealingState schedules: [] {
 		SimulatedAnnealingState current_state <- self;
 		ask problem {
 			create Enzymes with: [
-				T_C: min_enzymes.T_C + myself.budget[T_C_BUDGET]*(max_enzymes.T_C - min_enzymes.T_C),
+				T_CNP: min_enzymes.T_CNP + myself.budget[T_CNP_BUDGET]*(max_enzymes.T_CNP - min_enzymes.T_CNP),
 				T_N: min_enzymes.T_N + myself.budget[T_N_BUDGET]*(max_enzymes.T_N - min_enzymes.T_N),
 				T_P: min_enzymes.T_P + myself.budget[T_P_BUDGET]*(max_enzymes.T_P - min_enzymes.T_P),
-				T_CNP: min_enzymes.T_CNP + myself.budget[T_CNP_BUDGET]*(max_enzymes.T_CNP - min_enzymes.T_CNP),
 				T_recal: min_enzymes.T_recal + myself.budget[T_RECALCITRANT_BUDGET]*(max_enzymes.T_recal - min_enzymes.T_recal)
 			] {
 				current_state.enzymes <- self;
@@ -554,10 +520,9 @@ species SimulatedAnnealingState schedules: [] {
 		}
 		
 		create WeightedEnzymes with: [
-			T_C::problem.C_microbes*enzymes.T_C,
+			T_CNP::problem.C_microbes*enzymes.T_CNP,
 			T_N::problem.C_microbes*enzymes.T_N,
 			T_P::problem.C_microbes*enzymes.T_P,
-			T_CNP::problem.C_microbes*enzymes.T_CNP,
 			T_recal::problem.C_microbes*enzymes.T_recal
 		] {
 			current_state.weighted_enzymes <- self;
@@ -667,10 +632,9 @@ species EnzymaticActivityProblem schedules: [] {
 	action update_X_C_dam_max {
 		WeightedEnzymes enzymes;
 		create WeightedEnzymes with: [
-			T_C::C_microbes*max_enzymes.T_C,
+			T_CNP::C_microbes*max_enzymes.T_CNP,
 			T_N::C_microbes*max_enzymes.T_N,
 			T_P::C_microbes*max_enzymes.T_P,
-			T_CNP::C_microbes*max_enzymes.T_CNP,
 			T_recal::0.0
 		] {
 			// The current weighted enzymes is impossible in terms of budget, but it is a way
@@ -682,10 +646,9 @@ species EnzymaticActivityProblem schedules: [] {
 		}
 		ask decomposition_problem {
 			myself.X_C_dam_max <- max(
-				d_C_extraction(enzymes),
+				d_CNP_extraction(enzymes),
 				d_N_extraction(enzymes),
-				d_P_extraction(enzymes),
-				d_CNP_extraction(enzymes)
+				d_P_extraction(enzymes)
 			);
 		}
 		ask enzymes {
@@ -696,15 +659,15 @@ species EnzymaticActivityProblem schedules: [] {
 	action update_X_N_dam_max {
 		WeightedEnzymes enzymes;
 		create WeightedEnzymes with: [
-			T_N::C_microbes*max_enzymes.T_N,
-			T_CNP::C_microbes*max_enzymes.T_CNP
+			T_CNP::C_microbes*max_enzymes.T_CNP,
+			T_N::C_microbes*max_enzymes.T_N
 		] {
 			enzymes <- self;
 		}
 		ask decomposition_problem {
 			myself.X_N_dam_max <- C_labile_init > 0 ? max(
-				d_N_extraction(enzymes) / extracted_CN,
-				d_CNP_extraction(enzymes) * N_labile_init / C_labile_init
+				d_CNP_extraction(enzymes) * N_labile_init / C_labile_init,
+				d_N_extraction(enzymes) / extracted_CN
 				) : 0.0;
 		}
 		ask enzymes {
@@ -715,8 +678,8 @@ species EnzymaticActivityProblem schedules: [] {
 	action update_X_P_dam_max {
 		WeightedEnzymes enzymes;
 		create WeightedEnzymes with: [
-			T_P::C_microbes*max_enzymes.T_P,
 			T_CNP::C_microbes*max_enzymes.T_CNP,
+			T_P::C_microbes*max_enzymes.T_P,
 			T_recal::C_microbes*max_enzymes.T_recal
 		] {
 			enzymes <- self;
@@ -783,8 +746,8 @@ species SimulatedAnnealing schedules: [] {
 		T_init <- float(length(objectives));
 		T <- T_init;
 		budget_indexes <- [];
-		if(problem.max_enzymes.T_C - problem.min_enzymes.T_C > 0.0) {
-			add T_C_BUDGET to: budget_indexes;
+		if(problem.max_enzymes.T_CNP - problem.min_enzymes.T_CNP > 0.0) {
+			add T_CNP_BUDGET to: budget_indexes;
 		}
 		if(problem.max_enzymes.T_N - problem.min_enzymes.T_N > 0.0) {
 			add T_N_BUDGET to: budget_indexes;
@@ -792,13 +755,10 @@ species SimulatedAnnealing schedules: [] {
 		if(problem.max_enzymes.T_P - problem.min_enzymes.T_P > 0.0) {
 			add T_P_BUDGET to: budget_indexes;
 		}
-		if(problem.max_enzymes.T_CNP - problem.min_enzymes.T_CNP > 0.0) {
-			add T_CNP_BUDGET to: budget_indexes;
-		}
 		if(problem.max_enzymes.T_recal - problem.min_enzymes.T_recal > 0.0) {
 			add T_RECALCITRANT_BUDGET to: budget_indexes;
 		}
-		init_budget <- [0.0, 0.0, 0.0, 0.0, 0.0];
+		init_budget <- [0.0, 0.0, 0.0, 0.0];
 		loop i over: budget_indexes {
 			// The budget is initially distributed equally between all possible
 			// actions
@@ -1019,11 +979,11 @@ species MaxC parent: Objective schedules: [] {
 		float result;
 		ask state {
 			if(problem.X_C_dam_max > 0.0) {
-				result <- 1.0 - (decomposition.X_C_eC + decomposition.X_C_eN + decomposition.X_C_eCNP)
+				result <- 1.0 - (decomposition.X_C_eN + decomposition.X_C_eCNP)
 						/ problem.X_C_dam_max;
 			} else {
 				// Forces T_C, T_N and T_P budgets to 0 since no labile C/N/P can be decomposed anyway.
-				result <- exp(ln(2) * (state.budget[T_C_BUDGET] + budget[T_N_BUDGET] + budget[T_P_BUDGET])/3) - 1.0;
+				result <- exp(ln(2) * (state.budget[T_CNP_BUDGET] + budget[T_N_BUDGET] + budget[T_P_BUDGET])/3) - 1.0;
 			}
 		}
 		return result;
@@ -1090,15 +1050,13 @@ experiment EnzymaticActivityWorkbench type: gui {
 	float P_objective_weight;
 	list<Objective> objectives;
 
-	float min_T_C;
+	float min_T_CNP;
 	float min_T_N;
 	float min_T_P;
-	float min_T_CNP;
 	float min_T_recal;
-	float max_T_C;
+	float max_T_CNP;
 	float max_T_N;
 	float max_T_P;
-	float max_T_CNP;
 	float max_T_recal;
 	
 	float C_microbes;
@@ -1108,13 +1066,11 @@ experiment EnzymaticActivityWorkbench type: gui {
 	
 	float dt;
 	float extracted_CN;
+	float phosphatase_CP;
 	float alpha_P_e_r;
-	float beta_C_N;
-	float beta_C_P;
+	float beta_CNP_N;
+	float beta_CNP_P;
 	float beta_N_P;
-	float beta_C_CNP;
-	float beta_N_CNP;
-	float beta_P_CNP;
 	
 	float C_labile_init;
 	float C_labile_final;
@@ -1156,15 +1112,13 @@ experiment EnzymaticActivityWorkbench type: gui {
 	parameter "P" category: "Objectives" var: P_objective init: "none" among: ["none", "Max P"];
 	parameter "P weight" category: "Objectives" var: P_objective_weight init: 5.0;
 	
-	parameter "Min C extraction (gC/gM/d)" category: "Microbe population" var: min_T_C init: 0.0;
+	parameter "Min CNP extraction (gC/gM/d)" category: "Microbe population" var: min_T_CNP init: 0.0;
 	parameter "Min N extraction (gC/gM/d)" category: "Microbe population" var: min_T_N init: 0.0;
 	parameter "Min P extraction (gC/gM/d)" category: "Microbe population" var: min_T_P init: 0.0;
-	parameter "Min CNP extraction (gC/gM/d)" category: "Microbe population" var: min_T_CNP init: 0.0;
 	parameter "Min recalcitrant (gC/gM/d)" category: "Microbe population" var: min_T_recal init: 0.0;
-	parameter "Max C extraction (gC/gM/d)" category: "Microbe population" var: max_T_C init: 5.0;
+	parameter "Max CNP extraction (gC/gM/d)" category: "Microbe population" var: max_T_CNP init: 3.0;
 	parameter "Max N extraction (gC/gM/d)" category: "Microbe population" var: max_T_N init: 1.0;
 	parameter "Max P extraction (gC/gM/d)" category: "Microbe population" var: max_T_P init: 0.2;
-	parameter "Max CNP extraction (gC/gM/d)" category: "Microbe population" var: max_T_CNP init: 3.0;
 	parameter "Max recalcitrant (gC/gM/d)" category: "Microbe population" var: max_T_recal init: 1.0;
 
 	parameter "C microbes (g)" category: "Microbe population" var: C_microbes init: 1.0;
@@ -1174,13 +1128,11 @@ experiment EnzymaticActivityWorkbench type: gui {
 	
 	parameter "dt" category: "Constants" var:dt init: 1#d;
 	parameter "Extracted CN" category: "Constants" var: extracted_CN init: 5.0;
+	parameter "Phosphatase CP" category: "Constants" var: phosphatase_CP init: 5.0;
 	parameter "Alpha P eR" category: "Constants" var: alpha_P_e_r init: 0.001;
-	parameter "Beta C N" category: "Constants" var: beta_C_N init: 0.5;
-	parameter "Beta C P" category: "Constants" var: beta_C_P init: 0.5;
+	parameter "Beta CNP N" category: "Constants" var: beta_CNP_N init: 0.5;
+	parameter "Beta CNP P" category: "Constants" var: beta_CNP_P init: 0.5;
 	parameter "Beta N P" category: "Constants" var: beta_N_P init: 0.5;
-	parameter "Beta C CNP" category: "Constants" var: beta_C_CNP init: 0.5;
-	parameter "Beta N CNP" category: "Constants" var: beta_N_CNP init: 0.5;
-	parameter "Beta P CNP" category: "Constants" var: beta_P_CNP init: 0.5;
 		
 	parameter "Initial C dom (g)" category: "DOM" var: C_dom_init init: 0.0;
 	parameter "Final C dom (g)" category: "DOM" var: C_dom_final init: 0.0;
@@ -1305,20 +1257,18 @@ experiment EnzymaticActivityWorkbench type: gui {
 		
 		Enzymes min_enzymes;
 		create Enzymes with: [
-			T_C::min_T_C #gram/#gram/#d,
+			T_CNP::min_T_CNP #gram/#gram/#d,
 			T_N::min_T_N #gram/#gram/#d,
 			T_P::min_T_P #gram/#gram/#d,
-			T_CNP::min_T_CNP #gram/#gram/#d,
 			T_recal::min_T_recal #gram/#gram/#d
 		] {
 			min_enzymes <- self;
 		}
 		Enzymes max_enzymes;
 		create Enzymes with: [
-			T_C::max_T_C #gram/#gram/#d,
+			T_CNP::max_T_CNP #gram/#gram/#d,
 			T_N::max_T_N #gram/#gram/#d,
 			T_P::max_T_P #gram/#gram/#d,
-			T_CNP::max_T_CNP #gram/#gram/#d,
 			T_recal::max_T_recal #gram/#gram/#d
 		] {
 			max_enzymes <- self;
@@ -1369,13 +1319,11 @@ experiment EnzymaticActivityWorkbench type: gui {
 		create DecompositionProblem with: [
 			dt::dt,
 			extracted_CN::extracted_CN,
+			phosphatase_CP::phosphatase_CP,
 			alpha_P_e_r::alpha_P_e_r,
-			beta_C_N::beta_C_N,
-			beta_C_P::beta_C_P,
+			beta_CNP_N::beta_CNP_N,
+			beta_CNP_P::beta_CNP_P,
 			beta_N_P::beta_N_P,
-			beta_C_CNP::beta_C_CNP,
-			beta_N_CNP::beta_N_CNP,
-			beta_P_CNP::beta_P_CNP,
 			C_labile_init::total_C_labile,
 			N_labile_init::total_N_labile,
 			P_labile_init::total_P_labile,
@@ -1413,10 +1361,9 @@ experiment EnzymaticActivityWorkbench type: gui {
 			float P_avail <- s.problem.decomposition_problem.P_avail_final(s.decomposition);
 			write "";
 			write "s: " + s;
-			write "T_C: " + s.enzymes.T_C / (#gram / #gram / #d);
+			write "T_CNP: " + s.enzymes.T_CNP / (#gram / #gram / #d);
 			write "T_N: " + s.enzymes.T_N / (#gram / #gram / #d);
 			write "T_P: " + s.enzymes.T_P / (#gram / #gram / #d);
-			write "T_CNP: " + s.enzymes.T_CNP / (#gram / #gram / #d);
 			write "C/N: " + (N_avail > 0 ? C_avail / N_avail : 0.0);
 			write "C/P: " + (P_avail > 0 ? C_avail / P_avail : 0.0);
 			write "C_DOM: " + myself.decomposition_problem.C_DOM_init;
@@ -1424,13 +1371,12 @@ experiment EnzymaticActivityWorkbench type: gui {
 			write "e: " + E(s);
 						
 			ask s.decomposition {
-				write "X_C_eC: " + X_C_eC / #gram;
-				write "X_C_eN: " + X_C_eN / #gram;
-				write "X_N_eN: " + X_N_eN / #gram;
-				write "X_P_eP: " + X_P_eP / #gram;
 				write "X_C_eCNP: " + X_C_eCNP / #gram;
 				write "X_N_eCNP: " + X_N_eCNP / #gram;
 				write "X_P_eCNP: " + X_P_eCNP / #gram;
+				write "X_C_eN: " + X_C_eN / #gram;
+				write "X_N_eN: " + X_N_eN / #gram;
+				write "X_P_eP: " + X_P_eP / #gram;
 				write "X_C_eR: " + X_C_eR / #gram;
 				write "X_P_eR_recal_to_dim:" + X_P_eR_recal_to_dim / #gram;
 			}
@@ -1469,16 +1415,14 @@ experiment EnzymaticActivityWorkbench type: gui {
 		}
 		display "Enzymatic rates" type:2d {
 			chart "Enzymatic rates" type:series style:line {
-				data "T_C" value: sum(SimulatedAnnealing collect (each.s.enzymes.T_C / (#gram / #gram / #d))) marker:false;
+				data "T_CNP" value: sum(SimulatedAnnealing collect (each.s.enzymes.T_CNP / (#gram / #gram / #d))) marker:false;
 				data "T_N" value: sum(SimulatedAnnealing collect (each.s.enzymes.T_N / (#gram / #gram / #d))) marker:false;
 				data "T_P" value: sum(SimulatedAnnealing collect (each.s.enzymes.T_P / (#gram / #gram / #d))) marker:false;
-				data "T_CNP" value: sum(SimulatedAnnealing collect (each.s.enzymes.T_CNP / (#gram / #gram / #d))) marker:false;
 				data "T_recal" value: sum(SimulatedAnnealing collect (each.s.enzymes.T_recal / (#gram / #gram / #d))) marker:false;
 				if show_max_rates {
-					data "T_C (max)" value: problem != nil ? problem.max_enzymes.T_C / (#gram / #gram / #d) : 0.0 marker:false;
+					data "T_CNP (max)" value: problem != nil ? problem.max_enzymes.T_CNP / (#gram / #gram / #d) : 0.0 marker:false;
 					data "T_N (max)" value: problem != nil ? problem.max_enzymes.T_N / (#gram / #gram / #d) : 0.0 marker:false;
 					data "T_P (max)" value: problem != nil ? problem.max_enzymes.T_P / (#gram / #gram / #d) : 0.0 marker:false;
-					data "T_CNP (max)" value: problem != nil ? problem.max_enzymes.T_CNP / (#gram / #gram / #d) : 0.0 marker:false;
 					data "T_recal (max)" value: problem != nil ? problem.max_enzymes.T_recal / (#gram / #gram / #d) : 0.0 marker:false;			
 				}
 			}
