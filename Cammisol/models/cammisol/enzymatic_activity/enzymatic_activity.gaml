@@ -384,7 +384,7 @@ species DecompositionProblem schedules: [] {
 	 * decomposition.
 	 */
 	float P_DIM_final(Decomposition decomposition) {
-		return P_DIM_init + decomposition.X_P_eP;
+		return P_DIM_init + decomposition.X_P_eP + decomposition.X_P_eR_recal_to_dim;
 	}
 	
 	/**
@@ -1125,7 +1125,7 @@ experiment EnzymaticActivityWorkbench type: gui {
 	
 	parameter "dt" category: "Constants" var:dt init: 1#d;
 	parameter "Extracted CN" category: "Constants" var: extracted_CN init: 5.0;
-	parameter "Phosphatase CP" category: "Constants" var: phosphatase_CP init: 5.0;
+	parameter "Phosphatase CP" category: "Constants" var: phosphatase_CP init: 1.0;
 	parameter "Alpha P eR" category: "Constants" var: alpha_P_e_r init: 0.001;
 	parameter "Beta CNP N" category: "Constants" var: beta_CNP_N init: 0.5;
 	parameter "Beta CNP P" category: "Constants" var: beta_CNP_P init: 0.5;
