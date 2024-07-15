@@ -633,9 +633,7 @@ species EnzymaticActivityProblem schedules: [] {
 		WeightedEnzymes enzymes;
 		create WeightedEnzymes with: [
 			T_CNP::C_microbes*max_enzymes.T_CNP,
-			T_N::C_microbes*max_enzymes.T_N,
-			T_P::C_microbes*max_enzymes.T_P,
-			T_recal::0.0
+			T_N::C_microbes*max_enzymes.T_N
 		] {
 			// The current weighted enzymes is impossible in terms of budget, but it is a way
 			// to easily compute each d_* max since:
@@ -647,8 +645,7 @@ species EnzymaticActivityProblem schedules: [] {
 		ask decomposition_problem {
 			myself.X_C_dam_max <- max(
 				d_CNP_extraction(enzymes),
-				d_N_extraction(enzymes),
-				d_P_extraction(enzymes)
+				d_N_extraction(enzymes)
 			);
 		}
 		ask enzymes {
