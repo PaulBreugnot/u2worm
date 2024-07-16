@@ -26,8 +26,10 @@ global {
 	list<species<MicrobePopulation>> populations <- [O_Strategist, F_Strategist, M_Strategist];
 	
 	/* 
-	 * Default values for all parameters to explore.
-	 * Values are set and explored using experiment parameters.
+	 * Parameters of each experiment.
+	 *
+	 * Default values are set using experiment parameters, or explored by the
+	 * experiment.
 	 */
 	float C_labile;
 	float CN_labile;
@@ -44,7 +46,7 @@ global {
 	 */
 	OrganicParticle organic_particle;
 	/**
-	 * A single dam is considered in the environment.
+	 * A single DAM is considered in the environment.
 	 */
 	PoreParticle pore_particle;
 	
@@ -124,7 +126,7 @@ global {
 				output[species(myself)].X_C <- (X_C_eCNP + X_C_eN)/#gram;
 				output[species(myself)].X_N <- (X_N_eN + X_N_eCNP)/#gram;
 				output[species(myself)].X_P <- (X_P_eP + X_P_eCNP)/#gram;
-				output[species(myself)].X_recal <- X_C_eR/#gram;
+				output[species(myself)].X_recal <- X_C_er/#gram;
 				
 				float C_avail; float N_avail; float P_avail;
 				ask decomposition_problem {
@@ -133,15 +135,15 @@ global {
 					P_avail <- P_avail_final(myself);
 				}
 				
-				output[species(myself)].C_recal <- (world.C_recalcitrant - X_C_eR)/#gram;
+				output[species(myself)].C_recal <- (world.C_recalcitrant - X_C_er)/#gram;
 				
-				output[species(myself)].C_labile <- (world.C_labile + X_C_eR - (X_C_eCNP + X_C_eN))/#gram;
-				output[species(myself)].N_labile <- (world.C_labile/world.CN_labile + X_N_eR - X_N_eN - X_N_eCNP)/#gram;
-				output[species(myself)].P_labile <- (world.C_labile/world.CP_labile + X_P_eR_recal_to_labile - X_P_eP - X_P_eCNP)/#gram;
+				output[species(myself)].C_labile <- (world.C_labile + X_C_er - (X_C_eCNP + X_C_eN))/#gram;
+				output[species(myself)].N_labile <- (world.C_labile/world.CN_labile + X_N_er - X_N_eN - X_N_eCNP)/#gram;
+				output[species(myself)].P_labile <- (world.C_labile/world.CP_labile + X_P_er_recal_to_labile - X_P_eP - X_P_eCNP)/#gram;
 				
 				output[species(myself)].C_avail <- (world.C_dom + X_C_eCNP + X_C_eN)/#gram;
 				output[species(myself)].N_avail <- (world.C_dom/world.CN_dom + X_N_eN + X_N_eCNP)/#gram;
-				output[species(myself)].P_avail <- (world.C_dom/world.CP_dom + X_P_eP + X_P_eCNP + X_P_eR_recal_to_dim)/#gram;
+				output[species(myself)].P_avail <- (world.C_dom/world.CP_dom + X_P_eP + X_P_eCNP + X_P_er_recal_to_dim)/#gram;
 				
 				ask weighted_enzymes {
 					do die;
@@ -206,7 +208,8 @@ species CP_DOMGetter parent:ExplorationParameterGetter {
 }
 
 /**
- * Data structure used to store enzymatic activities and decomposition results for each species.
+ * Data structure used to store enzymatic activities and decomposition results
+ * for each species.
  */
 species DataOutput schedules:[] {
 	float T_r;
@@ -493,7 +496,8 @@ experiment Explore {
 }
 
 /**
- * Base virtual experiment used to explore the variation of the labile C/N rate, with an empty dam.
+ * Base virtual experiment used to explore the variation of the labile C/N rate,
+ * with an empty DAM.
  */
 experiment ExploreCN_labile parent:Explore {
 	parameter "X var" var:x_var init:"CN labile" read_only:true;
@@ -512,7 +516,8 @@ experiment ExploreCN_labile parent:Explore {
 
 // Scenario 1
 /**
- * Experiment used to explore the labile C/N rate with an "high" labile C availability of 1 gram.
+ * Experiment used to explore the labile C/N rate with an "high" labile C
+ * availability of 10 gram.
  */
 experiment ExploreCN_High_C_labile type:batch parent:ExploreCN_labile until: cycle>0 repeat: 5 {
 	parameter "Output file" var:output_file init: "CN_high_C_labile" read_only:true;
@@ -527,7 +532,8 @@ experiment ExploreCN_High_C_labile type:batch parent:ExploreCN_labile until: cyc
 
 // Scenario 2
 /**
- * Experiment used to explore the labile C/N rate with a "low" labile C availability of 0.1 gram.
+ * Experiment used to explore the labile C/N rate with a "low" labile C
+ * availability of 0.3 gram.
  */
 experiment ExploreCN_Low_C_labile type:batch parent:ExploreCN_labile until: cycle>0 repeat: 5 {
 	parameter "Output file" var:output_file init: "CN_low_C_labile";
@@ -541,7 +547,8 @@ experiment ExploreCN_Low_C_labile type:batch parent:ExploreCN_labile until: cycl
 }
 
 /**
- * Base virtual experiment used to explore the variation of the labile C/P rate, with an empty dam.
+ * Base virtual experiment used to explore the variation of the labile C/P rate,
+ * with an empty DAM.
  */
 experiment ExploreCP_labile parent:Explore {
 	parameter "X var" var:x_var init:"CP labile" read_only:true;
@@ -560,7 +567,8 @@ experiment ExploreCP_labile parent:Explore {
 
 // Scenario 3
 /**
- * Experiment used to explore the labile C/P rate with an "high" labile C availability of 1 gram.
+ * Experiment used to explore the labile C/P rate with an "high" labile C
+ * availability of 5 gram.
  */
 experiment ExploreCP_High_C_labile type:batch parent:ExploreCP_labile until: cycle>0 repeat: 5 {
 	parameter "Output file" var:output_file init: "CP_high_C_labile";
@@ -575,7 +583,8 @@ experiment ExploreCP_High_C_labile type:batch parent:ExploreCP_labile until: cyc
 
 // Scenario 4
 /**
- * Experiment used to explore the labile C/P rate with a "low" labile C availability of 0.1 gram.
+ * Experiment used to explore the labile C/P rate with a "low" labile C
+ * availability of 0.3 gram.
  */
 experiment ExploreCP_Low_C_labile type:batch parent:ExploreCP_labile until: cycle>0 repeat: 5 {
 	parameter "Output file" var:output_file init: "CP_low_C_labile";
@@ -588,7 +597,7 @@ experiment ExploreCP_Low_C_labile type:batch parent:ExploreCP_labile until: cycl
 	}
 }
 /**
- * Base virtual experiment used to explore the variation of the dom C/N rate.
+ * Base virtual experiment used to explore the variation of the DOM C/N rate.
  */
 experiment ExploreCN_dom parent:Explore type:batch until:cycle > 0 repeat: 5 {
 	parameter "X var" var:x_var init:"CN dom" read_only:true;
@@ -614,7 +623,7 @@ experiment ExploreCN_dom parent:Explore type:batch until:cycle > 0 repeat: 5 {
 }
 
 /**
- * Base virtual experiment used to explore the variation of the dom C/P rate.
+ * Base virtual experiment used to explore the variation of the DOM C/P rate.
  */
 experiment ExploreCP_dom parent:Explore type:batch until:cycle > 0 repeat: 5 {
 	parameter "X var" var:x_var init:"CP dom" read_only:true;

@@ -9,7 +9,7 @@ model enzyme_activity
 
 global {
 	/**
-	 * Index of the budget allocated to C extraction.
+	 * Index of the budget allocated to CNP extraction.
 	 */
 	int T_CNP_BUDGET <- 0;
 	/**
@@ -31,23 +31,48 @@ global {
  */
 species Enzymes schedules: [] {
 	/**
-	 * Decomposition of sugars and carboxylic acids by endocleaving
-	 * (depolymerization) or exocleaving. Produces "pure" C (H, O and elements
-	 * other that C, N and P are not represented in the model). (C extraction)
+	 * CNP extraction.
+	 * 
+	 * Decomposition of sugars, carbohydrates, proteins and fatty acids.reduces
+	 * the size of carbon based polymers (depolymerisation) using endocleaving
+	 * and exocleaving enzymes. Produces C/N/P compounds with C:N and C:P ratios
+	 * corresponding to the C:N and C:P ratios of labile OM.
 	 */
 	float T_CNP <- 0.0#gram/#gram/#d;
+
 	/**
-	 * Decomposition of polypeptides and amino sugars, from which amino acids
-	 * and N-acetyl glucosamine are extracted. (N extraction)
+	 * N extraction.
+	 * 
+	 * Decomposition of polypeptides and amino sugars. Extract assimilable amino
+	 * acids from polypeptides or N-acetyl glucosamine - which is the building
+	 * block of chitin molecules - from amino sugars. Represents the grouped
+	 * actions of aminopeptidases and N-acetyl glucosamidase. The C:N ratio
+	 * of products is equal to extracted_CN.
 	 */
 	float T_N <- 0.0#gram/#gram/#d;
+
 	/**
-	 * Mineralization of P. (P extraction)
+	 * P extraction.
+	 * 
+	 * Mineralisation of P. Extracts P into the DIM. Represents the
+	 * decomposition of phosphate groups by the combined action of
+	 * phosphomonoesterases and phosphodiesterases.
 	 */
 	float T_P <- 0.0#gram/#gram/#d;
+
 	/**
-	 * Cleavage of recalcitrant matter. Extract blocks of C/N/P into the labile
-	 * compartments. (Recalcitrant cleavage)
+	 * Recalcitrant cleavage.
+	 * 
+	 * Breaks coarse recalcitrant C based molecules into smaller and more labile
+	 * compounds, but not yet assimilable. This action brings together the
+	 * activities of numerous enzymes such as laccases, peroxidases, cellulases,
+	 * tannases, lipases, endoproteases, endochitinases, and endonucleases.
+	 * Doing so, trapped N and P is released in the labile OM in addition to C
+	 * according to the C:N and C:P ratios of the recalcitrant OM.
+	 * 
+	 * In order to model the special action of phytases, a small fraction
+	 * alpha_P_er of the released P is directly sent to the DIM, modelling the
+	 * first P extracted from recalcitrant phytic acid molecules.
 	 */
 	float T_recal <- 0.0#gram/#gram/#d;
 }
@@ -69,10 +94,20 @@ species WeightedEnzymes schedules: [] {
 species Decomposition schedules: [] {
 	/**
 	 * Quantity of C removed from C labile and added to C dom due to
-	 * C extraction.
+	 * CNP extraction.
 	 */
 	float X_C_eCNP <- 0.0;
+
+	/**
+	 * Quantity of N removed from N labile and added to N dom due to
+	 * CNP extraction.
+	 */
 	float X_N_eCNP <- 0.0;
+
+	/**
+	 * Quantity of P removed from P labile and added to P dom due to
+	 * CNP extraction.
+	 */
 	float X_P_eCNP <- 0.0;
 	
 	/**
@@ -97,31 +132,34 @@ species Decomposition schedules: [] {
 	 * Quantity of C removed from C recalcitrant and added to C labile due to
 	 * recalcitrant cleavage.
 	 */
-	float X_C_eR <- 0.0;
+	float X_C_er <- 0.0;
+
 	/**
 	 * Quantity of N removed from N recalcitrant and added to N labile due to
 	 * recalcitrant cleavage.
 	 */
-	float X_N_eR <- 0.0;
+	float X_N_er <- 0.0;
+
 	/**
 	 * Quantity of P removed from P recalcitrant and added to P labile due to
 	 * recalcitrant cleavage.
 	 */
-	float X_P_eR_recal_to_labile <- 0.0;
+	float X_P_er_recal_to_labile <- 0.0;
+
 	/**
 	 * Quantity of P removed from P recalcitrant and added to P dim due to
 	 * recalcitrant cleavage. (specific action of phytases)
 	 */
-	float X_P_eR_recal_to_dim <- 0.0;
+	float X_P_er_recal_to_dim <- 0.0;
 }
 
 /**
  * The decomposition problem embeds all parameters required to compute the
- * decomposition of matter due given a set of enzymatic activities.
+ * decomposition of matter given a set of enzymatic activities.
  *
  * It is notably used to estimate the quality of an enzymatic budget allocation
  * in the EnzymaticActivityProblem, but also standalone to compute the
- * decomposition of organic particles at each time step, without optimization.
+ * decomposition of organic particles at each time step.
  */
 species DecompositionProblem schedules: [] {
 	/**
@@ -184,14 +222,19 @@ species DecompositionProblem schedules: [] {
 	 * the substrate.
 	 */
 	float extracted_CN <- 5.0;
-	
+
+	/**
+	 * Count of C in the polymer section bound to each P and attacked by P
+	 * extraction. This quantity of C is requested, but not included in products
+	 * as only the phosphate is extracted to the DIM.
+	 */
 	float phosphatase_CP <- 1.0;
 
 	/**
 	 * Rate of organic P sent from recalcitrant to DIM among the P decomposed by
 	 * recalcitrant cleavage. Represents the the action of phytases.
 	 */
-	float alpha_P_e_r <- 1e-3;
+	float alpha_P_er <- 1e-3;
 
 	/**
 	 * Rate of C decomposed by C extraction if only C and N extractions request
@@ -241,7 +284,7 @@ species DecompositionProblem schedules: [] {
 	/**
 	 * Quantity of substrate that can be requested by P extraction.
 	 * 
-	 * It is expressed as a quantity of labile C bound to phosphate.
+	 * It is expressed as a quantity of labile C bound to phosphatase.
 	 */
 	float P_extraction_substrate {
 		return min(C_labile_init, P_labile_init * phosphatase_CP);
@@ -292,7 +335,7 @@ species DecompositionProblem schedules: [] {
 	 * decomposition.
 	 */
 	float C_recal_final(Decomposition decomposition) {
-		return C_recal_init - decomposition.X_C_eR;
+		return C_recal_init - decomposition.X_C_er;
 	}
 	
 	/**
@@ -300,7 +343,7 @@ species DecompositionProblem schedules: [] {
 	 * decomposition.
 	 */
 	float N_recal_final(Decomposition decomposition) {
-		return N_recal_init - decomposition.X_N_eR;
+		return N_recal_init - decomposition.X_N_er;
 	}
 	
 	/**
@@ -308,43 +351,58 @@ species DecompositionProblem schedules: [] {
 	 * decomposition.
 	 */
 	float P_recal_final(Decomposition decomposition) {
-		return P_recal_init - decomposition.X_P_eR_recal_to_labile - decomposition.X_P_eR_recal_to_dim;
+		return P_recal_init - decomposition.X_P_er_recal_to_labile - decomposition.X_P_er_recal_to_dim;
 	}
 	
+	/**
+	 * Represents the quantity of labile C resulting from the provided
+	 * decomposition, without products of the decomposition of recalcitrant OM.
+	 */
 	float C_labile_decomp(Decomposition decomposition) {
 		return C_labile_init - decomposition.X_C_eCNP - decomposition.X_C_eN;
 	}
 	
+	/**
+	 * Represents the quantity of labile N resulting from the provided
+	 * decomposition, without products of the decomposition of recalcitrant OM.
+	 */
 	float N_labile_decomp(Decomposition decomposition) {
 		return N_labile_init - decomposition.X_N_eCNP - decomposition.X_N_eN;
 	}
 	
+	/**
+	 * Represents the quantity of labile P resulting from the provided
+	 * decomposition, without products of the decomposition of recalcitrant OM.
+	 */
 	float P_labile_decomp(Decomposition decomposition) {
 		return P_labile_init - decomposition.X_P_eCNP - decomposition.X_P_eP;
 	}
 	
 	/**
 	 * Computes the quantity of labile C resulting from the provided
-	 * decomposition.
+	 * decomposition, including products of the decomposition of recalcitrant
+	 * OM.
 	 */
 	float C_labile_final(Decomposition decomposition) {
-		return C_labile_decomp(decomposition) + decomposition.X_C_eR;
+		return C_labile_decomp(decomposition) + decomposition.X_C_er;
 	}
 	
 	/**
 	 * Computes the quantity of labile N resulting from the provided
-	 * decomposition.
+	 * decomposition, including products of the decomposition of recalcitrant
+	 * OM.
 	 */
 	float N_labile_final(Decomposition decomposition) {
-		return N_labile_decomp(decomposition) + decomposition.X_N_eR;
+		return N_labile_decomp(decomposition) + decomposition.X_N_er;
 	}
 	
 	/**
 	 * Computes the quantity of labile P resulting from the provided
-	 * decomposition.
+	 * decomposition, including products of the decomposition of recalcitrant
+	 * OM.
 	 */
 	float P_labile_final(Decomposition decomposition) {
-		return P_labile_decomp(decomposition) + decomposition.X_P_eR_recal_to_labile;
+		return P_labile_decomp(decomposition) + decomposition.X_P_er_recal_to_labile;
 	}
 	
 	/**
@@ -384,7 +442,7 @@ species DecompositionProblem schedules: [] {
 	 * decomposition.
 	 */
 	float P_DIM_final(Decomposition decomposition) {
-		return P_DIM_init + decomposition.X_P_eP + decomposition.X_P_eR_recal_to_dim;
+		return P_DIM_init + decomposition.X_P_eP + decomposition.X_P_er_recal_to_dim;
 	}
 	
 	/**
@@ -460,19 +518,19 @@ species DecompositionProblem schedules: [] {
 		}
 
 		if(C_recal_init > 0) {
-			result.X_C_eR <- d_C_recal(enzymes);
-			result.X_N_eR <- result.X_C_eR * (N_recal_init / C_recal_init);
+			result.X_C_er <- d_C_recal(enzymes);
+			result.X_N_er <- result.X_C_er * (N_recal_init / C_recal_init);
 			
-			float D_P_recal <- result.X_C_eR * (P_recal_init / C_recal_init);
-			result.X_P_eR_recal_to_dim <-
-				alpha_P_e_r * D_P_recal;
-			result.X_P_eR_recal_to_labile <-
-				(1-alpha_P_e_r) * D_P_recal;
+			float D_P_recal <- result.X_C_er * (P_recal_init / C_recal_init);
+			result.X_P_er_recal_to_dim <-
+				alpha_P_er * D_P_recal;
+			result.X_P_er_recal_to_labile <-
+				(1-alpha_P_er) * D_P_recal;
 		} else {
-			result.X_C_eR <- 0.0;
-			result.X_N_eR <- 0.0;
-			result.X_P_eR_recal_to_dim <- 0.0;
-			result.X_P_eR_recal_to_labile <- 0.0;
+			result.X_C_er <- 0.0;
+			result.X_N_er <- 0.0;
+			result.X_P_er_recal_to_dim <- 0.0;
+			result.X_P_er_recal_to_labile <- 0.0;
 		}
 	}
 }
@@ -496,11 +554,13 @@ species SimulatedAnnealingState schedules: [] {
 	 * Current enzymatic activities, computed from the budget.
 	 */
 	Enzymes enzymes;
+
 	/**
 	 * Current enzymatic activities, weighted by the active microbe biomass,
 	 * computed from the budget.
 	 */
 	WeightedEnzymes weighted_enzymes;
+
 	/**
 	 * Estimated decomposition, computed from the current problem and enzymes.
 	 */
@@ -563,18 +623,21 @@ species Objective schedules: [] {
  * state in the optimization process.
  */
 species EnzymaticActivityProblem schedules: [] {
+	/**
+	 * Decomposition problem used to estimate the quality of each budget.
+	 */
 	DecompositionProblem decomposition_problem;
 	
 	/**
-	 * Microbe population active structural C.
+	 * Active structural C of the microbe population.
 	 */
 	float C_microbes;
 	/**
-	 * Requested microbe CN rate.
+	 * CN ratio requested by the microbe population.
 	 */
 	float C_N;
 	/**
-	 * Requested microbe CP rate.
+	 * CP ratio requested by the microbe population.
 	 */
 	float C_P;
 	/**
@@ -590,7 +653,7 @@ species EnzymaticActivityProblem schedules: [] {
 	
 	/**
 	 * Estimation of the maximum quantity of labile C that can be produced by
-	 * to the recalcitrant cleavage action.
+	 * the recalcitrant cleavage action.
 	 * 
 	 * The value is computed by the update_X_C_labile_max() method.
 	 */
@@ -598,7 +661,7 @@ species EnzymaticActivityProblem schedules: [] {
 	
 	/**
 	 * Estimation of the maximum quantity of available C that can be produced by
-	 * C, N and P extraction actions.
+	 * CNP and N extraction actions.
 	 * 
 	 * The value is computed by the update_X_C_dam_max() method.
 	 */
@@ -606,15 +669,15 @@ species EnzymaticActivityProblem schedules: [] {
 	
 	/**
 	 * Estimation of the maximum quantity of available N that can be produced by
-	 * N extraction.
+	 * CNP and N extraction.
 	 * 
 	 * The value is computed by the update_X_N_dam_max() method.
 	 */
 	float X_N_dam_max;
 	
 	/**
-	 * Estimation of the maximum quantity of available P that can be produced
-	 * by the recalcitrant cleavage and P extraction actions.
+	 * Estimation of the maximum quantity of available P that can be produced by
+	 * the recalcitrant cleavage, CNP and P extraction actions.
 	 * 
 	 * The value is computed by the update_X_P_dam_max() method.
 	 */
@@ -637,9 +700,11 @@ species EnzymaticActivityProblem schedules: [] {
 		] {
 			// The current weighted enzymes is impossible in terms of budget, but it is a way
 			// to easily compute each d_* max since:
-			// - the maximum of d_C_extraction is only computed from the max_enzymes.T_C (assuming other T_* = 0)
-			// - the maximum of d_N_extraction is only computed from the max_enzymes.T_N (assuming other T_* = 0)
-			// - ... idem form d_C_P
+			// - the maximum of d_CNP_extraction is only computed from
+			// max_enzymes.T_CNP (assuming other T_* = 0)
+			// - the maximum of d_N_extraction is only computed from
+			// max_enzymes.T_N (assuming other T_* = 0)
+			// - ... idem for d_C_P
 			enzymes <- self;
 		}
 		ask decomposition_problem {
@@ -683,7 +748,7 @@ species EnzymaticActivityProblem schedules: [] {
 		}
 		ask decomposition_problem {
 			myself.X_P_dam_max <- max(
-				C_recal_init > 0.0 ? alpha_P_e_r * d_C_recal(enzymes) * P_recal_init / C_recal_init : 0.0,
+				C_recal_init > 0.0 ? alpha_P_er * d_C_recal(enzymes) * P_recal_init / C_recal_init : 0.0,
 				C_labile_init > 0.0 ? d_P_extraction(enzymes) / phosphatase_CP : 0.0,
 				C_labile_init > 0.0 ? d_CNP_extraction(enzymes) * P_labile_init / C_labile_init : 0.0
 			);
@@ -703,12 +768,14 @@ species SimulatedAnnealing schedules: [] {
 	 */
 	int N <- 1000;
 	/**
-	 * If the value of the objective is below this threshold, the current state is returned, even if N has not been reached yet.
+	 * If the value of the objective is below this threshold, the current state
+	 * is returned, even if N has not been reached yet.
 	 */
 	float epsilon <- 0.0;
 	
 	/**
-	 * Initial temperature. Must be in the order of the values of the objective function.
+	 * Initial temperature. Must be in the order of the values of the objective
+	 * function.
 	 */
 	float T_init;
 	/**
@@ -833,10 +900,11 @@ species SimulatedAnnealing schedules: [] {
 			add item to: _T;
 		}
 
-		// The indexes list is shuffled to determine in which order each component will vary.
-		// Since the total budget (1.0) is fixed, this allows a fair access to the budget for
-		// each action (i.e. the last component does not always get the last part left after
-		// all other get their own part).
+		// The indexes list is shuffled to determine in which order each
+		// component will vary. Since the total budget (1.0) is fixed, this
+		// allows a fair access to the budget for each action (i.e. the last
+		// component does not always get the last part left after all other get
+		// their own part).
 		list<int> indexes <- shuffle(budget_indexes);
 		float delta <- 0.1;
 		float range <- 1.0;
@@ -956,7 +1024,7 @@ species MaxLabileC parent: Objective schedules: [] {
 		float result;
 		ask state {
 			if(problem.X_C_labile_max > 0.0) {
-				result <- 1.0 - decomposition.X_C_eR / problem.X_C_labile_max;
+				result <- 1.0 - decomposition.X_C_er / problem.X_C_labile_max;
 			} else {
 				// Forces T_recal to tend to 0 if max_recal_C_decomposition = 0.0
 				result <- exp(ln(2) * budget[T_RECALCITRANT_BUDGET]) - 1.0;	
@@ -1017,7 +1085,7 @@ species MaxP parent: Objective schedules: [] {
 		float result;
 		ask state {
 			if(problem.X_P_dam_max > 0.0) {
-				result <- 1.0 - (decomposition.X_P_eR_recal_to_dim + decomposition.X_P_eP + decomposition.X_P_eCNP)
+				result <- 1.0 - (decomposition.X_P_er_recal_to_dim + decomposition.X_P_eP + decomposition.X_P_eCNP)
 						/ problem.X_P_dam_max;
 			} else {
 				// No P can be decomposed anyway
@@ -1064,7 +1132,7 @@ experiment EnzymaticActivityWorkbench type: gui {
 	float dt;
 	float extracted_CN;
 	float phosphatase_CP;
-	float alpha_P_e_r;
+	float alpha_P_er;
 	float beta_CNP_N;
 	float beta_CNP_P;
 	float beta_N_P;
@@ -1126,7 +1194,7 @@ experiment EnzymaticActivityWorkbench type: gui {
 	parameter "dt" category: "Constants" var:dt init: 1#d;
 	parameter "Extracted CN" category: "Constants" var: extracted_CN init: 5.0;
 	parameter "Phosphatase CP" category: "Constants" var: phosphatase_CP init: 1.0;
-	parameter "Alpha P eR" category: "Constants" var: alpha_P_e_r init: 0.001;
+	parameter "Alpha P er" category: "Constants" var: alpha_P_er init: 0.001;
 	parameter "Beta CNP N" category: "Constants" var: beta_CNP_N init: 0.5;
 	parameter "Beta CNP P" category: "Constants" var: beta_CNP_P init: 0.5;
 	parameter "Beta N P" category: "Constants" var: beta_N_P init: 0.5;
@@ -1317,7 +1385,7 @@ experiment EnzymaticActivityWorkbench type: gui {
 			dt::dt,
 			extracted_CN::extracted_CN,
 			phosphatase_CP::phosphatase_CP,
-			alpha_P_e_r::alpha_P_e_r,
+			alpha_P_er::alpha_P_er,
 			beta_CNP_N::beta_CNP_N,
 			beta_CNP_P::beta_CNP_P,
 			beta_N_P::beta_N_P,
@@ -1374,8 +1442,8 @@ experiment EnzymaticActivityWorkbench type: gui {
 				write "X_C_eN: " + X_C_eN / #gram;
 				write "X_N_eN: " + X_N_eN / #gram;
 				write "X_P_eP: " + X_P_eP / #gram;
-				write "X_C_eR: " + X_C_eR / #gram;
-				write "X_P_eR_recal_to_dim:" + X_P_eR_recal_to_dim / #gram;
+				write "X_C_er: " + X_C_er / #gram;
+				write "X_P_er_recal_to_dim:" + X_P_er_recal_to_dim / #gram;
 			}
 			exp.simulated_annealing <- self;
 		}
