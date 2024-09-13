@@ -145,14 +145,14 @@ experiment MicrobesTestBase {
 			
 			if enzymes_display = "Budget" {
 				enzymes_output[s] <- [
-					populations[s].enzymes.T_C/(#gram/#gram/#h),
+					populations[s].enzymes.T_CNP/(#gram/#gram/#h),
 					populations[s].enzymes.T_N/(#gram/#gram/#h),
 					populations[s].enzymes.T_P/(#gram/#gram/#h),
 					populations[s].enzymes.T_recal/(#gram/#gram/#h)
 					];
 			} else if enzymes_display = "Absolute" {
 				enzymes_output[s] <- [
-					populations[s].enzymes.T_C * C[s] * awake[s] / (#gram/#h),
+					populations[s].enzymes.T_CNP * C[s] * awake[s] / (#gram/#h),
 					populations[s].enzymes.T_N * C[s] * awake[s] / (#gram/#h),
 					populations[s].enzymes.T_P * C[s] * awake[s] / (#gram/#h),
 					populations[s].enzymes.T_recal * C[s] * awake[s] / (#gram/#h)
@@ -364,7 +364,6 @@ experiment IndividualMicrobesGrowth_InfiniteNutrients parent:IndividualMicrobesG
 	}
 	
 	action feed_dam(MicrobePopulation population, Dam dam) {
-		write "" + dam + " " + (dam = nil);
 		// Each dam is fed with the nutrients requested by the population
 		ask dam {
 			dom[2] <- dom[2] + myself.nutrient_rate * population.requested_C;
@@ -512,9 +511,14 @@ experiment CollectiveMicrobesGrowth_FixedNutrients parent:CollectiveMicrobesGrow
 	}
 }
 
-experiment MicrobesDormancy parent:IndividualMicrobesGrowth {
+experiment Sporulation parent:IndividualMicrobesGrowth {
 	float phase_1_duration <- 24#h;
 	float phase_2_duration <- 100#h;
+	
+	parameter "Duration of phase 1 (nutrients)" var:phase_1_duration;
+	parameter "Duration of phase 2 (no nutrients)" var:phase_2_duration;
+	parameter "Sporulation time" var:microbes_sporulation_time;
+	parameter "Germination time" var:microbes_germination_time;
 	
 	reflex {
 		do update_populations;

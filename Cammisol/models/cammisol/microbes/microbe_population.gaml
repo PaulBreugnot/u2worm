@@ -15,6 +15,8 @@ global {
 	
 	float microbes_CN <- 10.0;
 	float microbes_CP <- 17.0;
+	float microbes_sporulation_time <- 10#h;
+	float microbes_germination_time <- 1#h;
 	
 	// Enzyme objectives
 	MaxLabileC max_labile_C;
@@ -109,11 +111,11 @@ species MicrobePopulation schedules:[]
 	/**
 	 * Characteristic sporulation time (time to go dormant or inactive).
 	 */
-	float sporulation_time <- 10#h;
+	float sporulation_time <- microbes_sporulation_time;
 	/**
 	 * Characteristic germination time (time to go awoken or active).
 	 */
-	float germination_time <- 1#h;
+	float germination_time <- microbes_germination_time;
 	
 	/**
 	 * Cytosol C.
@@ -210,12 +212,13 @@ species MicrobePopulation schedules:[]
 	 * Assimilates nutrients from the specified dam to the cytosol.
 	 */
 	action assimilate(Dam dam, float perceived_rate) {
+		write "Requested C/N/P: " + requested_C + ", " + requested_N + ", " + requested_P;
 		// C/N/P is retrieved in priority from the cytosol. Is enough nutrients
 		// is available in the cytosol, nothing is consumed from the perceived
 		// C/N/P.
 		float assimilated_C <- min(dam.dom[2] * perceived_rate, max(0.0, requested_C-cytosol_C));
-		float assimilated_N <- min(dam.dom[0] * perceived_rate, max(0.0, requested_N-cytosol_N));
-		float assimilated_P <- min(dam.dom[1] * perceived_rate, max(0.0, requested_P-cytosol_P));
+		float assimilated_N <- dam.dom[0] > 0 ? assimilated_C * dam.dom[2] / dam.dom[0] : 0.0;
+		float assimilated_P <- dam.dom[1] > 0 ? assimilated_C * dam.dom[2] / dam.dom[1] : 0.0;
 
 		cytosol_C <- cytosol_C + assimilated_C;
 		cytosol_N <- cytosol_N + assimilated_N;
@@ -233,25 +236,36 @@ species MicrobePopulation schedules:[]
 
 		dam.dim[0] <- dam.dim[0] - assimilated_N;
 		dam.dim[1] <- dam.dim[1] - assimilated_P;
+		
+		
+		write "Cytosol C/N/P: " + cytosol_C + ", " + cytosol_N + ", " + cytosol_P;
 	}
 	
 	/**
 	 * Updates active rate according to perceived nutrients.
 	 */
 	action sleep(Dam dam, float perceived_rate) {
-		float perceived_C_respiration <- (1-carbon_use_efficiency) * (perceived_rate * dam.dom[2]+cytosol_C);
-		float perceived_C_growth <- min(
-			carbon_use_efficiency * (perceived_rate * dam.dom[2]+cytosol_C),
-			(perceived_rate * (dam.dom[0]+dam.dim[0])+cytosol_N) * C_N,
-			(perceived_rate * (dam.dom[1]+dam.dim[1])+cytosol_P) * C_P
-		);		
-		float max_awake_population <- min(1.0, (perceived_C_respiration + perceived_C_growth) / (C * local_step / (carbon_use_efficiency * dividing_time)));
+		float usable_C <- perceived_rate * dam.dom[2]+cytosol_C;
+		float C_usable_for_respiration <- (1-carbon_use_efficiency) * usable_C;
 		
-		float d_awake_population <- 1/(active_rate > max_awake_population ? sporulation_time : germination_time)
-			* active_rate * (1 - active_rate / max(minimum_active_rate, max_awake_population));
+		float usable_N <- perceived_rate * (dam.dom[0]+dam.dim[0])+cytosol_N;
+		float usable_P <- perceived_rate * (dam.dom[1]+dam.dim[1])+cytosol_P;
+		float C_usable_for_growth <- min(
+			carbon_use_efficiency * usable_C,
+			usable_N * C_N,
+			usable_P * C_P
+		);
+		// The active ratio is equal to the ratio of usable C over the quantity of C that would be requested if all the population was active.
+		float active_population_target <- max(
+			minimum_active_rate, 
+			min(1.0, (C_usable_for_respiration + C_usable_for_growth) / (C * local_step / (carbon_use_efficiency * dividing_time)))
+			);
+		
+		float d_active_population <- 1/(active_rate > active_population_target ? sporulation_time : germination_time)
+			* active_population_target * (1 - active_rate / active_population_target);
 
 		// The minimum awake rate prevents awake_population to be set to 0.0, what would prevent it to awake (see d_awake_population equation above)
-		active_rate <- min(1.0, max(minimum_active_rate, active_rate + d_awake_population * local_step));
+		active_rate <- min(1.0, max(minimum_active_rate, active_rate + d_active_population * local_step));
 	}
 	
 	/**
@@ -282,6 +296,7 @@ species MicrobePopulation schedules:[]
 		float C_used_for_growth <- max(0.0, C_usable_for_growth * (1.0 - total_C_in_pore/carrying_capacity));
 		
 		// C/N/P assimilated for growth but finally not used due to carrying capacity
+		// TODO: Comportement de cette section à vérifier
 		float C_not_used_for_growth <- C_usable_for_growth - C_used_for_growth;
 		float N_not_used_for_growth <- C_not_used_for_growth / C_N;
 		float P_not_used_for_growth <- C_not_used_for_growth / C_P;
